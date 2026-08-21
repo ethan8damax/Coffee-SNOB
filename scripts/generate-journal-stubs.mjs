@@ -26,6 +26,7 @@ for (const stub of STUBS) {
     `readMinutes: ${stub.readMinutes}`,
     `photoAlt: "${stub.photoAlt}"`,
     `dek: "${stub.dek}"`,
+    "draft: true",
     "---",
     "",
     `${stub.dek}`,

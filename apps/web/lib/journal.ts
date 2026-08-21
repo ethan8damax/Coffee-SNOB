@@ -12,11 +12,12 @@ export type JournalFrontmatter = {
   readMinutes: number;
   photoAlt: string;
   dek: string;
+  draft?: boolean;
 };
 
 export type JournalPost = { slug: string; frontmatter: JournalFrontmatter; content: string };
 
-export function getAllJournalPosts(): JournalPost[] {
+function readAllJournalPosts(): JournalPost[] {
   return readdirSync(JOURNAL_DIR)
     .filter((f) => f.endsWith(".mdx"))
     .map((file) => {
@@ -27,6 +28,10 @@ export function getAllJournalPosts(): JournalPost[] {
     .sort((a, b) => (a.frontmatter.date < b.frontmatter.date ? 1 : -1));
 }
 
+export function getAllJournalPosts(): JournalPost[] {
+  return readAllJournalPosts().filter((p) => !p.frontmatter.draft);
+}
+
 export function getJournalPost(slug: string): JournalPost | undefined {
-  return getAllJournalPosts().find((p) => p.slug === slug);
+  return readAllJournalPosts().find((p) => p.slug === slug);
 }

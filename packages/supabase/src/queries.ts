@@ -17,8 +17,9 @@ export async function getCityGuide(client: Client, citySlug: string) {
     .from("cities")
     .select("id, slug, name, country, region, status")
     .eq("slug", citySlug)
-    .single();
+    .maybeSingle();
   if (cityError) throw cityError;
+  if (!city) return null;
 
   const { data: guide, error: guideError } = await client
     .from("lists")
@@ -27,7 +28,7 @@ export async function getCityGuide(client: Client, citySlug: string) {
     )
     .eq("type", "city_guide")
     .eq("city_id", city.id)
-    .single();
+    .maybeSingle();
   if (guideError) throw guideError;
 
   return { city, guide };

@@ -1,1 +1,2 @@
-export const PLACEHOLDER = true;
+export { colors } from "./colors";
+export type { ColorToken } from "./colors";

@@ -1,0 +1,25 @@
+@font-face{font-family:'Area';src:url('/fonts/area-normal/fonnts.com-Area_Normal_Regular.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'Area';src:url('/fonts/area-normal/fonnts.com-Area_Normal_Bold.otf') format('opentype');font-weight:600 900;font-display:swap}
+@font-face{font-family:'Area Extended';src:url('/fonts/area-normal/fonnts.com-Area_Extended_Bold.otf') format('opentype');font-weight:700;font-display:swap}
+@font-face{font-family:'Area Extended';src:url('/fonts/area-normal/fonnts.com-Area_Extended_Black.otf') format('opentype');font-weight:900;font-display:swap}
+
+:root{
+  --sage:      #9cb6b8;
+  --sage-dk:   #86a4a6;
+  --sage-lt:   #b6c9ca;
+  --oxblood:   #4a1206;
+  --oxblood-lt:#63200e;
+  --burnt:     #c46a17;
+  --teal:      #0e8ba3;
+  --teal-dk:   #0a6272;
+  --cream:     #e9e4d0;
+  --paper:     #f0ecdf;
+  --paper-2:   #e6e1d1;
+  --card:      #faf8ef;
+  --ink:       #161310;
+  --ink-2:     #4b423a;
+  --ink-3:     #8c8175;
+  --rule:      rgba(22,19,16,.13);
+  --rule-2:    rgba(22,19,16,.07);
+  --r-sm: 4px; --r-md: 8px; --r-lg: 14px;
+}

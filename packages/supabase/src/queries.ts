@@ -28,6 +28,7 @@ export async function getCityGuide(client: Client, citySlug: string) {
     )
     .eq("type", "city_guide")
     .eq("city_id", city.id)
+    .order("position", { referencedTable: "list_items" })
     .maybeSingle();
   if (guideError) throw guideError;
 

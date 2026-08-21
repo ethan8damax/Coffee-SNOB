@@ -6,27 +6,12 @@ import { getCityGuide } from "@coffeesnob/supabase";
 
 export const revalidate = 60;
 
-type ShopRow = {
-  position: number;
-  note: string | null;
-  shops: {
-    id: string;
-    name: string;
-    neighborhood: string;
-    price_tier: string;
-    tag: string | null;
-    writeup: string | null;
-    order_note: string | null;
-    editorial_rating: number | null;
-  };
-};
-
 export default async function CityGuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const result = await getCityGuide(getSupabase(), slug);
   if (!result || !result.guide) notFound();
   const { city, guide } = result;
-  const items = (guide.list_items as unknown as ShopRow[]).sort((a, b) => a.position - b.position);
+  const items = guide.list_items;
 
   return (
     <div className="snob-web">

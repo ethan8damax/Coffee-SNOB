@@ -50,7 +50,9 @@ function fakeGuideClient(
         select: () => ({
           eq: () => ({
             eq: () => ({
-              maybeSingle: () => Promise.resolve(guideResult),
+              order: () => ({
+                maybeSingle: () => Promise.resolve(guideResult),
+              }),
             }),
           }),
         }),

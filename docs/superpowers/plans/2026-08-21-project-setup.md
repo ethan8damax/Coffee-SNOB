@@ -1239,6 +1239,8 @@ body{background:var(--paper);font-family:'Area',-apple-system,system-ui,sans-ser
 
 .chip{display:inline-flex;align-items:center;gap:5px;height:27px;padding:0 11px;border-radius:2px;border:1px solid var(--rule);background:transparent;color:var(--ink-2);white-space:nowrap;font-family:'Area Extended','Area',sans-serif;font-weight:700;text-transform:uppercase;font-size:8.5px;letter-spacing:.1em}
 .chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.chip.ox{background:var(--oxblood);color:var(--cream);border-color:var(--oxblood)}
+.chip.bu{background:var(--burnt);color:var(--ink);border-color:var(--burnt)}
 
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:46px;padding:0 18px;border-radius:2px;border:none;cursor:pointer;font-family:'Area Extended','Area',sans-serif;font-weight:900;text-transform:uppercase;font-size:10.5px;letter-spacing:.1em}
 .btn-ox{background:var(--oxblood);color:var(--cream)}
@@ -1458,6 +1460,7 @@ export function Eyebrow({
 }
 
 const DETOUR = ["Stay home", "If it's on your way", "Worth the detour", "Make the trip", "Catch a flight"];
+const DETOUR_SHORT = ["Stay home", "On your way", "Worth the detour", "Make the trip", "Catch a flight"];
 const DETOUR_SUB = [
   "Skip it. Your coffee at home is probably better.",
   "Nothing wrong with it — just don't go out of your way.",
@@ -1470,7 +1473,7 @@ export function Detour({ value = 4, short = false }: { value?: number; short?: b
   const v = Math.max(1, Math.min(5, Math.round(value)));
   const fill = v === 4 ? "bu" : v === 5 ? "ox" : "";
   return (
-    <span className={`chip ${fill}`}>
+    <span className={["chip", fill].filter(Boolean).join(" ")}>
       <span className="detour" style={{ gap: 1.5 }}>
         {[1, 2, 3, 4, 5].map((i) => (
           <svg key={i} width="5.5" height="7" viewBox="0 0 9 11" fill="none" stroke="var(--burnt)"
@@ -1479,12 +1482,12 @@ export function Detour({ value = 4, short = false }: { value?: number; short?: b
           </svg>
         ))}
       </span>
-      {short ? DETOUR[v - 1] : DETOUR[v - 1]}
+      {(short ? DETOUR_SHORT : DETOUR)[v - 1]}
     </span>
   );
 }
 
-export { DETOUR, DETOUR_SUB };
+export { DETOUR, DETOUR_SHORT, DETOUR_SUB };
 
 export function Avatar({ name = "AB", size = 28, bg = "var(--sage-dk)", fg = "var(--paper)" }: { name?: string; size?: number; bg?: string; fg?: string }) {
   const init = name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();

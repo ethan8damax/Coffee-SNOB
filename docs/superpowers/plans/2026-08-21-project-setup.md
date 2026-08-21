@@ -572,39 +572,40 @@ git commit -m "Scaffold packages/supabase"
 
 ## Phase B — Supabase schema
 
-> **Before Task 6:** ask the user for their existing Supabase project's `SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL` (the direct Postgres connection string, for verification queries), `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY`. Do not hardcode these into any file — they go into `.env.local` (gitignored) and Vercel env vars only.
+> **Revised tooling (superseding the CLI/psql approach originally written below):** the Supabase MCP server is authenticated and connected directly in this session (project "Coffee SNOB", `project_id: kyiuhuivyugoqljqodil`, fresh/empty). Tasks 6–11 use its tools instead of the Supabase CLI + psql: `mcp__plugin_supabase_supabase__apply_migration` for DDL, `execute_sql` for seed/verification queries, `generate_typescript_types` for Task 11's types file, `get_project_url`/`get_publishable_keys` for client env vars. No CLI install, `supabase login`, project linking, or DB connection string is needed — the MCP server has already resolved project access. SQL is still saved to `supabase/migrations/*.sql` and `supabase/seed.sql` locally for version control, matching the original file structure below; only the *application* mechanism changed (MCP tool call instead of `supabase db push`/`psql -f`).
+>
+> The fetched anon/publishable key is not a secret (Supabase anon keys are meant to ship in client bundles; RLS is what protects data) — safe to write into gitignored `.env` files directly, no need to route it through the user.
 
-### Task 6: Supabase CLI init + link
+### Task 6: Wire Supabase project credentials into both apps
 
 **Files:**
-- Create: `supabase/config.toml` (generated)
-- Create: `.env.local` (gitignored — not committed)
+- Create: `apps/web/.env.local` (gitignored — not committed)
+- Create: `apps/app/.env` (gitignored — not committed)
 
-- [ ] **Step 1: Initialize the Supabase project directory**
+- [ ] **Step 1: Fetch the project's URL and anon/publishable key**
 
-Run: `npx supabase init` (from repo root — creates `supabase/config.toml` and `supabase/migrations/`)
+Via MCP: `mcp__plugin_supabase_supabase__get_project_url` and `get_publishable_keys` with `project_id: kyiuhuivyugoqljqodil`.
 
-- [ ] **Step 2: Link to the existing project**
-
-Run: `npx supabase login` (opens a browser to authenticate), then:
-`npx supabase link --project-ref <SUPABASE_PROJECT_REF>`
-Expected: `Finished supabase link`
-
-- [ ] **Step 3: Write `.env.local` at the repo root** (values from the user — do not commit)
+- [ ] **Step 2: Write `apps/web/.env.local`**
 
 ```
-NEXT_PUBLIC_SUPABASE_URL=<from user>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<from user>
-SUPABASE_SERVICE_ROLE_KEY=<from user>
-SUPABASE_DB_URL=<from user>
+NEXT_PUBLIC_SUPABASE_URL=https://kyiuhuivyugoqljqodil.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=<the anon key from Step 1>
 ```
 
-- [ ] **Step 4: Commit the Supabase config (not the env file)**
+- [ ] **Step 3: Write `apps/app/.env`**
 
-```bash
-git add supabase/config.toml
-git commit -m "Initialize Supabase CLI project"
 ```
+EXPO_PUBLIC_SUPABASE_URL=https://kyiuhuivyugoqljqodil.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=<the same anon key>
+```
+
+- [ ] **Step 4: Verify both are gitignored**
+
+Run: `git check-ignore apps/web/.env.local apps/app/.env`
+Expected: both paths printed (confirms they're ignored, matching the root `.gitignore`'s `.env*.local` / `.env` patterns — note `apps/app/.env` needs the literal `.env` pattern, not just `.env*.local`, since Expo's convention is a plain `.env` file)
+
+- [ ] **Step 5: No commit of the env files themselves** (they're gitignored by design)
 
 ---
 
@@ -613,10 +614,9 @@ git commit -m "Initialize Supabase CLI project"
 **Files:**
 - Create: `supabase/migrations/<timestamp>_core.sql`
 
-- [ ] **Step 1: Generate the migration file**
+- [ ] **Step 1: Create the migration file locally** (for version control — this is written to disk but applied via MCP in Step 3, not `supabase db push`)
 
-Run: `npx supabase migration new core`
-Expected: creates `supabase/migrations/<timestamp>_core.sql`
+Create `supabase/migrations/0001_core.sql`
 
 - [ ] **Step 2: Write the migration**
 
@@ -656,14 +656,14 @@ create policy "cities are publicly readable" on public.cities for select using (
 create policy "shops are publicly readable" on public.shops for select using (true);
 ```
 
-- [ ] **Step 3: Push the migration**
+- [ ] **Step 3: Apply the migration via MCP**
 
-Run: `npx supabase db push`
-Expected: `Applying migration <timestamp>_core.sql...`, exits 0
+Call `mcp__plugin_supabase_supabase__apply_migration` with `project_id: kyiuhuivyugoqljqodil`, `name: "core"`, `query: <the SQL from Step 2>`.
+Expected: success response, no error.
 
 - [ ] **Step 4: Verify the tables exist**
 
-Run: `psql "$SUPABASE_DB_URL" -c "\dt public.*"`
+Call `mcp__plugin_supabase_supabase__list_tables` with `project_id: kyiuhuivyugoqljqodil`, `schemas: ["public"]`.
 Expected: lists `cities` and `shops`
 
 - [ ] **Step 5: Commit**
@@ -680,9 +680,9 @@ git commit -m "Add cities and shops tables"
 **Files:**
 - Create: `supabase/migrations/<timestamp>_lists.sql`
 
-- [ ] **Step 1: Generate the migration file**
+- [ ] **Step 1: Create the migration file locally**
 
-Run: `npx supabase migration new lists`
+Create `supabase/migrations/0002_lists.sql`
 
 - [ ] **Step 2: Write the migration**
 
@@ -718,11 +718,10 @@ create policy "lists are publicly readable" on public.lists for select using (tr
 create policy "list_items are publicly readable" on public.list_items for select using (true);
 ```
 
-- [ ] **Step 3: Push and verify**
+- [ ] **Step 3: Apply and verify via MCP**
 
-Run: `npx supabase db push`
-Run: `psql "$SUPABASE_DB_URL" -c "\d public.lists"`
-Expected: shows the `lists` columns including the `city_guide_has_city` check constraint
+Call `apply_migration` with `project_id: kyiuhuivyugoqljqodil`, `name: "lists"`, `query: <the SQL from Step 2>`.
+Then call `list_tables` (verbose: true) and confirm `lists` and `list_items` appear with the expected columns, including the `city_guide_has_city` check constraint.
 
 - [ ] **Step 4: Commit**
 
@@ -738,9 +737,9 @@ git commit -m "Add lists and list_items tables"
 **Files:**
 - Create: `supabase/migrations/<timestamp>_social.sql`
 
-- [ ] **Step 1: Generate the migration file**
+- [ ] **Step 1: Create the migration file locally**
 
-Run: `npx supabase migration new social`
+Create `supabase/migrations/0003_social.sql`
 
 - [ ] **Step 2: Write the migration**
 
@@ -830,17 +829,15 @@ create trigger on_auth_user_created
   for each row execute function public.handle_new_user();
 ```
 
-- [ ] **Step 3: Push and verify**
+- [ ] **Step 3: Apply and verify via MCP**
 
-Run: `npx supabase db push`
-Run: `psql "$SUPABASE_DB_URL" -c "select trigger_name from information_schema.triggers where event_object_table = 'users';"`
+Call `apply_migration` with `project_id: kyiuhuivyugoqljqodil`, `name: "social"`, `query: <the SQL from Step 2>`.
+Then call `execute_sql` with `query: "select trigger_name from information_schema.triggers where event_object_table = 'users';"`.
 Expected: includes `on_auth_user_created`
 
 - [ ] **Step 4: Smoke-test the new-user trigger**
 
-Run: `psql "$SUPABASE_DB_URL" -c "select count(*) from auth.users;"` (note the count), then create a test user via Supabase Studio's Auth panel (or `supabase.auth.signUp` in a scratch script), then:
-Run: `psql "$SUPABASE_DB_URL" -c "select username from public.profiles order by created_at desc limit 1;"`
-Expected: a new profile row exists with a derived username. Delete the test user afterward via Studio.
+Call `execute_sql` with `query: "select count(*) from auth.users;"` (note the count), then call `execute_sql` with an insert-a-test-user flow is not available via SQL alone (auth.users requires the Auth API) — instead, skip creating a real test user and verify the trigger function's correctness by reading it back: call `execute_sql` with `query: "select prosrc from pg_proc where proname = 'handle_new_user';"` and confirm the returned function body matches Step 2's `handle_new_user` definition exactly (insert into profiles, coalesce username from raw_user_meta_data or email). This verifies the trigger is wired correctly without needing to fabricate a real signup.
 
 - [ ] **Step 5: Commit**
 
@@ -936,14 +933,14 @@ insert into public.list_items (list_id, shop_id, position)
 select l.id, ordered.id, ordered.pos from l, ordered;
 ```
 
-- [ ] **Step 2: Run the seed against the linked project**
+- [ ] **Step 2: Run the seed against the project via MCP**
 
-Run: `psql "$SUPABASE_DB_URL" -f supabase/seed.sql`
-Expected: `INSERT 0 7` (cities), `INSERT 0 7` (shops), `INSERT 0 1` (lists), `INSERT 0 7` (list_items)
+Call `mcp__plugin_supabase_supabase__execute_sql` with `project_id: kyiuhuivyugoqljqodil`, `query: <the full contents of supabase/seed.sql>`.
+Expected: no error.
 
 - [ ] **Step 3: Verify**
 
-Run: `psql "$SUPABASE_DB_URL" -c "select slug, status from public.cities order by slug;"`
+Call `execute_sql` with `query: "select slug, status from public.cities order by slug;"`.
 Expected: 6 `coming_soon` rows + `lisbon` as `demo`
 
 - [ ] **Step 4: Commit**
@@ -963,10 +960,10 @@ git commit -m "Seed launch cities and Lisbon demo city guide"
 - Modify: `packages/supabase/src/index.ts`
 - Create: `packages/supabase/test/queries.test.ts`
 
-- [ ] **Step 1: Generate types from the linked project**
+- [ ] **Step 1: Generate types from the project via MCP**
 
-Run: `npx supabase gen types typescript --linked > packages/supabase/src/types.ts`
-Expected: file is overwritten with a large `Database` type covering all tables from Tasks 7–9
+Call `mcp__plugin_supabase_supabase__generate_typescript_types` with `project_id: kyiuhuivyugoqljqodil`. Write the returned TypeScript directly to `packages/supabase/src/types.ts` (overwriting the placeholder), unmodified.
+Expected: file now contains a large `Database` type covering all tables from Tasks 7–9
 
 - [ ] **Step 2: Write `packages/supabase/src/queries.ts`**
 
@@ -1995,11 +1992,14 @@ git commit -m "Build City Guides index page (Supabase-backed)"
 
 - [ ] **Step 1: Write `apps/web/app/city-guides/[slug]/page.tsx`** (ported from `city-guide.jsx`, dynamic and Supabase-backed instead of hardcoded Lisbon data)
 
+**Reuse `@coffeesnob/supabase`'s `getCityGuide` helper here rather than re-querying inline** — Task 11 fixed it to return `null`/`{ city, guide: null }` instead of throwing on missing rows, specifically so this page (and the Expo app later) can share one query implementation instead of each hand-rolling the same two-query join. If `getCityGuide`'s shape doesn't quite fit this page's needs, that's a signal to adjust the shared helper, not to duplicate it here again.
+
 ```tsx
 import { notFound } from "next/navigation";
 import { Eyebrow, Detour } from "@/components/primitives";
 import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
 import { getSupabase } from "@/lib/supabase";
+import { getCityGuide } from "@coffeesnob/supabase";
 
 export const revalidate = 60;
 
@@ -2018,34 +2018,12 @@ type ShopRow = {
   };
 };
 
-async function getCityGuide(slug: string) {
-  const supabase = getSupabase();
-  const { data: city, error: cityError } = await supabase
-    .from("cities")
-    .select("id, slug, name, country")
-    .eq("slug", slug)
-    .maybeSingle();
-  if (cityError) throw cityError;
-  if (!city) return null;
-
-  const { data: guide, error: guideError } = await supabase
-    .from("lists")
-    .select("id, title, description, body, list_items(position, note, shops(id, name, neighborhood, price_tier, tag, writeup, order_note, editorial_rating))")
-    .eq("type", "city_guide")
-    .eq("city_id", city.id)
-    .maybeSingle();
-  if (guideError) throw guideError;
-  if (!guide) return null;
-
-  const items = (guide.list_items as unknown as ShopRow[]).sort((a, b) => a.position - b.position);
-  return { city, guide, items };
-}
-
 export default async function CityGuidePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const result = await getCityGuide(slug);
-  if (!result) notFound();
-  const { city, guide, items } = result;
+  const result = await getCityGuide(getSupabase(), slug);
+  if (!result || !result.guide) notFound();
+  const { city, guide } = result;
+  const items = (guide.list_items as unknown as ShopRow[]).sort((a, b) => a.position - b.position);
 
   return (
     <div className="snob-web">

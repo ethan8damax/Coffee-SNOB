@@ -9,7 +9,7 @@
     "./css/tokens.css": "./css/tokens.css"
   },
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

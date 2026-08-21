@@ -2389,6 +2389,17 @@ git commit -m "Build Journal index and post pages"
 
 ### Task 20: Deploy — repoint Vercel + push to GitHub
 
+> **Already completed ahead of order** (done mid-Task-16 at the user's request, once they'd connected the repo themselves). Documenting what actually happened, since it differs from the original draft above this note:
+>
+> - The repo the user connected was `https://github.com/ethan8damax/Coffee-SNOB.git` (not `Snob.git` as guessed in the original spec) — `git remote -v` already showed this configured (by the user, via Vercel's GitHub integration or directly) by the time this task ran. A normal `git push origin main` (no force needed) synced everything.
+> - The Vercel project is `coffee-snob-project`. Its Root Directory was left at `.` (repo root) by default, which broke Next.js framework auto-detection (`vercel deploy` failed: "No Next.js version detected" — it was scanning the monorepo root's `package.json`, which has no `next` dependency). Fixed via `vercel project update coffee-snob-project --root-directory apps/web --framework nextjs --install-command "cd ../.. && pnpm install"` — **not** via a repo-root `vercel.json` buildCommand hack. With Root Directory set to `apps/web`, Next.js's own defaults (`next build`, output `.next`) work unmodified; `vercel.json` only needs `{ "framework": "nextjs" }`.
+> - The project already had stale env vars from the *old* Supabase project, under the *wrong* names too (`SUPABASE_URL`/`SUPABASE_ANON_KEY`/`SUPABASE_SERVICE_ROLE_KEY` — missing the `NEXT_PUBLIC_` prefix the code actually reads). Removed all three, added `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` for Production, Preview, and Development via `vercel env add <name> <env> --value <value> --yes`.
+> - Hit and fixed a real Vercel CLI bug: v54.10.2's `env add ... preview --value ... --yes` silently ignored `--value` and re-prompted for the git branch; also silently corrupted the Development values added via piped stdin (verified via `vercel env pull`, caught because the CLI displayed the mangled value). Both fixed by updating to `vercel@latest` (v59.3.0) and re-adding cleanly, then verifying with `vercel env pull` that the actual decoded values matched what was intended — don't trust "Added Environment Variable" success output alone with this CLI version if a fresher one is available.
+> - `vercel deploy --yes` then failed a third way: Vercel's dependency security scan blocked the deploy over `next-mdx-remote@5.0.0` (a known vulnerability) — the version pinned in Task 2's `apps/web/package.json`, unused by any code until Task 18. Bumped to `^6.0.0`, reinstalled, rebuilt clean.
+> - Final `vercel deploy --prod --yes` succeeded. Verified against the real production alias (`https://coffeesnobproject.com`, not the auto-generated `*.vercel.app` URL — that one redirects through Vercel SSO for team members and isn't a useful public-reachability check) with `curl`: landing page 200 with real hero copy, `/city-guides` 200 showing the live Lisbon guide alongside "Guide in progress" for the 6 real launch cities.
+>
+> Original draft below, kept for reference on what was intended before the above corrections:
+
 **Files:** none (infra/config only)
 
 - [ ] **Step 1: Configure the monorepo build in Vercel**

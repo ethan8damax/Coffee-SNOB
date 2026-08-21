@@ -30,12 +30,13 @@ const DETOUR_SUB = [
   "Genuinely exceptional. Worth going out of your way for, no excuses needed.",
   "A once-in-a-while experience. You'd plan a trip around this place — or already have.",
 ];
+const DETOUR_SHORT = ["Stay home", "On your way", "Worth the detour", "Make the trip", "Catch a flight"];
 
 export function Detour({ value = 4, short = false }: { value?: number; short?: boolean }) {
   const v = Math.max(1, Math.min(5, Math.round(value)));
   const fill = v === 4 ? "bu" : v === 5 ? "ox" : "";
   return (
-    <span className={`chip ${fill}`}>
+    <span className={["chip", fill].filter(Boolean).join(" ")}>
       <span className="detour" style={{ gap: 1.5 }}>
         {[1, 2, 3, 4, 5].map((i) => (
           <svg key={i} width="5.5" height="7" viewBox="0 0 9 11" fill="none" stroke="var(--burnt)"
@@ -44,12 +45,12 @@ export function Detour({ value = 4, short = false }: { value?: number; short?: b
           </svg>
         ))}
       </span>
-      {short ? DETOUR[v - 1] : DETOUR[v - 1]}
+      {(short ? DETOUR_SHORT : DETOUR)[v - 1]}
     </span>
   );
 }
 
-export { DETOUR, DETOUR_SUB };
+export { DETOUR, DETOUR_SUB, DETOUR_SHORT };
 
 export function Avatar({ name = "AB", size = 28, bg = "var(--sage-dk)", fg = "var(--paper)" }: { name?: string; size?: number; bg?: string; fg?: string }) {
   const init = name.split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();

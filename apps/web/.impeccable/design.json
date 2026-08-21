@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-21T00:00:00Z",
+  "title": "Design System: Coffee Snob",
+  "extensions": {
+    "colorMeta": {
+      "paper": { "role": "neutral", "displayName": "Warm Paper", "canonical": "#f0ecdf", "tonalRamp": ["#242321","#605e59","#9c9991","#ccc9be","#f0ecdf","#f4f1e7","#f8f6ef","#fbfaf7"] },
+      "paper-2": { "role": "neutral", "displayName": "Warm Paper Deep", "canonical": "#e6e1d1", "tonalRamp": ["#23221f","#5c5a54","#969288","#c4bfb2","#e6e1d1","#ece9dd","#f3f0e8","#f9f8f4"] },
+      "cream": { "role": "neutral", "displayName": "Aged Cream", "canonical": "#e9e4d0", "tonalRamp": ["#23221f","#5d5b53","#979487","#c6c2b1","#e9e4d0","#efebdc","#f4f2e8","#faf8f3"] },
+      "card": { "role": "neutral", "displayName": "Card White", "canonical": "#faf8ef", "tonalRamp": ["#262524","#646360","#a3a19b","#d5d3cb","#faf8ef","#fbfaf3","#fdfcf7","#fefdfb"] },
+      "ink": { "role": "neutral", "displayName": "Warm Ink", "canonical": "#161310", "tonalRamp": ["#030302","#090806","#0e0c0a","#13100e","#161310","#504e4c","#8b8988","#c5c4c3"] },
+      "ink-2": { "role": "neutral", "displayName": "Ink Muted", "canonical": "#4b423a", "tonalRamp": ["#0b0a09","#1e1a17","#312b26","#403831","#4b423a","#78716b","#a5a19d","#d2d0ce"] },
+      "ink-3": { "role": "neutral", "displayName": "Ink Faint", "canonical": "#8c8175", "tonalRamp": ["#151312","#38342f","#5b544c","#776e63","#8c8175","#a9a198","#c6c0ba","#e2e0dd"] },
+      "oxblood": { "role": "secondary", "displayName": "Oxblood", "canonical": "#4a1206", "tonalRamp": ["#0b0301","#1e0702","#300c04","#3f0f05","#4a1206","#774d44","#a58983","#d2c4c1"] },
+      "oxblood-lt": { "role": "secondary", "displayName": "Oxblood Light", "canonical": "#63200e", "tonalRamp": ["#0f0502","#280d06","#401509","#541b0c","#63200e","#8a584a","#b19087","#d8c7c3"] },
+      "burnt": { "role": "primary", "displayName": "Burnt Amber", "canonical": "#c46a17", "tonalRamp": ["#1d1003","#4e2a09","#7f450f","#a75a14","#c46a17","#d38f51","#e2b58b","#f0dac5"] },
+      "sage": { "role": "tertiary", "displayName": "Dusty Sage", "canonical": "#9cb6b8", "tonalRamp": ["#171b1c","#3e494a","#657678","#859b9c","#9cb6b8","#b5c8ca","#cedbdc","#e6eded"] },
+      "sage-dk": { "role": "tertiary", "displayName": "Dusty Sage Deep", "canonical": "#86a4a6", "tonalRamp": ["#141919","#364242","#576b6c","#728b8d","#86a4a6","#a4bbbc","#c3d2d3","#e1e8e9"] },
+      "sage-lt": { "role": "tertiary", "displayName": "Dusty Sage Light", "canonical": "#b6c9ca", "tonalRamp": ["#1b1e1e","#495051","#768383","#9babac","#b6c9ca","#c8d7d7","#dbe4e5","#edf2f2"] },
+      "teal": { "role": "accent", "displayName": "Signal Teal", "canonical": "#0e8ba3", "tonalRamp": ["#021518","#063841","#095a6a","#0c768b","#0e8ba3","#4aa8ba","#87c5d1","#c3e2e8"] },
+      "teal-dk": { "role": "accent", "displayName": "Signal Teal Deep", "canonical": "#0a6272", "tonalRamp": ["#020f11","#04272e","#07404a","#095361","#0a6272","#478995","#85b1b9","#c2d8dc"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero H1 only. The <em> child is recolored burnt, never italicized." },
+      "headline": { "displayName": "Headline", "purpose": "Section heads: letter band, page heads." },
+      "title": { "displayName": "Title", "purpose": "Card and journal-entry titles." },
+      "lede": { "displayName": "Lede", "purpose": "One supporting sentence under a display or headline. Never more than one per section." },
+      "body": { "displayName": "Body", "purpose": "Running copy, ~65-75ch measure." },
+      "label": { "displayName": "Label", "purpose": "Nav, chips, kickers, footer heads, form confirmations. Always uppercase, always Area Extended." }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": [
+      { "name": "mobile", "value": "900px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button (Oxblood)",
+      "kind": "button",
+      "refersTo": "button-accent",
+      "description": "Highest-conviction CTA. Rare — one per page, typically a signup submit inside the dark letter band.",
+      "html": "<button class=\"ds-btn-ox\">Get the letter</button>",
+      "css": ".ds-btn-ox { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 46px; padding: 0 18px; border-radius: 2px; border: none; cursor: pointer; font-family: 'Area Extended','Area',sans-serif; font-weight: 900; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em; background: #4a1206; color: #e9e4d0; transition: background 0.2s ease-out; } .ds-btn-ox:hover { background: #63200e; } .ds-btn-ox:focus-visible { outline: 2px solid #c46a17; outline-offset: 2px; }"
+    },
+    {
+      "name": "Secondary Button (Burnt)",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Default working button — nav CTA, hero signup.",
+      "html": "<button class=\"ds-btn-bu\">Get the letter</button>",
+      "css": ".ds-btn-bu { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 46px; padding: 0 18px; border-radius: 2px; border: none; cursor: pointer; font-family: 'Area Extended','Area',sans-serif; font-weight: 900; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em; background: #c46a17; color: #161310; transition: background 0.2s ease-out; } .ds-btn-bu:hover { background: #a75a14; } .ds-btn-bu:focus-visible { outline: 2px solid #4a1206; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Present but quiet — used where a button needs to exist without competing for attention.",
+      "html": "<button class=\"ds-btn-line\">Learn more</button>",
+      "css": ".ds-btn-line { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 46px; padding: 0 18px; border-radius: 2px; border: 1px solid #161310; cursor: pointer; font-family: 'Area Extended','Area',sans-serif; font-weight: 900; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.1em; background: transparent; color: #161310; transition: background 0.2s ease-out; } .ds-btn-line:hover { background: rgba(22,19,16,0.06); }"
+    },
+    {
+      "name": "Email Input",
+      "kind": "input",
+      "refersTo": "input-email",
+      "description": "Signup field used across hero and letter band.",
+      "html": "<input class=\"ds-input-email\" type=\"email\" placeholder=\"you@email.com\" aria-label=\"Email address\" />",
+      "css": ".ds-input-email { flex: 1; height: 52px; padding: 0 16px; border: 1px solid #161310; border-radius: 2px; background: transparent; font-family: 'Area',sans-serif; font-size: 15px; letter-spacing: -0.01em; color: #161310; } .ds-input-email::placeholder { color: #8c8175; } .ds-input-email:focus-visible { outline: 2px solid #c46a17; outline-offset: -1px; }"
+    },
+    {
+      "name": "Detour Chip (chevron rating)",
+      "kind": "custom",
+      "refersTo": "chip-default",
+      "description": "The five-chevron effort-rating indicator — the brand's signature component. Never replace with a numeric score or star rating.",
+      "html": "<span class=\"ds-chip ds-chip-bu\"><span class=\"ds-detour\"><svg width=\"5.5\" height=\"7\" viewBox=\"0 0 9 11\" fill=\"none\" stroke=\"#c46a17\" stroke-width=\"2.6\"><path d=\"M1.5 1.5 6 5.5l-4.5 4\"/></svg><svg width=\"5.5\" height=\"7\" viewBox=\"0 0 9 11\" fill=\"none\" stroke=\"#c46a17\" stroke-width=\"2.6\"><path d=\"M1.5 1.5 6 5.5l-4.5 4\"/></svg><svg width=\"5.5\" height=\"7\" viewBox=\"0 0 9 11\" fill=\"none\" stroke=\"#c46a17\" stroke-width=\"2.6\"><path d=\"M1.5 1.5 6 5.5l-4.5 4\"/></svg><svg width=\"5.5\" height=\"7\" viewBox=\"0 0 9 11\" fill=\"none\" stroke=\"#c46a17\" stroke-width=\"2.6\"><path d=\"M1.5 1.5 6 5.5l-4.5 4\"/></svg><svg width=\"5.5\" height=\"7\" viewBox=\"0 0 9 11\" fill=\"none\" stroke=\"#c46a17\" stroke-opacity=\"0.32\" stroke-width=\"2.6\"><path d=\"M1.5 1.5 6 5.5l-4.5 4\"/></svg></span>Make the trip</span>",
+      "css": ".ds-chip { display: inline-flex; align-items: center; gap: 5px; height: 27px; padding: 0 11px; border-radius: 2px; border: 1px solid rgba(22,19,16,0.13); background: #c46a17; color: #161310; font-family: 'Area Extended','Area',sans-serif; font-weight: 700; text-transform: uppercase; font-size: 8.5px; letter-spacing: 0.1em; } .ds-detour { display: inline-flex; gap: 1.5px; align-items: center; }"
+    },
+    {
+      "name": "Sticky Nav",
+      "kind": "nav",
+      "refersTo": null,
+      "description": "The one blur/glass effect in the whole system — functional (legibility over scrolling content), not decorative.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-link ds-nav-on\" href=\"#\">City guides</a><a class=\"ds-nav-link\" href=\"#\">Journal</a><a class=\"ds-nav-link\" href=\"#\">About</a></header>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 26px; padding: 18px 24px; background: rgba(240,236,223,0.92); backdrop-filter: blur(10px); border-bottom: 1px solid rgba(22,19,16,0.13); } .ds-nav-link { font-family: 'Area Extended','Area',sans-serif; font-weight: 700; text-transform: uppercase; font-size: 9.5px; letter-spacing: 0.13em; color: #4b423a; text-decoration: none; } .ds-nav-link:hover { color: #c46a17; } .ds-nav-on { color: #161310; position: relative; } .ds-nav-on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -6px; height: 2px; background: #c46a17; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Editorial, not decorative.",
+    "overview": "Coffee Snob's web presence reads like a well-run print newsletter that happens to be a website: warm paper background, disciplined type, almost no ornament. Every visual choice earns its place by carrying information — a chevron fill shows effort level, a color band marks a section transition, a hairline rule separates content. Nothing is decorative for its own sake. This mirrors the product's own standard: a shop write-up is disqualified if the detail 'could describe a different shop'; a page is disqualified if a visual flourish could be swapped out without losing meaning.\n\nThe palette is a warm, worn paper world (paper, cream, card) punctuated by two hard-working accents: oxblood for the highest-conviction moments (footer, top ratings, primary links) and burnt orange for warmth and action (buttons, emphasis, mid-tier ratings). Sage appears once as a calm background band, never as a UI accent. There are no shadows anywhere in the system — depth comes from full-bleed color blocks and hairline rules, never elevation tricks.\n\nTypography carries the brand's confidence: Area for reading, Area Extended (heavy, uppercase, tracked) for anything that needs to sound certain — labels, buttons, kickers. The display type is large and tight (negative tracking down to -.045em), giving headlines a compressed, printed-poster feel rather than a soft SaaS one.",
+    "keyCharacteristics": [
+      "Warm paper base, near-black warm ink text, zero pure grays",
+      "Two accent colors doing all the emotional work: oxblood (gravity) and burnt (warmth/action)",
+      "Flat, sharp-cornered surfaces (2px radius) — nothing pill-shaped, nothing soft",
+      "Area Extended uppercase-tracked type for anything structural (nav, labels, buttons, kickers)",
+      "No shadows; depth via full-bleed color bands and hairline rules only",
+      "Chevron-based effort rating as a first-class, recurring visual motif — never a number"
+    ],
+    "rules": [
+      { "name": "The Two-Accent Rule", "body": "Only oxblood and burnt carry emotional weight. If a third 'accent' color starts appearing on interactive elements, that's drift — route it back to one of the two, or to neutral.", "section": "colors" },
+      { "name": "The No-Number Rule", "body": "No UI element may render a numeric score, a star rating, or a decimal average. Rating is always the five-chevron effort scale, rendered via the Detour component. This is brand identity, not a styling preference.", "section": "colors" },
+      { "name": "The Two-Register Rule", "body": "A block of text is either reading copy (Area, sentence case, generous line-height) or structural copy (Area Extended, uppercase, tracked, tight line-height). Never blend the two conventions in one text block.", "section": "typography" },
+      { "name": "The Flat-By-Default Rule", "body": "No shadows, ever, on cards, buttons, or inputs. If something needs to feel raised, lift it with the Card White neutral against Warm Paper, not with a shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep every rating a chevron effort-scale value (Detour component), never a number or star.",
+      "Do use flat 2px corners everywhere — buttons, inputs, photo placeholders, cards.",
+      "Do reserve Area Extended (uppercase, tracked) for structural text only: nav, labels, buttons, kickers.",
+      "Do let oxblood stay rare — it should read as the highest-conviction color precisely because it appears less often than burnt.",
+      "Do convey depth with full-bleed color bands and 1px hairline rules, never shadows.",
+      "Do write specific, concrete copy per PRODUCT.md's voice — short sentences, opinions as fact, curate/curation/rigorous/picky/snob as the house vocabulary."
+    ],
+    "donts": [
+      "Don't introduce a numeric score, star rating, or decimal average anywhere in the UI — the chevron scale is the only rating system, and this is brand identity, not a styling preference.",
+      "Don't add box-shadows, drop shadows, or glow effects to any surface. If something needs to feel elevated, use the Card White neutral against Warm Paper instead.",
+      "Don't use border-radius above 2px on any interactive element or photo container.",
+      "Don't use glassmorphism decoratively — the sticky nav's blur is the one functional exception, not a pattern to repeat.",
+      "Don't write or design toward affiliate-blog patterns: numbered 'Top 10' badges, urgency banners, star-rating widgets, sponsored-placement styling. PRODUCT.md is explicit that there is 'no affiliate padding, ever.'",
+      "Don't use banned vocabulary in any UI copy: 'elevate,' 'leverage,' 'streamline,' 'hidden gem,' 'vibe,' 'nestled,' or 'it's not X it's Y' constructions.",
+      "Don't blend the two typographic registers — no uppercase-tracked paragraphs, no sentence-case structural labels."
+    ]
+  }
+}

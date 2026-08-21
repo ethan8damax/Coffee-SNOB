@@ -63,18 +63,26 @@ function Scale() {
   return (
     <section className="scale" style={{ background: "var(--oxblood)", color: "var(--cream)", padding: "104px 0 108px" }}>
       <div className="wrap">
-        <div style={{ paddingBottom: 56 }}>
-          <Eyebrow color="rgba(233,228,208,.5)">The rating</Eyebrow>
-          <h2 className="h2">Five stars tell you<br />nothing. Ours tells<br />you whether to go.</h2>
-          <p className="lede on-dark" style={{ marginTop: 18 }}>Every shop in Snob is rated on one question: how far would you travel for it? The scale is a sentence, not a number, and it is the only score we keep.</p>
+        <div className="scale-head">
+          <div>
+            <Eyebrow color="rgba(233,228,208,.5)">The rating</Eyebrow>
+            <h2 className="h2" style={{ marginTop: 18 }}>Five stars tell you<br />nothing. Ours tells<br />you whether to go.</h2>
+          </div>
+          <p className="lede on-dark">Every shop in Snob is rated on one question: how far would you travel for it? The scale is a sentence, not a number, and it is the only score we keep.</p>
         </div>
-        <ol style={{ listStyle: "none", margin: 0, padding: 0, borderTop: "1px solid rgba(233,228,208,.18)" }}>
+        <ol className="scale-list">
           {DETOUR.map((word, i) => (
-            <li key={word} style={{ display: "grid", gridTemplateColumns: "52px 78px 300px 1fr", gap: 24, alignItems: "baseline", padding: "26px 0", borderBottom: "1px solid rgba(233,228,208,.18)" }}>
-              <span className="num" style={{ fontSize: 15, color: i === 2 ? "var(--burnt)" : "rgba(233,228,208,.4)" }}>{i + 1}</span>
-              <Detour value={i + 1} />
-              <span className="d2" style={{ color: i === 2 ? "var(--burnt)" : "var(--cream)" }}>{word}</span>
-              <span className="body" style={{ color: "rgba(233,228,208,.6)", maxWidth: "56ch" }}>{DETOUR_SUB[i]}</span>
+            <li key={word} className={"scale-row" + (i === 2 ? " is-active" : "")}>
+              <span className="num scale-num">{i + 1}</span>
+              <span className="scale-chevrons" aria-hidden="true">
+                {[0, 1, 2, 3, 4].map((n) => (
+                  <svg key={n} width="10" height="13" viewBox="0 0 9 11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" opacity={n <= i ? 1 : 0.3}>
+                    <path d="M1.5 1.5 6 5.5l-4.5 4" />
+                  </svg>
+                ))}
+              </span>
+              <span className="d2 scale-title">{word}</span>
+              <span className="body scale-desc">{DETOUR_SUB[i]}</span>
             </li>
           ))}
         </ol>

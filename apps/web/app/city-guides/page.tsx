@@ -76,6 +76,7 @@ export default async function CityGuidesPage() {
                 : <div key={c.id} className="ccard">{inner}<span className="ccard-go label soon">Guide in progress</span></div>;
             })}
           </div>
+          <div className="allcities-seam" />
         </div>
       </section>
       <LetterBand />

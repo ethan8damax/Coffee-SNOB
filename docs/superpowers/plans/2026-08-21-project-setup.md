@@ -1525,10 +1525,13 @@ git commit -m "Port global styles and shared web primitives"
 
 ### Task 14: Shared web chrome (Nav, Footer, Signup, Letter band)
 
+> **Post-review split:** code quality review found putting the interactive `SignupForm` in the same `"use client"` file as `WebNav`/`WebFooter` force-hydrates the nav and footer on every page for no reason (they have no state). Fixed by splitting `SignupForm` into its own `apps/web/components/signup-form.tsx` (the only file with `"use client"`); `web-chrome.tsx` stays a plain Server Component module that imports `SignupForm` for `LetterBand`. Any later task importing `SignupForm` directly (rather than via `LetterBand`) should import it from `@/components/signup-form`, not `@/components/web-chrome`.
+
 **Files:**
 - Create: `apps/web/components/web-chrome.tsx`
+- Create: `apps/web/components/signup-form.tsx`
 
-- [ ] **Step 1: Write `apps/web/components/web-chrome.tsx`** (ported from the design project's `web-chrome.jsx`, converted to a client component for the interactive signup form)
+- [ ] **Step 1: Write `apps/web/components/web-chrome.tsx`** (ported from the design project's `web-chrome.jsx`; `SignupForm` itself lives in `signup-form.tsx`, imported here for `LetterBand`)
 
 ```tsx
 "use client";
@@ -1664,7 +1667,8 @@ git commit -m "Port shared web chrome (nav, footer, signup, letter band)"
 ```tsx
 import Link from "next/link";
 import { Eyebrow, Detour, DETOUR, DETOUR_SUB } from "@/components/primitives";
-import { WebNav, SignupForm, LetterBand, WebFooter } from "@/components/web-chrome";
+import { WebNav, LetterBand, WebFooter } from "@/components/web-chrome";
+import { SignupForm } from "@/components/signup-form";
 
 const US_CITIES = ["Portland", "Brooklyn", "Chicago", "Oakland", "Austin", "Seattle", "Los Angeles"];
 const EU_CITIES = ["Lisbon", "Berlin", "Copenhagen", "Paris", "Milan", "Barcelona", "Rotterdam"];

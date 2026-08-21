@@ -1,0 +1,10 @@
+:root {
+  --paper: #f0ecdf;
+  --ink: #161310;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+}

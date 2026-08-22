@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
-import { router } from "expo-router";
+import { router, Link } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { supabase } from "@/lib/supabase";
 import { D2, Body, BodySm, ButtonOx, Label } from "@/components/primitives";
@@ -46,6 +46,10 @@ export default function ForgotPasswordScreen() {
         disabled={loading}
         style={styles.submit}
       />
+
+      <Link href="/sign-in" replace style={styles.backLink}>
+        <Label style={{ color: colors.tealDk }}>Back to sign in</Label>
+      </Link>
     </View>
   );
 }
@@ -58,4 +62,5 @@ const styles = StyleSheet.create({
   input: { borderBottomWidth: 1, borderBottomColor: colors.ink, paddingBottom: 9, fontSize: 15, color: colors.ink },
   error: { color: colors.oxblood, marginTop: 12 },
   submit: { marginTop: 22 },
+  backLink: { marginTop: 20 },
 });

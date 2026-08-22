@@ -17,7 +17,7 @@ export default function SignInScreen() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInError) {
-      if (signInError.message.toLowerCase().includes("email not confirmed")) {
+      if (signInError.code === "email_not_confirmed") {
         router.push({ pathname: "/check-email", params: { reason: "confirm" } });
         return;
       }
@@ -57,6 +57,7 @@ export default function SignInScreen() {
           value={password}
           onChangeText={setPassword}
           secureTextEntry
+          autoCapitalize="none"
           testID="sign-in-password"
         />
 

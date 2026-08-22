@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
@@ -14,6 +14,8 @@ export default function IdentityScreen() {
   const [availability, setAvailability] = useState<"idle" | "checking" | "available" | "taken">("idle");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const usernameRef = useRef(username);
+  usernameRef.current = username;
 
   useEffect(() => {
     const trimmed = username.trim();
@@ -24,7 +26,9 @@ export default function IdentityScreen() {
     setAvailability("checking");
     const timeout = setTimeout(async () => {
       const available = await isUsernameAvailable(supabase, trimmed, session.user.id);
-      setAvailability(available ? "available" : "taken");
+      if (usernameRef.current.trim() === trimmed) {
+        setAvailability(available ? "available" : "taken");
+      }
     }, 500);
     return () => clearTimeout(timeout);
   }, [username, session]);
@@ -41,7 +45,14 @@ export default function IdentityScreen() {
       await refreshProfile();
       router.push("/taste");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Couldn't save that. Try again.");
+      const isDuplicateUsername = e instanceof Error && "code" in e && e.code === "23505";
+      setError(
+        isDuplicateUsername
+          ? "Already taken"
+          : e instanceof Error
+            ? e.message
+            : "Couldn't save that. Try again."
+      );
     } finally {
       setSaving(false);
     }

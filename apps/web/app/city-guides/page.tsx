@@ -2,16 +2,13 @@ import Link from "next/link";
 import { Eyebrow } from "@/components/primitives";
 import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
 import { getSupabase } from "@/lib/supabase";
+import { getCities } from "@coffeesnob/supabase";
 
 export const revalidate = 60;
 
 async function getCityGuidesIndex() {
   const supabase = getSupabase();
-  const { data: cities, error } = await supabase
-    .from("cities")
-    .select("id, slug, name, country, status")
-    .order("name");
-  if (error) throw error;
+  const cities = await getCities(supabase);
 
   const { data: guides, error: guidesError } = await supabase
     .from("lists")

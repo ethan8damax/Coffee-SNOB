@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eyebrow, Avatar } from "@/components/primitives";
-import { WebNav, WebFooter } from "@/components/web-chrome";
+import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
 import { getAllJournalPosts } from "@/lib/journal";
 
 export default function JournalIndexPage() {
@@ -20,7 +20,7 @@ export default function JournalIndexPage() {
         </div>
       </section>
       {featured && (
-        <section className="jfeat wrap" style={{ display: "grid", gridTemplateColumns: "1.1fr 1fr", gap: 48, paddingBottom: 64 }}>
+        <section className="jfeat wrap">
           <div className="photo-ph" data-label={featured.frontmatter.photoAlt} style={{ aspectRatio: "4/3" }} />
           <div>
             <span className="label jkicker">{featured.frontmatter.category}</span>
@@ -58,6 +58,7 @@ export default function JournalIndexPage() {
           </div>
         </section>
       )}
+      <LetterBand />
       <WebFooter />
     </div>
   );

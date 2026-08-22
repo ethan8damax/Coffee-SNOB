@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Eyebrow, Detour, DETOUR, DETOUR_SUB } from "@/components/primitives";
+import { Eyebrow, DETOUR, DETOUR_SUB } from "@/components/primitives";
 import { WebNav, LetterBand, WebFooter } from "@/components/web-chrome";
 import { SignupForm } from "@/components/signup-form";
 

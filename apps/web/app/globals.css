@@ -163,6 +163,8 @@ a:hover{color:var(--burnt)}
 .bl-meta{color:var(--ink-3)}
 .bl-dot{width:3px;height:3px;background:var(--rule);flex-shrink:0}
 
+.jfeat{display:grid;grid-template-columns:1.1fr 1fr;gap:48px;padding-bottom:64px}
+
 .pgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:56px 28px}
 .pcard{display:flex;flex-direction:column;border-top:1px solid var(--rule);padding-top:18px}
 .pcard-link{display:block;color:var(--ink);flex:1}
@@ -238,6 +240,7 @@ a:hover{color:var(--burnt)}
   .scale-row{grid-template-columns:1fr;gap:10px;padding:20px 0}
   .jgrid{grid-template-columns:1fr;gap:44px}
   .pgrid{grid-template-columns:1fr;gap:48px}
+  .jfeat{grid-template-columns:1fr}
   .letter-in,.post-in{grid-template-columns:1fr}
   .foot-in{grid-template-columns:repeat(2,1fr)}
 }

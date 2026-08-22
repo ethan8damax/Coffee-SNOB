@@ -34,3 +34,44 @@ export async function getCityGuide(client: Client, citySlug: string) {
 
   return { city, guide };
 }
+
+export async function getProfile(client: Client, userId: string) {
+  const { data, error } = await client
+    .from("profiles")
+    .select("id, username, display_name, avatar_url, taste_picks, onboarded_at")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function isUsernameAvailable(client: Client, username: string, excludingUserId: string) {
+  const { data, error } = await client
+    .from("profiles")
+    .select("id")
+    .eq("username", username)
+    .neq("id", excludingUserId)
+    .maybeSingle();
+  if (error) throw error;
+  return data === null;
+}
+
+export async function saveIdentity(
+  client: Client,
+  userId: string,
+  params: { username: string; displayName: string }
+) {
+  const { error } = await client
+    .from("profiles")
+    .update({ username: params.username, display_name: params.displayName })
+    .eq("id", userId);
+  if (error) throw error;
+}
+
+export async function saveTastePicks(client: Client, userId: string, tastePicks: string[]) {
+  const { error } = await client
+    .from("profiles")
+    .update({ taste_picks: tastePicks, onboarded_at: new Date().toISOString() })
+    .eq("id", userId);
+  if (error) throw error;
+}

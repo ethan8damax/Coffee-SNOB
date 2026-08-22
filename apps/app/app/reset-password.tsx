@@ -1,19 +1,27 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, TextInput, StyleSheet } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { Link, router, useLocalSearchParams } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/context/auth";
 import { D2, Body, BodySm, ButtonOx, Label } from "@/components/primitives";
 
 export default function ResetPasswordScreen() {
   const { code } = useLocalSearchParams<{ code?: string }>();
-  const [exchanging, setExchanging] = useState(true);
+  const { session } = useAuth();
+  const [exchanging, setExchanging] = useState(!session);
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const [password, setPassword] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const attempted = useRef(false);
 
   useEffect(() => {
+    if (session || attempted.current) {
+      setExchanging(false);
+      return;
+    }
+    attempted.current = true;
     if (!code) {
       setExchangeError("This reset link is missing its code. Request a new one.");
       setExchanging(false);
@@ -23,7 +31,7 @@ export default function ResetPasswordScreen() {
       if (error) setExchangeError(error.message);
       setExchanging(false);
     });
-  }, [code]);
+  }, [code, session]);
 
   async function onSubmit() {
     setSubmitError(null);
@@ -50,6 +58,9 @@ export default function ResetPasswordScreen() {
       <View style={styles.screen}>
         <D2 style={styles.headline}>That link didn't work.</D2>
         <BodySm style={styles.error}>{exchangeError}</BodySm>
+        <Link href="/sign-in" replace style={styles.backLink}>
+          <Label style={{ color: colors.tealDk }}>Back to sign in</Label>
+        </Link>
       </View>
     );
   }
@@ -80,4 +91,5 @@ const styles = StyleSheet.create({
   input: { borderBottomWidth: 1, borderBottomColor: colors.ink, paddingBottom: 9, fontSize: 15, color: colors.ink },
   error: { color: colors.oxblood, marginTop: 12 },
   submit: { marginTop: 22 },
+  backLink: { marginTop: 20 },
 });

@@ -35,27 +35,29 @@ export default function JournalIndexPage() {
           </div>
         </section>
       )}
-      <section className="jindex">
-        <div className="wrap">
-          <div className="sec-head"><h2 className="h2" style={{ marginTop: 0 }}>Everything else</h2></div>
-          <div className="pgrid">
-            {rest.map((p) => (
-              <article key={p.slug} className="pcard">
-                <Link href={`/journal/${p.slug}`} className="pcard-link">
-                  <div className="photo-ph pcard-photo" data-label={p.frontmatter.photoAlt} />
-                  <span className="label pcard-kicker">{p.frontmatter.category}</span>
-                  <h3 className="d2 pcard-title">{p.frontmatter.title}</h3>
-                  <p className="body pcard-dek">{p.frontmatter.dek}</p>
-                </Link>
-                <div className="pcard-foot">
-                  <span className="label pcard-author">{p.frontmatter.author}</span>
-                  <span className="label pcard-meta">{p.frontmatter.readMinutes} min</span>
-                </div>
-              </article>
-            ))}
+      {rest.length > 0 && (
+        <section className="jindex">
+          <div className="wrap">
+            <div className="sec-head"><h2 className="h2" style={{ marginTop: 0 }}>Everything else</h2></div>
+            <div className="pgrid">
+              {rest.map((p) => (
+                <article key={p.slug} className="pcard">
+                  <Link href={`/journal/${p.slug}`} className="pcard-link">
+                    <div className="photo-ph pcard-photo" data-label={p.frontmatter.photoAlt} />
+                    <span className="label pcard-kicker">{p.frontmatter.category}</span>
+                    <h3 className="d2 pcard-title">{p.frontmatter.title}</h3>
+                    <p className="body pcard-dek">{p.frontmatter.dek}</p>
+                  </Link>
+                  <div className="pcard-foot">
+                    <span className="label pcard-author">{p.frontmatter.author}</span>
+                    <span className="label pcard-meta">{p.frontmatter.readMinutes} min</span>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
       <WebFooter />
     </div>
   );

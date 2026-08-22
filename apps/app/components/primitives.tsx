@@ -1,4 +1,4 @@
-import { Text, View, Pressable, StyleSheet, type TextProps, type PressableProps } from "react-native";
+import { Text, View, Pressable, StyleSheet, type TextProps, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { colors } from "@coffeesnob/design-tokens";
 
@@ -87,17 +87,25 @@ export function Label(props: TextProps) {
   return <Text {...props} style={[styles.label, props.style]} />;
 }
 
-export function ButtonOx({ title, style, ...rest }: { title: string } & PressableProps) {
+export function ButtonOx({
+  title,
+  style,
+  ...rest
+}: { title: string; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
   return (
-    <Pressable {...rest} style={[styles.btn, styles.btnOx, style as object]}>
+    <Pressable {...rest} style={[styles.btn, styles.btnOx, style]}>
       <Text style={styles.btnOxText}>{title}</Text>
     </Pressable>
   );
 }
 
-export function ButtonLine({ title, style, ...rest }: { title: string } & PressableProps) {
+export function ButtonLine({
+  title,
+  style,
+  ...rest
+}: { title: string; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
   return (
-    <Pressable {...rest} style={[styles.btn, styles.btnLine, style as object]}>
+    <Pressable {...rest} style={[styles.btn, styles.btnLine, style]}>
       <Text style={styles.btnLineText}>{title}</Text>
     </Pressable>
   );

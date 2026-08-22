@@ -17,6 +17,9 @@ importers:
 
   apps/app:
     dependencies:
+      '@coffeesnob/design-tokens':
+        specifier: workspace:*
+        version: link:../../packages/design-tokens
       '@coffeesnob/supabase':
         specifier: workspace:*
         version: link:../../packages/supabase

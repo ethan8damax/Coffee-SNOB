@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Script, Eyebrow } from "./primitives";
 import { SignupForm } from "./signup-form";
+import { MobileNav } from "./mobile-nav";
 
 const NAV_ITEMS: [string, string][] = [
   ["City guides", "/city-guides"],
@@ -23,6 +24,7 @@ export function WebNav({ active }: { active?: string }) {
         <a href="#" className="nav-sign">Sign in</a>
         <a href="#letter" className="btn btn-bu nav-cta">Get the letter</a>
       </div>
+      <MobileNav items={NAV_ITEMS} active={active} />
     </header>
   );
 }

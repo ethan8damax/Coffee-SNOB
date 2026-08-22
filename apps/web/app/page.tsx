@@ -61,7 +61,7 @@ function CityBand() {
 
 function Scale() {
   return (
-    <section className="scale" style={{ background: "var(--oxblood)", color: "var(--cream)", padding: "104px 0 108px" }}>
+    <section className="scale" style={{ background: "var(--oxblood)", color: "var(--cream)", padding: "clamp(56px,12vw,104px) 0 clamp(56px,12vw,108px)" }}>
       <div className="wrap">
         <div className="scale-head">
           <div>
@@ -93,7 +93,7 @@ function Scale() {
 
 function Guides() {
   return (
-    <section className="guides" style={{ padding: "104px 0 0" }}>
+    <section className="guides" style={{ padding: "clamp(56px,12vw,104px) 0 0" }}>
       <div className="wrap">
         <div className="sec-head">
           <Eyebrow>City guides</Eyebrow>
@@ -124,7 +124,7 @@ function Guides() {
 
 function Journal() {
   return (
-    <section className="journal" style={{ padding: "104px 0" }}>
+    <section className="journal" style={{ padding: "clamp(56px,12vw,104px) 0" }}>
       <div className="wrap">
         <div className="sec-head">
           <Eyebrow>The journal</Eyebrow>
@@ -150,7 +150,7 @@ function Journal() {
 
 function Founder() {
   return (
-    <section style={{ background: "var(--card)", borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", padding: "96px 56px" }}>
+    <section style={{ background: "var(--card)", borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", padding: "clamp(56px,12vw,96px) clamp(20px,7vw,56px)" }}>
       <div style={{ maxWidth: 660, margin: "0 auto" }}>
         <Eyebrow color="var(--ink-3)">Why this exists</Eyebrow>
         <div style={{ marginTop: 32, display: "grid", gap: 20 }}>

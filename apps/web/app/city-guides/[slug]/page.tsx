@@ -17,8 +17,8 @@ export default async function CityGuidePage({ params }: { params: Promise<{ slug
     <div className="snob-web">
       <WebNav active="City guides" />
       <section className="chero">
-        <div className="photo-ph chero-photo" data-label={`Hero photograph — ${city.name}, morning counter`} style={{ aspectRatio: "21/9" }} />
-        <div className="wrap" style={{ padding: "24px 56px" }}>
+        <div className="photo-ph chero-photo" data-label={`Hero photograph — ${city.name}, morning counter`} />
+        <div className="wrap chero-head">
           <h1 className="h1">{city.name}</h1>
           <span className="label">{city.country}</span>
         </div>
@@ -37,10 +37,10 @@ export default async function CityGuidePage({ params }: { params: Promise<{ slug
           </div>
           <ol className="slist" style={{ listStyle: "none", margin: 0, padding: 0 }}>
             {items.map(({ shops: s, note }) => (
-              <li key={s.id} className="srow" style={{ display: "flex", gap: 20, padding: "24px 0", borderTop: "1px solid var(--rule)" }}>
-                <div className="photo-ph srow-ph" data-label={`${s.name} — counter`} style={{ width: 140, aspectRatio: "4/3", flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+              <li key={s.id} className="srow">
+                <div className="photo-ph srow-ph" data-label={`${s.name} — counter`} />
+                <div className="srow-body">
+                  <div className="srow-head">
                     <h3 className="d3">{s.name}</h3>
                     <span className="label">{s.neighborhood} · {s.tag} · {s.price_tier}</span>
                   </div>
@@ -48,7 +48,7 @@ export default async function CityGuidePage({ params }: { params: Promise<{ slug
                   {s.order_note && <p style={{ marginTop: 8 }}><span className="label">Order</span> <span className="body">{s.order_note}</span></p>}
                   {note && <p className="fine">{note}</p>}
                 </div>
-                {s.editorial_rating != null && <div style={{ flexShrink: 0 }}><Detour value={s.editorial_rating} short /></div>}
+                {s.editorial_rating != null && <div className="srow-rating"><Detour value={s.editorial_rating} short /></div>}
               </li>
             ))}
           </ol>

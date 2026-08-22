@@ -29,19 +29,14 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
 
   async function loadProfile(userId: string) {
-    setProfile(await getProfile(supabase, userId));
+    try {
+      setProfile(await getProfile(supabase, userId));
+    } catch (error) {
+      console.error("Failed to load profile", error);
+    }
   }
 
   useEffect(() => {
-    let cancelled = false;
-
-    supabase.auth.getSession().then(async ({ data: { session: initialSession } }) => {
-      if (cancelled) return;
-      setSession(initialSession);
-      if (initialSession) await loadProfile(initialSession.user.id);
-      setLoading(false);
-    });
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
@@ -51,10 +46,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
       } else {
         setProfile(null);
       }
+      setLoading(false);
     });
 
     return () => {
-      cancelled = true;
       subscription.unsubscribe();
     };
   }, []);

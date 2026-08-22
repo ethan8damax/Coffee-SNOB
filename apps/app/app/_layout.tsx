@@ -42,16 +42,20 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     "Area-Regular": require("../assets/fonts/area-normal/fonnts.com-Area_Normal_Regular.otf"),
     "Area-Bold": require("../assets/fonts/area-normal/fonnts.com-Area_Normal_Bold.otf"),
     "AreaExtended-Bold": require("../assets/fonts/area-normal/fonnts.com-Area_Extended_Bold.otf"),
     "AreaExtended-Black": require("../assets/fonts/area-normal/fonnts.com-Area_Extended_Black.otf"),
   });
 
+  useEffect(() => {
+    if (fontError) console.error("Failed to load Area typeface:", fontError);
+  }, [fontError]);
+
   return (
     <AuthProvider>
-      <RootNavigator fontsLoaded={fontsLoaded} />
+      <RootNavigator fontsLoaded={fontsLoaded || !!fontError} />
     </AuthProvider>
   );
 }

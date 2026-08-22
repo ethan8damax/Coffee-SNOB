@@ -128,35 +128,37 @@ describe("getProfile", () => {
   });
 });
 
+function fakeUsernameCheckClient(row: unknown) {
+  const maybeSingleSpy = vi.fn(() => Promise.resolve({ data: row, error: null }));
+  const neqSpy = vi.fn(() => ({ maybeSingle: maybeSingleSpy }));
+  const eqSpy = vi.fn(() => ({ neq: neqSpy }));
+  const selectSpy = vi.fn(() => ({ eq: eqSpy }));
+  const fromSpy = vi.fn(() => ({ select: selectSpy }));
+  const client = { from: fromSpy } as any;
+  return { client, fromSpy, selectSpy, eqSpy, neqSpy };
+}
+
 describe("isUsernameAvailable", () => {
   it("is true when no other profile has the username", async () => {
-    const client = {
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            neq: () => ({
-              maybeSingle: () => Promise.resolve({ data: null, error: null }),
-            }),
-          }),
-        }),
-      }),
-    } as any;
+    const { client, fromSpy, selectSpy, eqSpy, neqSpy } = fakeUsernameCheckClient(null);
+
     expect(await isUsernameAvailable(client, "maradrinks", "u1")).toBe(true);
+
+    expect(fromSpy).toHaveBeenCalledWith("profiles");
+    expect(selectSpy).toHaveBeenCalledWith("id");
+    expect(eqSpy).toHaveBeenCalledWith("username", "maradrinks");
+    expect(neqSpy).toHaveBeenCalledWith("id", "u1");
   });
 
   it("is false when another profile already has the username", async () => {
-    const client = {
-      from: () => ({
-        select: () => ({
-          eq: () => ({
-            neq: () => ({
-              maybeSingle: () => Promise.resolve({ data: { id: "u2" }, error: null }),
-            }),
-          }),
-        }),
-      }),
-    } as any;
+    const { client, fromSpy, selectSpy, eqSpy, neqSpy } = fakeUsernameCheckClient({ id: "u2" });
+
     expect(await isUsernameAvailable(client, "maradrinks", "u1")).toBe(false);
+
+    expect(fromSpy).toHaveBeenCalledWith("profiles");
+    expect(selectSpy).toHaveBeenCalledWith("id");
+    expect(eqSpy).toHaveBeenCalledWith("username", "maradrinks");
+    expect(neqSpy).toHaveBeenCalledWith("id", "u1");
   });
 });
 

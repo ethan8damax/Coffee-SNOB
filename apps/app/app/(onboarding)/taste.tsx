@@ -31,7 +31,11 @@ export default function TasteScreen() {
     setSaving(true);
     try {
       await saveTastePicks(supabase, session.user.id, picks);
-      await refreshProfile();
+      const refreshed = await refreshProfile();
+      if (!refreshed) {
+        setError("Saved, but couldn't confirm — tap Continue to try again.");
+        return;
+      }
       router.replace("/");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't save that. Try again.");

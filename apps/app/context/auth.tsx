@@ -9,7 +9,7 @@ type AuthContextValue = {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  refreshProfile: () => Promise<void>;
+  refreshProfile: () => Promise<boolean>;
   signOut: () => Promise<void>;
 };
 
@@ -28,11 +28,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(userId: string) {
+  async function loadProfile(userId: string): Promise<boolean> {
     try {
       setProfile(await getProfile(supabase, userId));
+      return true;
     } catch (error) {
       console.error("Failed to load profile", error);
+      return false;
     }
   }
 
@@ -54,8 +56,9 @@ export function AuthProvider({ children }: PropsWithChildren) {
     };
   }, []);
 
-  async function refreshProfile() {
-    if (session) await loadProfile(session.user.id);
+  async function refreshProfile(): Promise<boolean> {
+    if (!session) return false;
+    return loadProfile(session.user.id);
   }
 
   async function signOut() {

@@ -219,21 +219,27 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          display_name: string | null
           id: string
+          onboarded_at: string | null
           taste_picks: string[]
           username: string
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           id: string
+          onboarded_at?: string | null
           taste_picks?: string[]
           username: string
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          display_name?: string | null
           id?: string
+          onboarded_at?: string | null
           taste_picks?: string[]
           username?: string
         }

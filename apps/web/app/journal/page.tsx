@@ -19,6 +19,11 @@ export default function JournalIndexPage() {
           <p className="lede">Roaster interviews, rooms worth sitting in, and what we learned drinking our way through a city. Everything here was paid for by us, and nothing here was placed.</p>
         </div>
       </section>
+      {posts.length === 0 && (
+        <section className="wrap" style={{ padding: "clamp(40px,8vw,72px) 0" }}>
+          <p className="lede">First letter's still being written. Sign up below and it'll land in your inbox the day it's ready — nothing before then.</p>
+        </section>
+      )}
       {featured && (
         <section className="jfeat wrap">
           <div className="photo-ph" data-label={featured.frontmatter.photoAlt} style={{ aspectRatio: "4/3" }} />

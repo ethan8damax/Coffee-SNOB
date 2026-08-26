@@ -71,10 +71,13 @@ never fake.
 - Add an explicit "the app is coming" section on the homepage, reusing the
   same signup capture — no fake app-store badges/links.
 
-**Founder section:** drafted with real structure (grounded in `PRODUCT.md`'s
-voice and the Sofia/David avatars) but left as a clearly-marked draft for
-the user to rewrite into their real personal story — this can't be
-fabricated truthfully by anyone else.
+**Founder section:** removed from the live page rather than drafted-in-place.
+Realized during planning that replacement prose sounding like a real founder
+story (a trip, a shop, a name) would be worse than the current honest
+"Placeholder — rewrite this in your own voice" text — a reader would take
+drafted-but-fictional specifics as true. A code comment marks the spot and
+the intended structure (the trip/shop that started it; who it's for and
+isn't; a real name and photo) for whenever real copy exists to put there.
 
 **Affiliate infrastructure:** a small `<AffiliateLink>` MDX component that
 renders a normal link plus an FTC-required disclosure line, so the

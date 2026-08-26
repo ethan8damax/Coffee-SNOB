@@ -15,7 +15,7 @@
 `supabase/seed.sql` has already been run against the real, shared Supabase project (project ref `kyiuhuivyugoqljqodil`, name "Coffee SNOB") — there is no separate dev database. Verified directly against it: `lisbon` / `status: demo` / 7 shops is live right now, and `/city-guides/lisbon` on the deployed site is rendering it as if it were a real published guide. Editing `seed.sql` alone would not fix this — it only runs again on a local `db reset`. This needs an actual migration applied to the live project.
 
 **Files:**
-- Create: `supabase/migrations/0006_remove_demo_lisbon.sql`
+- Create: `supabase/migrations/0007_remove_demo_lisbon.sql`
 - Create: `supabase/seed.dev.sql`
 - Modify: `supabase/seed.sql`
 
@@ -40,7 +40,7 @@ mcp__plugin_supabase_supabase__execute_sql
   query: select slug, status from public.cities order by slug;
 ```
 
-Expected: 6 rows (`austin`, `new-york`, `portland`, `san-francisco`, `seattle`, `tampa`), no `lisbon` row.
+Expected: 9 rows (`atlanta`, `austin`, `london`, `nashville`, `new-york`, `portland`, `san-francisco`, `seattle`, `tampa`), no `lisbon` row. (Atlanta/Nashville/London were added in a separate migration, `0006_add_priority_launch_cities.sql`, applied earlier in this session — already live, nothing to do here.)
 
 - [ ] **Step 3: Save the deleted Lisbon content as a dev-only fixture**
 
@@ -121,7 +121,7 @@ Edit `supabase/seed.sql`: delete everything from the `-- Demo content only.` com
 - [ ] **Step 5: Commit**
 
 ```bash
-git add supabase/migrations/0006_remove_demo_lisbon.sql supabase/seed.dev.sql supabase/seed.sql
+git add supabase/migrations/0007_remove_demo_lisbon.sql supabase/seed.dev.sql supabase/seed.sql
 git commit -m "Remove live demo Lisbon data; move fixture to seed.dev.sql
 
 The Lisbon demo city/shops/guide were live in production, not just a local
@@ -575,7 +575,7 @@ function CityBand({ cities }: { cities: CityWithShopCount[] }) {
 }
 ```
 
-(No fake "+N more" — with only 6 real launch cities, all of them fit; if the real city count ever exceeds what looks good in one row, add pagination back then, against the real count.)
+(No fake "+N more" — with 9 real launch cities, all of them fit; if the real city count ever exceeds what looks good in one row, add pagination back then, against the real count.)
 
 - [ ] **Step 3: Rewrite `Guides` to take real cities as a prop**
 
@@ -773,7 +773,7 @@ pnpm --filter web typecheck
 pnpm --filter web dev
 ```
 
-Visit `http://localhost:3000/` — expect the "Mapped at launch" band to show exactly the 6 real cities (no Brooklyn/Berlin/etc., no "+22 more"), the city-guide cards to show "Guide in progress" for all 4 featured, and no journal section (0 live posts).
+Visit `http://localhost:3000/` — expect the "Mapped at launch" band to show all 9 real cities (no Brooklyn/Berlin/etc., no "+22 more"), the city-guide cards to show "Guide in progress" for all 4 featured, and no journal section (0 live posts).
 
 - [ ] **Step 7: Commit**
 

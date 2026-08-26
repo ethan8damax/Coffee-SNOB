@@ -24,8 +24,13 @@ assumed):
   etc.) and a fake "+22 more." `apps/web/app/city-guides/page.tsx` already
   does this correctly (queries Supabase live) — the homepage needs to match
   that pattern.
-- The 7 posts in `apps/web/content/journal/*.mdx` are confirmed placeholder
-  copy from the design phase, not real reporting.
+- Of the 7 files in `apps/web/content/journal/*.mdx`, 6 already have
+  `draft: true` set (from `scripts/generate-journal-stubs.mjs`) and are
+  already excluded by `lib/journal.ts`'s existing draft filter — only
+  **one**, `nobody-roasts-for-the-second-cup.mdx`, is actually live, and
+  it's confirmed placeholder copy from the design phase, not real
+  reporting. The fix is to flip its `draft` flag using the convention
+  that's already there, not build a new archival scheme.
 - `supabase/seed.sql` seeds a full 7-shop Lisbon city guide marked
   `status: 'demo'` — confirmed dev-only fixture data, not a real city.
 - The homepage's "Why this exists" founder section is literally
@@ -40,14 +45,19 @@ exists (confirmed in this session). The site goes live looking sparse but
 never fake.
 
 **Remove fiction:**
-- Move the 7 placeholder journal MDX files out of
-  `apps/web/content/journal/` into a non-rendered reference location (e.g.
-  `apps/web/content/_examples/`) — kept as a style/format reference for
-  writing real posts, not deleted outright since the prose quality is worth
-  keeping as a template.
-- Move the Lisbon seed block in `supabase/seed.sql` into a separate
-  dev-only seed file (not run against production), so production only ever
-  seeds the 6 real launch cities, all `coming_soon`.
+- Set `draft: true` on `nobody-roasts-for-the-second-cup.mdx`'s frontmatter
+  — the same convention the other 6 stub posts already use — so
+  `lib/journal.ts`'s existing filter excludes it. Kept on disk as a
+  style/format reference for writing real posts, not deleted outright.
+- The Lisbon demo data isn't just a local fixture — `supabase/seed.sql` has
+  already been run against the real, shared Supabase project (there's no
+  separate dev/prod database), so `/city-guides/lisbon` is live on
+  production right now showing fabricated shops. Fixing this needs two
+  things: a migration that deletes the `lisbon` city row from the real
+  database (cascades to its shops/list/list_items via existing `on delete
+  cascade` foreign keys), and moving the Lisbon block out of `seed.sql`
+  into a separate dev-only fixture so future local resets don't
+  re-introduce it.
 
 **Make the real infra real:**
 - `SignupForm` posts to a new Route Handler that adds the email to a Resend

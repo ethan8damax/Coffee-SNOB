@@ -17,7 +17,7 @@ Write to them as peers who happen to know less about *this specific city* than w
 
 Coffee Snob is a specialty coffee discovery and social app — Letterboxd for coffee shops, backed by real editorial curation instead of crowdsourced ratings. Five to ten shops per city, chosen against written standards. Users log visits, rate on an effort scale, and share finds.
 
-The wedge is travel: people browse locally and become power users in a new city. Launch markets: Tampa, Portland, Seattle, SF, NYC, Austin (US first, global eventually).
+The wedge is travel: people browse locally and become power users in a new city. Launch markets, priority group: NYC, Atlanta, Nashville, London, Tampa. Also mapped, lower priority: Portland, Seattle, SF, Austin. (US first, global eventually — London is the one non-US market in the priority group.)
 
 This `apps/web` surface is the pre-launch site: a weekly editorial letter (one shop, one roaster, the reason it earned the trip) plus city guides, building the audience ahead of the app.
 

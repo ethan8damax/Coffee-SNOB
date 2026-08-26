@@ -148,8 +148,10 @@ cycle — these are documentation, not code):
 
 - The actual copy/checklist content of the new docs in §8 (write them, don't
   spec them).
-- Shop-partner portal and admin dashboard designs (§3) — each gets its own
-  brainstorm → spec → plan cycle when its turn comes.
+- Shop-partner portal design (§3) — gets its own brainstorm → spec → plan
+  cycle when its turn comes. (The admin/CMS dashboard was originally
+  deferred here too, but moved up — see "Build sequencing" below and
+  `2026-08-26-map-and-admin-dashboard-design.md`.)
 - Passport's exact badge rules and recap visual design — schema
   accommodation is decided here; the reward-rule content is separate.
 
@@ -167,16 +169,19 @@ Confirmed order for the rest of the build:
    — a "coming soon" / waitlist treatment, not a fake download link). Wire up
    affiliate links (per §1's gradient) during this phase, not deferred to
    phase 3.
-3. **App to v1** — the 9 remaining product screens, with Passport's schema
+3. **Map + admin dashboard** (moved up from post-launch, decided
+   2026-08-26). The map screen needs a real provider choice (Mapbox) and
+   the admin dashboard is what will actually populate real shop data —
+   building either without the other means testing against seed data
+   indefinitely. Full design: `2026-08-26-map-and-admin-dashboard-design.md`.
+4. **App to v1** — the remaining product screens, with Passport's schema
    built in alongside the log screen.
-4. **Launch prep** — Apple Developer account, App Store Connect/TestFlight,
+5. **Launch prep** — Apple Developer account, App Store Connect/TestFlight,
    Google Play listing.
-5. **Post-launch maturity** — shop-partner portal, admin/CMS dashboard,
-   Coffee Snob+, city guide magazines. Each gets its own brainstorm when its
-   turn comes.
+6. **Post-launch maturity** — shop-partner portal, Coffee Snob+, city guide
+   magazines. Each gets its own brainstorm when its turn comes.
 
-Step 2 (finish the marketing site) is the immediate next sub-project and
-needs its own brainstorm/spec — it has open questions this doc doesn't
-answer (which cities/shops are actually vetted enough to publish vs.
-"coming soon," what the app's "coming soon" treatment looks like, which
-affiliate programs to join).
+Steps 2 and 3 both have their own design docs now
+(`2026-08-26-marketing-site-truthful-launch-design.md` and
+`2026-08-26-map-and-admin-dashboard-design.md`) — they can be built in
+either order or in parallel, since neither blocks the other.

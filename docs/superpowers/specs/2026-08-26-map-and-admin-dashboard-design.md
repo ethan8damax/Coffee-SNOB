@@ -107,6 +107,19 @@ resolved here; revisit when this becomes a real priority rather than a
   `list_items` for insert/update/delete
 - New `partners` table (shop_id, deal_type, status, notes, created_at)
 
+## Sequencing note (added 2026-08-26, after this spec was written)
+
+The admin dashboard is a net-new UI surface with no existing Claude Design
+mockup — per the user's design-first workflow, it needs to be designed in
+the Claude Design product before an implementation plan is written for it,
+not designed ad hoc in code. **The backend decisions in this spec (RLS
+model, `is_admin`, schema additions) are unaffected and can be built
+first** — only the dashboard's actual pages/forms wait on the mockup. The
+map screen's visual design likely already exists in the original "Coffee
+Snob" Claude Design project (referenced in the project-setup spec) as part
+of the app's screen set — verify that before assuming it also needs a
+fresh mockup.
+
 ## Out of scope for this pass
 
 - Designing the actual Mapbox Studio style (visual work, not this spec).

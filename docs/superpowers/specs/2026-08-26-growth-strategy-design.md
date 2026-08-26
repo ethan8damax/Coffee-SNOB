@@ -155,6 +155,28 @@ cycle — these are documentation, not code):
 
 ## Build sequencing
 
-Decided in this session: docs (§8) first since every other sub-project below
-should be built against them, not around them. Sequencing beyond that is the
-subject of the follow-up brainstorm on finishing the build.
+Confirmed order for the rest of the build:
+
+1. **Docs (§8)** — `MONETIZATION.md`, content-ops doc, root `CLAUDE.md` — so
+   every sub-project below is built against them, not around them.
+2. **Finish the marketing site for real.** Landing + City Guides
+   (index/detail) wired to Supabase, Journal wired to MDX, newsletter signup
+   wired to Resend, deployed. **Hard constraint: no filler/placeholder
+   content.** Only show city guides that are genuinely in progress; anything
+   not real yet is an explicit "coming soon" state (including the app itself
+   — a "coming soon" / waitlist treatment, not a fake download link). Wire up
+   affiliate links (per §1's gradient) during this phase, not deferred to
+   phase 3.
+3. **App to v1** — the 9 remaining product screens, with Passport's schema
+   built in alongside the log screen.
+4. **Launch prep** — Apple Developer account, App Store Connect/TestFlight,
+   Google Play listing.
+5. **Post-launch maturity** — shop-partner portal, admin/CMS dashboard,
+   Coffee Snob+, city guide magazines. Each gets its own brainstorm when its
+   turn comes.
+
+Step 2 (finish the marketing site) is the immediate next sub-project and
+needs its own brainstorm/spec — it has open questions this doc doesn't
+answer (which cities/shops are actually vetted enough to publish vs.
+"coming soon," what the app's "coming soon" treatment looks like, which
+affiliate programs to join).

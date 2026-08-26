@@ -2,22 +2,13 @@ import Link from "next/link";
 import { Eyebrow, DETOUR, DETOUR_SUB } from "@/components/primitives";
 import { WebNav, LetterBand, WebFooter } from "@/components/web-chrome";
 import { SignupForm } from "@/components/signup-form";
+import { getSupabase } from "@/lib/supabase";
+import { getCitiesWithShopCounts } from "@coffeesnob/supabase";
+import { getAllJournalPosts } from "@/lib/journal";
 
-const US_CITIES = ["Portland", "Brooklyn", "Chicago", "Oakland", "Austin", "Seattle", "Los Angeles"];
-const EU_CITIES = ["Lisbon", "Berlin", "Copenhagen", "Paris", "Milan", "Barcelona", "Rotterdam"];
+export const revalidate = 60;
 
-const JOURNAL_TEASERS = [
-  { kicker: "Roasters", title: "Nobody roasts for the second cup", dek: "Ana Beires roasts forty kilos a week in an Alcântara garage and is sold out by Thursday.", photoLabel: "Roaster at the drum, Alcântara garage" },
-  { kicker: "Rooms", title: "The case for a bad chair", dek: "Four rooms we keep going back to, none of them comfortable.", photoLabel: "Wooden stool at a tiled counter" },
-  { kicker: "Field notes", title: "Three days in Porto, one good espresso", dek: "A bar culture that resists everything specialty coffee wants from it.", photoLabel: "Porto café interior" },
-];
-
-const GUIDE_CITIES = [
-  { city: "Lisbon", country: "Portugal", shops: 7, detour: 5, href: "/city-guides/lisbon" },
-  { city: "Portland", country: "United States", shops: 0, detour: 0, href: undefined },
-  { city: "Seattle", country: "United States", shops: 0, detour: 0, href: undefined },
-  { city: "Austin", country: "United States", shops: 0, detour: 0, href: undefined },
-];
+type CityWithShopCount = Awaited<ReturnType<typeof getCitiesWithShopCounts>>[number];
 
 function Hero() {
   return (
@@ -42,17 +33,19 @@ function Hero() {
   );
 }
 
-function CityBand() {
-  const cities = [...US_CITIES.slice(0, 5), ...EU_CITIES.slice(0, 5)];
+function CityBand({ cities }: { cities: CityWithShopCount[] }) {
   return (
     <section className="cityband">
       <div className="cityband-in">
         <span className="label" style={{ color: "var(--oxblood)", flexShrink: 0 }}>Mapped at launch</span>
         <ul className="citylist">
           {cities.map((c) => (
-            <li key={c}><Link href={c === "Lisbon" ? "/city-guides/lisbon" : "/city-guides"} className="d4">{c}</Link></li>
+            <li key={c.slug}>
+              {c.status === "live" || c.status === "demo"
+                ? <Link href={`/city-guides/${c.slug}`} className="d4">{c.name}</Link>
+                : <span className="d4">{c.name}</span>}
+            </li>
           ))}
-          <li className="more"><Link href="/city-guides" className="d4">+ 22 more</Link></li>
         </ul>
       </div>
     </section>
@@ -91,7 +84,8 @@ function Scale() {
   );
 }
 
-function Guides() {
+function Guides({ cities }: { cities: CityWithShopCount[] }) {
+  const featured = cities.slice(0, 4);
   return (
     <section className="guides" style={{ padding: "clamp(56px,12vw,104px) 0 0" }}>
       <div className="wrap">
@@ -103,19 +97,21 @@ function Guides() {
           </div>
         </div>
         <div className="ggrid">
-          {GUIDE_CITIES.map((c) => (
-            <Link key={c.city} className="gcard" href={c.href ?? "/city-guides"}>
-              <div className="photo-ph gphoto" data-label={`${c.city} — street or counter photograph`} />
-              <div className="gline">
-                <h3 className="d3">{c.city}</h3>
-                <span className="label gcountry">{c.country}</span>
-              </div>
-              <div className="gmeta">
-                <span className="body-sm">{c.shops ? <><span className="num">{c.shops}</span> shops</> : "Guide in progress"}</span>
-                {c.detour > 0 && <span className="body-sm gbu"><span className="num">{c.detour}</span> worth the detour</span>}
-              </div>
-            </Link>
-          ))}
+          {featured.map((c) => {
+            const href = c.status === "live" || c.status === "demo" ? `/city-guides/${c.slug}` : "/city-guides";
+            return (
+              <Link key={c.slug} className="gcard" href={href}>
+                <div className="photo-ph gphoto" data-label={`${c.name} — street or counter photograph`} />
+                <div className="gline">
+                  <h3 className="d3">{c.name}</h3>
+                  <span className="label gcountry">{c.country}</span>
+                </div>
+                <div className="gmeta">
+                  <span className="body-sm">{c.shopCount > 0 ? <><span className="num">{c.shopCount}</span> shops</> : "Guide in progress"}</span>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -123,6 +119,8 @@ function Guides() {
 }
 
 function Journal() {
+  const posts = getAllJournalPosts().slice(0, 3);
+  if (posts.length === 0) return null;
   return (
     <section className="journal" style={{ padding: "clamp(56px,12vw,104px) 0" }}>
       <div className="wrap">
@@ -134,13 +132,13 @@ function Journal() {
           </div>
         </div>
         <div className="jgrid">
-          {JOURNAL_TEASERS.map((a) => (
-            <article key={a.title} className="jcard">
-              <div className="photo-ph cr jphoto" data-label={a.photoLabel} />
-              <span className="label jkicker">{a.kicker}</span>
-              <h3 className="d3">{a.title}</h3>
-              <p className="body">{a.dek}</p>
-            </article>
+          {posts.map((p) => (
+            <Link key={p.slug} href={`/journal/${p.slug}`} className="jcard">
+              <div className="photo-ph cr jphoto" data-label={p.frontmatter.photoAlt} />
+              <span className="label jkicker">{p.frontmatter.category}</span>
+              <h3 className="d3">{p.frontmatter.title}</h3>
+              <p className="body">{p.frontmatter.dek}</p>
+            </Link>
           ))}
         </div>
       </div>
@@ -169,16 +167,18 @@ function Founder() {
   );
 }
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const supabase = getSupabase();
+  const cities = await getCitiesWithShopCounts(supabase);
+
   return (
     <div className="snob-web">
       <WebNav />
       <Hero />
-      <CityBand />
+      <CityBand cities={cities} />
       <Scale />
-      <Guides />
+      <Guides cities={cities} />
       <Journal />
-      <Founder />
       <LetterBand />
       <WebFooter />
     </div>

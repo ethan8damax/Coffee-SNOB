@@ -2,29 +2,17 @@ import Link from "next/link";
 import { Eyebrow } from "@/components/primitives";
 import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
 import { getSupabase } from "@/lib/supabase";
-import { getCities } from "@coffeesnob/supabase";
+import { getCitiesWithShopCounts } from "@coffeesnob/supabase";
 
 export const revalidate = 60;
 
 async function getCityGuidesIndex() {
   const supabase = getSupabase();
-  const cities = await getCities(supabase);
-
-  const { data: guides, error: guidesError } = await supabase
-    .from("lists")
-    .select("city_id, list_items(count)")
-    .eq("type", "city_guide");
-  if (guidesError) throw guidesError;
-
-  const shopCountByCity = new Map<string, number>();
-  for (const guide of guides) {
-    const count = (guide.list_items as unknown as { count: number }[])[0]?.count ?? 0;
-    shopCountByCity.set(guide.city_id as string, count);
-  }
+  const cities = await getCitiesWithShopCounts(supabase);
 
   return cities.map((c) => ({
     ...c,
-    shops: shopCountByCity.get(c.id) ?? 0,
+    shops: c.shopCount,
     href: c.status === "live" || c.status === "demo" ? `/city-guides/${c.slug}` : undefined,
   }));
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -27,6 +27,45 @@ describe("getCities", () => {
       }),
     } as any;
     await expect(getCities(client)).rejects.toThrow("boom");
+  });
+});
+
+describe("getCitiesWithShopCounts", () => {
+  it("joins shop counts from published city guides onto each city", async () => {
+    const client = {
+      from: (table: string) => {
+        if (table === "cities") {
+          return {
+            select: () => ({
+              order: () => Promise.resolve({
+                data: [
+                  { id: "c1", slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe", status: "demo" },
+                  { id: "c2", slug: "tampa", name: "Tampa", country: "United States", region: "North America", status: "coming_soon" },
+                ],
+                error: null,
+              }),
+            }),
+          };
+        }
+        if (table === "lists") {
+          return {
+            select: () => ({
+              eq: () => Promise.resolve({
+                data: [{ city_id: "c1", list_items: [{ count: 7 }] }],
+                error: null,
+              }),
+            }),
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as any;
+
+    const cities = await getCitiesWithShopCounts(client);
+    expect(cities).toEqual([
+      { id: "c1", slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe", status: "demo", shopCount: 7 },
+      { id: "c2", slug: "tampa", name: "Tampa", country: "United States", region: "North America", status: "coming_soon", shopCount: 0 },
+    ]);
   });
 });
 

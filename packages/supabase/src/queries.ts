@@ -12,6 +12,24 @@ export async function getCities(client: Client) {
   return data;
 }
 
+export async function getCitiesWithShopCounts(client: Client) {
+  const cities = await getCities(client);
+
+  const { data: guides, error } = await client
+    .from("lists")
+    .select("city_id, list_items(count)")
+    .eq("type", "city_guide");
+  if (error) throw error;
+
+  const shopCountByCity = new Map<string, number>();
+  for (const guide of guides) {
+    const count = (guide.list_items as unknown as { count: number }[])[0]?.count ?? 0;
+    shopCountByCity.set(guide.city_id as string, count);
+  }
+
+  return cities.map((c) => ({ ...c, shopCount: shopCountByCity.get(c.id) ?? 0 }));
+}
+
 export async function getCityGuide(client: Client, citySlug: string) {
   const { data: city, error: cityError } = await client
     .from("cities")

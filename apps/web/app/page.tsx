@@ -146,26 +146,11 @@ function Journal() {
   );
 }
 
-function Founder() {
-  return (
-    <section style={{ background: "var(--card)", borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", padding: "clamp(56px,12vw,96px) clamp(20px,7vw,56px)" }}>
-      <div style={{ maxWidth: 660, margin: "0 auto" }}>
-        <Eyebrow color="var(--ink-3)">Why this exists</Eyebrow>
-        <div style={{ marginTop: 32, display: "grid", gap: 20 }}>
-          <p className="lede">Placeholder — rewrite this in your own voice. Two or three paragraphs on the trip that started it, the shop you still think about, and what was missing from every app you tried to plan it with.</p>
-          <p className="body">Placeholder. Say who Snob is for and who it is not for. Being specific here is what makes people sign up.</p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginTop: 44, paddingTop: 28, borderTop: "1px solid var(--rule)" }}>
-          <div className="photo-ph" style={{ width: 56, height: 56, borderRadius: "50%" }} data-label="Portrait" />
-          <div>
-            <div className="d4">Your name</div>
-            <div className="label" style={{ color: "var(--ink-3)", marginTop: 6 }}>Founder, Coffee Snob</div>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
+// A "Why this exists" founder section belongs here once there's a real
+// story to tell — see docs/superpowers/specs/2026-08-26-marketing-site-truthful-launch-design.md.
+// Structure to follow (from the deleted draft): (1) the trip/shop that
+// started it, (2) who Snob is for and isn't, (3) a real name and photo.
+// Don't ship placeholder narrative that reads as true.
 
 export default async function LandingPage() {
   const supabase = getSupabase();

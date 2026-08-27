@@ -2,14 +2,13 @@
 
 import { useState } from "react";
 
-// ponytail: local-state stub only, no real request — wire to a real signup endpoint before launch
 export function SignupForm({
   dark = false, placeholder = "you@email.com", cta = "Get the letter", done,
 }: { dark?: boolean; placeholder?: string; cta?: string; done?: [string, string] }) {
   const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
 
-  if (sent) {
+  if (status === "sent") {
     return (
       <div className={`signed ${dark ? "on-dark" : ""}`} aria-live="polite">
         <span className="label-lg">{done ? done[0] : "You're on the list"}</span>
@@ -19,9 +18,28 @@ export function SignupForm({
   }
 
   return (
-    <form className={`signup ${dark ? "on-dark" : ""}`} onSubmit={(e) => { e.preventDefault(); if (email.trim()) setSent(true); }}>
-      <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder={placeholder} aria-label="Email address" />
-      <button type="submit" className="btn btn-bu">{cta}</button>
+    <form
+      className={`signup ${dark ? "on-dark" : ""}`}
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!email.trim()) return;
+        setStatus("loading");
+        const res = await fetch("/api/newsletter", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email }),
+        });
+        setStatus(res.ok ? "sent" : "error");
+      }}
+    >
+      <input
+        type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+        placeholder={placeholder} aria-label="Email address" disabled={status === "loading"}
+      />
+      <button type="submit" className="btn btn-bu" disabled={status === "loading"}>
+        {status === "loading" ? "Sending…" : cta}
+      </button>
+      {status === "error" && <p className="body-sm" role="alert">Something went wrong — try again in a minute.</p>}
     </form>
   );
 }

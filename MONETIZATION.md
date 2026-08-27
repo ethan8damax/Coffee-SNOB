@@ -35,6 +35,34 @@ check which content type it's going into against the list above.
 
 **Explicitly rejected:** third-party ads.
 
+## Commerce architecture: merch vs. gear (decided 2026-08-27)
+
+These need different architectures — don't conflate them.
+
+- **Merch (stickers, shirts, hats, sweatshirts) — our own product.** Full
+  on-site storefront, real cart/checkout on coffeesnobproject.com, nobody
+  redirected out. Fulfillment is print-on-demand (Printful/Printify —
+  produced and shipped per order, nothing held in inventory). Platform:
+  Shopify via Vercel Marketplace's `commerce` integration when this gets
+  built (catalog + cart + checkout in one, integrates with print-on-demand
+  fulfillment) — provision it properly at build time, don't hand-roll a
+  cart.
+- **Gear (grinders, Chemex, Aeropress, other brands' hardware) — not our
+  product, status: paused.** Considered and explicitly rejected becoming a
+  reseller/dropshipper of third-party gear for now: premium brands (Fellow,
+  Acaia, Baratza, etc.) require a formal authorized-dealer application per
+  brand, often with minimum order commitments — real business development
+  that doesn't fit a pre-launch, no-audience-yet stage. Traffic is the
+  leverage that makes that conversation viable later, not something to
+  chase before it exists. **Decision paused pending a conversation with
+  Ryan** — no design or build work should start on a gear storefront or
+  gear affiliate links until that's resolved.
+- **Beans** are a separate, more promising near-term case than generic gear
+  — a curated bean subscription built on the same roaster relationships
+  already being vetted for city guides (per `CURATION-STANDARDS.md`) is a
+  more natural fit than dropshipping hardware. Not decided or scoped yet;
+  revisit as its own brainstorm.
+
 ## Costs
 
 - Upfront: Apple Developer Program ($99/yr), Google Play Developer ($25

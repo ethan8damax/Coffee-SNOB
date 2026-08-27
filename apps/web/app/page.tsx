@@ -154,7 +154,7 @@ function AppComingSoon() {
           <Eyebrow color="rgba(233,228,208,.5)">The app</Eyebrow>
           <h2 className="h2" style={{ marginTop: 18 }}>Built for<br />wherever you land.</h2>
         </div>
-        <div className="letter-form">
+        <div style={{ display: "grid", gap: 26 }}>
           <p className="lede on-dark">The locator is in build — city guides, the detour scale, saved lists, all of it. No download link yet because there&rsquo;s nothing to download yet. The letter is how you&rsquo;ll know the day it&rsquo;s ready.</p>
           <SignupForm dark done={["You'll hear it from us first", "No spam between now and launch — just the Sunday letter."]} />
         </div>

@@ -15,8 +15,8 @@ colors:
   sage: "#9cb6b8"
   sage-dk: "#86a4a6"
   sage-lt: "#b6c9ca"
-  teal: "#0e8ba3"
-  teal-dk: "#0a6272"
+  teal: "#07899b"
+  teal-dk: "#05616d"
 typography:
   display:
     fontFamily: "'Area', -apple-system, system-ui, sans-serif"
@@ -146,7 +146,7 @@ A warm-paper editorial palette: three warm neutrals for surface and text, two co
 - **Warm Ink** (`#161310` / `--ink`): primary text and the near-black anchor of the whole palette — never pure black.
 - **Ink Muted** (`#4b423a` / `--ink-2`): body copy, secondary text.
 - **Ink Faint** (`#8c8175` / `--ink-3`): tertiary text — captions, counts, disabled-feeling labels.
-- **Signal Teal** (`#0e8ba3` / `--teal`, darker `#0a6272` / `--teal-dk`): default link color only. Reserved strictly for inline text links; never used as a surface or button fill.
+- **Signal Teal** (`#07899b` / `--teal`, darker `#05616d` / `--teal-dk`): default link color, and the fill of the brand mark/wordmark. Reserved strictly for inline text links and the logo; never used as a surface or button fill.
 
 ### Named Rules
 **The Two-Accent Rule.** Only oxblood and burnt carry emotional weight. If a third "accent" color starts appearing on interactive elements, that's drift — route it back to one of the two, or to neutral.

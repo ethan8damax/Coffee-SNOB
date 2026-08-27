@@ -22,14 +22,18 @@ export function SignupForm({
       className={`signup ${dark ? "on-dark" : ""}`}
       onSubmit={async (e) => {
         e.preventDefault();
-        if (!email.trim()) return;
+        if (!email.trim() || status === "loading") return;
         setStatus("loading");
-        const res = await fetch("/api/newsletter", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email }),
-        });
-        setStatus(res.ok ? "sent" : "error");
+        try {
+          const res = await fetch("/api/newsletter", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim() }),
+          });
+          setStatus(res.ok ? "sent" : "error");
+        } catch {
+          setStatus("error");
+        }
       }}
     >
       <input

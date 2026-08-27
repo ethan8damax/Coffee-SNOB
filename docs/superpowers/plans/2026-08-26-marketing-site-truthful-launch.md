@@ -925,22 +925,22 @@ git commit -m "Add honest 'app is coming' section instead of no app CTA at all"
 - Modify: `apps/web/package.json`
 - Modify: `apps/web/.env.local`
 
-- [ ] **Step 1: Provision Resend (manual — needs the user's Vercel account)**
+- [ ] **Step 1: Provision Resend (manual — needs the user directly)**
 
-This step needs a human at the keyboard, not an autonomous agent — it touches billing/account state:
+Decided against the Vercel Marketplace integration: it only offers paid plans ($20/mo Pro minimum), while signing up at resend.com directly gets the free tier (3k emails/mo). This step needs a human at the keyboard, not an autonomous agent — it touches account/DNS state:
 
-```bash
-vercel integration add resend --yes
-```
-
-If it hands off to a browser/dashboard step, stop and let the user complete it, then continue.
-
-Then, in the Resend dashboard, create an Audience named "Coffee Snob Newsletter" and copy its Audience ID.
+1. Sign up at resend.com (free tier).
+2. Add and verify a sending domain (DNS records — TXT/CNAME — added at the domain registrar).
+3. Create an API key in the Resend dashboard.
+4. Create an Audience named "Coffee Snob Newsletter" and copy its Audience ID.
+5. Add both secrets to Vercel directly (run these yourself so the values never pass through an agent's context):
 
 ```bash
-vercel env pull --yes
+vercel env add RESEND_API_KEY
+# paste the API key when prompted, for all environments
 vercel env add RESEND_AUDIENCE_ID
 # paste the Audience ID when prompted, for all environments
+vercel env pull --yes
 ```
 
 - [ ] **Step 2: Add placeholder env var names locally**

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { Avatar } from "@/components/primitives";
-import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
+import { WebNav, WebFooter, Doors } from "@/components/web-chrome";
 import { getJournalPost, getAllJournalPosts } from "@/lib/journal";
 
 export function generateStaticParams() {
@@ -41,7 +41,7 @@ export default async function JournalPostPage({ params }: { params: Promise<{ sl
           </div>
         </section>
       </main>
-      <LetterBand />
+      <Doors />
       <WebFooter />
     </div>
   );

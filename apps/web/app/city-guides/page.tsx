@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eyebrow } from "@/components/primitives";
-import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
+import { WebNav, WebFooter, Doors } from "@/components/web-chrome";
 import { getSupabase } from "@/lib/supabase";
 import { getCitiesWithShopCounts } from "@coffeesnob/supabase";
 
@@ -66,7 +66,7 @@ export default async function CityGuidesPage() {
           </div>
         </section>
       </main>
-      <LetterBand />
+      <Doors />
       <WebFooter />
     </div>
   );

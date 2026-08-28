@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Eyebrow, Detour } from "@/components/primitives";
-import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
+import { WebNav, WebFooter, Doors } from "@/components/web-chrome";
 import { getSupabase } from "@/lib/supabase";
 import { getCityGuide } from "@coffeesnob/supabase";
 
@@ -56,7 +56,7 @@ export default async function CityGuidePage({ params }: { params: Promise<{ slug
           </div>
         </section>
       </main>
-      <LetterBand />
+      <Doors />
       <WebFooter />
     </div>
   );

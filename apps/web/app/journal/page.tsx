@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Eyebrow, Avatar } from "@/components/primitives";
-import { WebNav, WebFooter, LetterBand } from "@/components/web-chrome";
+import { WebNav, WebFooter, Doors } from "@/components/web-chrome";
 import { getAllJournalPosts } from "@/lib/journal";
 
 export default function JournalIndexPage() {
@@ -65,7 +65,7 @@ export default function JournalIndexPage() {
           </section>
         )}
       </main>
-      <LetterBand />
+      <Doors />
       <WebFooter />
     </div>
   );

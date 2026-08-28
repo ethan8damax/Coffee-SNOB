@@ -126,7 +126,7 @@ function GetTheApp() {
         </div>
         <div style={{ display: "grid", gap: 26 }}>
           <p className="lede on-dark" data-reveal>Streaks, saved lists, and a push alert the moment we map a new city — that experience is native-only. Join the list and you&rsquo;ll be first to know when it&rsquo;s ready.</p>
-          <SignupForm dark done={["You're on the list", "We'll email you the moment the app is ready to install."]} />
+          <SignupForm dark cta="Join the waitlist" done={["You're on the list", "We'll email you the moment the app is ready to install."]} />
         </div>
       </div>
     </section>

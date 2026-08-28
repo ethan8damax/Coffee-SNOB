@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Script, Eyebrow } from "./primitives";
-import { SignupForm } from "./signup-form";
 import { MobileNav } from "./mobile-nav";
 import { APP_SIGN_UP_URL, APP_SIGN_IN_URL } from "@/lib/app-url";
 

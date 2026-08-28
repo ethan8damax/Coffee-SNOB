@@ -95,6 +95,35 @@ wants it kept.
 7. **Closing recap strip** — all three doors again, side by side, in the
    slot where the Sunday letter band used to sit, right before the footer.
 
+## Motion
+
+Scroll-triggered reveals via `IntersectionObserver`, each tied to
+something already in the design system rather than a generic fade-up —
+validated live in the visual companion before write-up. All use
+ease-out-expo timing (`cubic-bezier(.16,1,.3,1)`), no bounce/elastic, and
+fall back to an instant, transform-free state under
+`prefers-reduced-motion: reduce`, per the brand register's motion rules.
+
+- **Hairline rules draw themselves.** The system's existing 1px `--rule`
+  dividers currently just appear. On scroll-into-view, a burnt overlay
+  scales in from `transform: scaleX(0)` to `scaleX(1)`, left-to-right —
+  same divider, now with a beat of motion that reads as "a line being
+  drawn."
+- **Color bands fade in, not wipe.** The oxblood/burnt full-bleed bands
+  (already how the system marks a zone transition — city strip → scale →
+  paper again) transition `background-color` directly from `--paper` to
+  `--oxblood` over ~1.1s, rather than a static cut or a wipe/reveal
+  animation. Text inside the band uses the same fade+rise as everything
+  else, delayed ~0.25s behind the background so it's never read against a
+  background that's still shifting color underneath it.
+- **The Detour chevrons fill in sequence.** In the Scale section, each of
+  the five chevron strokes goes from 25% to 100% opacity with a ~0.12s
+  stagger between them as the row scrolls into view — the rating "counting
+  up" the way you'd read it left to right. Reserved for the Scale section
+  specifically; this is the one motion moment that's brand-specific rather
+  than a reusable pattern, and shouldn't be copied onto every rating
+  display site-wide.
+
 ## Nav
 
 `WebNav`'s "Sign in" link was cut in the prior dead-links pass because it

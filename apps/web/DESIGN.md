@@ -8,7 +8,7 @@ colors:
   card: "#faf8ef"
   ink: "#161310"
   ink-2: "#4b423a"
-  ink-3: "#8c8175"
+  ink-3: "#635a4e"
   oxblood: "#4a1206"
   oxblood-lt: "#63200e"
   burnt: "#c46a17"
@@ -145,7 +145,7 @@ A warm-paper editorial palette: three warm neutrals for surface and text, two co
 - **Card White** (`#faf8ef` / `--card`): the lightest neutral, reserved for card/content surfaces that need to lift slightly off the paper background without a shadow.
 - **Warm Ink** (`#161310` / `--ink`): primary text and the near-black anchor of the whole palette — never pure black.
 - **Ink Muted** (`#4b423a` / `--ink-2`): body copy, secondary text.
-- **Ink Faint** (`#8c8175` / `--ink-3`): tertiary text — captions, counts, disabled-feeling labels.
+- **Ink Faint** (`#635a4e` / `--ink-3`): tertiary text — captions, counts, disabled-feeling labels. Darkened from the original `#8c8175` (3.2:1 on Warm Paper, failing WCAG AA) to `#635a4e` (5.7:1), the darkest value that still reads as visually quieter than Ink Muted.
 - **Signal Teal** (`#07899b` / `--teal`, darker `#05616d` / `--teal-dk`): default link color, and the fill of the brand mark/wordmark. Reserved strictly for inline text links and the logo; never used as a surface or button fill.
 
 ### Named Rules
@@ -205,7 +205,7 @@ Fully flat. There are no `box-shadow` declarations anywhere in the system. Depth
 ### Navigation
 - **Style:** sticky top, translucent paper background with 10px backdrop blur, 1px `--rule` bottom border, Area Extended 9.5px uppercase links with 0.13em tracking.
 - **States:** default ink-2, hover burnt, active (`.on`) ink with a 2px burnt underline offset 6px below the text.
-- **Mobile:** nav links are hidden entirely below 900px (no hamburger drawer implemented yet — logo, sign-in, and CTA remain).
+- **Mobile:** below 900px, nav links collapse into a hamburger toggle that opens a full-width drawer (`MobileNav`) with the same links plus the CTA; the logo stays visible in the bar.
 
 ### Detour Chip (signature component)
 The five-chevron effort-rating indicator is the brand's most distinctive visual mark: a row of five small chevron strokes, full opacity up to the rating value and faint beyond it. Two forms, chosen by context:

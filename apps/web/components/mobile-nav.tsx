@@ -28,7 +28,6 @@ export function MobileNav({ items, active }: { items: [string, string][]; active
           ))}
         </nav>
         <div className="nav-drawer-actions">
-          <a href="#" className="nav-sign" onClick={close}>Sign in</a>
           <a href="#letter" className="btn btn-bu nav-cta" onClick={close}>Get the letter</a>
         </div>
       </div>

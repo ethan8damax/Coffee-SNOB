@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Script, Eyebrow } from "./primitives";
 import { SignupForm } from "./signup-form";
 import { MobileNav } from "./mobile-nav";
-import { APP_SIGN_UP_URL } from "@/lib/app-url";
+import { APP_SIGN_UP_URL, APP_SIGN_IN_URL } from "@/lib/app-url";
 
 const NAV_ITEMS: [string, string][] = [
   ["City guides", "/city-guides"],
@@ -19,9 +19,10 @@ export function WebNav({ active }: { active?: string }) {
         ))}
       </nav>
       <div className="nav-right">
-        <a href="#letter" className="btn btn-bu nav-cta">Get the letter</a>
+        <a href={APP_SIGN_IN_URL} className="nav-sign">Sign in</a>
+        <a href={APP_SIGN_UP_URL} className="btn btn-bu nav-cta">Create account</a>
       </div>
-      <MobileNav items={NAV_ITEMS} active={active} />
+      <MobileNav items={NAV_ITEMS} active={active} signInHref={APP_SIGN_IN_URL} signUpHref={APP_SIGN_UP_URL} />
     </header>
   );
 }

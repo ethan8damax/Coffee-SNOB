@@ -225,21 +225,17 @@ a:hover{color:var(--burnt)}
 .rail-author{display:flex;gap:12px;margin-top:10px}
 .rail-toc{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
 
-/* ── Letter band ── */
-.letter{background:var(--burnt);padding:96px 0 100px}
+/* ── GetTheApp layout (shared with the deleted LetterBand) ── */
 .letter-in{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:end}
-.letter-h{color:var(--ink)}
-.letter .lede{color:rgba(22,19,16,.78);max-width:440px}
-.letter-form{display:grid;gap:26px}
-.letter-form .signup input{border-color:rgba(22,19,16,.55);color:var(--ink)}
-.letter-form .signup input::placeholder{color:rgba(22,19,16,.5)}
-.letter-form .signup .btn{background:var(--oxblood);color:var(--cream)}
-.letter-meta{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 24px}
-.letter-meta li{color:rgba(22,19,16,.62);display:flex;align-items:center;gap:7px}
-.letter-meta li::before{content:'';width:4px;height:4px;background:var(--oxblood)}
-.letter .signed .label-lg{color:var(--oxblood)}
-.letter .signed{border-color:var(--oxblood)}
-.letter .signed .body{color:rgba(22,19,16,.72)}
+
+/* ── Doors (closing recap strip) ── */
+.doors{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.door{padding:40px 32px}
+.door:not(:last-child){border-right:1px solid var(--rule)}
+.door.ox{background:var(--oxblood);color:var(--cream)}
+.door.ox .label{color:rgba(233,228,208,.5)}
+.door.cr{background:var(--cream)}
+.door .d3{margin-top:8px}
 
 /* ── Footer ── */
 .foot{background:var(--oxblood);color:var(--cream);padding:80px 0 26px}
@@ -266,6 +262,8 @@ a:hover{color:var(--burnt)}
   .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 28px}
   .jfeat{grid-template-columns:1fr}
   .letter-in,.post-in{grid-template-columns:1fr}
+  .doors{grid-template-columns:1fr}
+  .door:not(:last-child){border-right:none;border-bottom:1px solid var(--rule)}
   .foot-in{grid-template-columns:repeat(2,1fr)}
 }
 
@@ -276,7 +274,6 @@ a:hover{color:var(--burnt)}
   .foot-in{grid-template-columns:1fr;gap:36px}
   .pagehead{padding:44px 0 32px}
   .allcities{padding-bottom:64px}
-  .letter{padding:64px 0 72px}
   .foot{padding:56px 0 20px}
   .signup{flex-wrap:wrap}
   .signup input{flex-basis:100%}
@@ -298,6 +295,15 @@ a:hover{color:var(--burnt)}
 .band-fade.is-in{background:var(--oxblood)}
 .band-fade [data-reveal]{transition-delay:.25s}
 
+.scale-chevrons svg{opacity:0;transition:opacity .4s ease-out}
+.scale-chevrons.is-in svg{opacity:var(--fill-opacity)}
+.scale-chevrons.is-in svg:nth-child(1){transition-delay:0s}
+.scale-chevrons.is-in svg:nth-child(2){transition-delay:.12s}
+.scale-chevrons.is-in svg:nth-child(3){transition-delay:.24s}
+.scale-chevrons.is-in svg:nth-child(4){transition-delay:.36s}
+.scale-chevrons.is-in svg:nth-child(5){transition-delay:.48s}
+
 @media(prefers-reduced-motion:reduce){
-  [data-reveal],[data-reveal-hair]::after,.band-fade{transition-duration:.01ms!important;transform:none!important;opacity:1!important}
+  [data-reveal],[data-reveal-hair]::after,.band-fade,.scale-chevrons svg{transition-duration:.01ms!important;transform:none!important;opacity:1!important}
+  .scale-chevrons svg{opacity:var(--fill-opacity)!important}
 }

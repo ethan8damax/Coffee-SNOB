@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 
-const SELECTOR = "[data-reveal], [data-reveal-hair], .band-fade";
+const SELECTOR = "[data-reveal], [data-reveal-hair], .band-fade, .scale-chevrons";
 
 export function ScrollReveal() {
   const pathname = usePathname();

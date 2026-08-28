@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { Eyebrow, DETOUR, DETOUR_SUB } from "@/components/primitives";
-import { WebNav, LetterBand, WebFooter } from "@/components/web-chrome";
+import { WebNav, Doors, WebFooter } from "@/components/web-chrome";
 import { SignupForm } from "@/components/signup-form";
 import { getSupabase } from "@/lib/supabase";
 import { getCitiesWithShopCounts } from "@coffeesnob/supabase";
-import { getAllJournalPosts } from "@/lib/journal";
+import { APP_SIGN_UP_URL } from "@/lib/app-url";
 
 export const revalidate = 60;
 
@@ -16,14 +16,12 @@ function Hero() {
       <div className="hero-type">
         <div className="hero-eyebrow">
           <span className="label">Pre-launch</span>
-          <span className="hair" />
-          <span className="label">Letter № 001 — Sunday</span>
         </div>
         <h1 className="h1">Find coffee<br />worth the <em>detour</em></h1>
         <div className="hero-sub">
-          <p className="lede">A specialty coffee locator, in build. Until it ships we send one letter a week: one shop, one roaster, and the reason it earned the trip.</p>
-          <SignupForm />
-          <p className="fine">One a week. No round-ups, no affiliate padding. Unsubscribe whenever.</p>
+          <p className="lede" data-reveal>Log what you drink. Rate it on the only scale that matters. Build a profile before the app even ships.</p>
+          <Link href={APP_SIGN_UP_URL} className="btn btn-ox" data-reveal>Create your account</Link>
+          <p className="fine" data-reveal>Free. Takes about a minute.</p>
         </div>
       </div>
       <div className="hero-art">
@@ -69,7 +67,7 @@ function Scale() {
               <span className="num scale-num">{i + 1}</span>
               <span className="scale-chevrons" aria-hidden="true">
                 {[0, 1, 2, 3, 4].map((n) => (
-                  <svg key={n} width="10" height="13" viewBox="0 0 9 11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" opacity={n <= i ? 1 : 0.3}>
+                  <svg key={n} width="10" height="13" viewBox="0 0 9 11" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ "--fill-opacity": n <= i ? 1 : 0.3 } as React.CSSProperties}>
                     <path d="M1.5 1.5 6 5.5l-4.5 4" />
                   </svg>
                 ))}
@@ -118,45 +116,17 @@ function Guides({ cities }: { cities: CityWithShopCount[] }) {
   );
 }
 
-function Journal() {
-  const posts = getAllJournalPosts().slice(0, 3);
-  if (posts.length === 0) return null;
+function GetTheApp() {
   return (
-    <section className="journal" style={{ padding: "clamp(56px,12vw,104px) 0" }}>
-      <div className="wrap">
-        <div className="sec-head">
-          <Eyebrow>The journal</Eyebrow>
-          <div className="sec-head-row">
-            <h2 className="h2">What we are writing<br />while we build.</h2>
-            <Link href="/journal" className="seeall label-lg">All writing →</Link>
-          </div>
-        </div>
-        <div className="jgrid">
-          {posts.map((p) => (
-            <Link key={p.slug} href={`/journal/${p.slug}`} className="jcard">
-              <div className="photo-ph cr jphoto" data-label={p.frontmatter.photoAlt} />
-              <span className="label jkicker">{p.frontmatter.category}</span>
-              <h3 className="d3">{p.frontmatter.title}</h3>
-              <p className="body">{p.frontmatter.dek}</p>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function AppComingSoon() {
-  return (
-    <section style={{ background: "var(--oxblood)", color: "var(--cream)", padding: "96px 0 100px" }}>
+    <section id="get-the-app" className="band-fade" style={{ color: "var(--cream)", padding: "96px 0 100px" }}>
       <div className="wrap letter-in">
         <div>
           <Eyebrow color="rgba(233,228,208,.5)">The app</Eyebrow>
           <h2 className="h2" style={{ marginTop: 18 }}>Built for<br />wherever you land.</h2>
         </div>
         <div style={{ display: "grid", gap: 26 }}>
-          <p className="lede on-dark">The locator is in build — city guides, the detour scale, saved lists, all of it. No download link yet because there&rsquo;s nothing to download yet. The letter is how you&rsquo;ll know the day it&rsquo;s ready.</p>
-          <SignupForm dark done={["You'll hear it from us first", "No spam between now and launch — just the Sunday letter."]} />
+          <p className="lede on-dark" data-reveal>Streaks, saved lists, and a push alert the moment we map a new city — that experience is native-only. Join the list and you&rsquo;ll be first to know when it&rsquo;s ready.</p>
+          <SignupForm dark done={["You're on the list", "We'll email you the moment the app is ready to install."]} />
         </div>
       </div>
     </section>
@@ -181,10 +151,9 @@ export default async function LandingPage() {
         <CityBand cities={cities} />
         <Scale />
         <Guides cities={cities} />
-        <Journal />
-        <AppComingSoon />
+        <GetTheApp />
       </main>
-      <LetterBand />
+      <Doors />
       <WebFooter />
     </div>
   );

@@ -170,11 +170,7 @@ a:hover{color:var(--burnt)}
 .sortsel select{font-family:'Area',sans-serif;font-size:13px;border:1px solid var(--rule);border-radius:2px;padding:8px 10px}
 
 /* ── Journal ── */
-.jgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
-.jcard{border-top:1px solid var(--rule);padding-top:20px}
-.jphoto{aspect-ratio:4/3;margin-bottom:22px;border-radius:2px}
 .jkicker{color:var(--burnt);display:block;margin-bottom:12px}
-.jcard .d3{margin-bottom:10px;max-width:22ch}
 
 .byline{display:flex;align-items:center;gap:10px;min-width:0}
 .bl-name{color:var(--ink)}
@@ -259,7 +255,6 @@ a:hover{color:var(--burnt)}
   .ggrid,.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .scale-head{grid-template-columns:1fr;gap:24px}
   .scale-row{grid-template-columns:1fr;gap:10px;padding:20px 0}
-  .jgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 28px}
   .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 28px}
   .jfeat{grid-template-columns:1fr}
   .letter-in,.post-in{grid-template-columns:1fr}
@@ -271,7 +266,7 @@ a:hover{color:var(--burnt)}
 @media(max-width:640px){
   .wrap,.nav,.cityband-in{padding-left:24px;padding-right:24px}
   .hero-type{padding:44px 24px 40px}
-  .ggrid,.cgrid,.jgrid,.pgrid{grid-template-columns:1fr}
+  .ggrid,.cgrid,.pgrid{grid-template-columns:1fr}
   .foot-in{grid-template-columns:1fr;gap:36px}
   .pagehead{padding:44px 0 32px}
   .allcities{padding-bottom:64px}

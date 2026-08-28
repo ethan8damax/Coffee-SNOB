@@ -3,7 +3,7 @@
 import { useState } from "react";
 
 export function SignupForm({
-  dark = false, placeholder = "you@email.com", cta = "Get the letter", done,
+  dark = false, placeholder = "you@email.com", cta = "Sign up", done,
 }: { dark?: boolean; placeholder?: string; cta?: string; done?: [string, string] }) {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
@@ -12,7 +12,7 @@ export function SignupForm({
     return (
       <div className={`signed ${dark ? "on-dark" : ""}`} aria-live="polite">
         <span className="label-lg">{done ? done[0] : "You're on the list"}</span>
-        <p className="body">{done ? done[1] : "First letter lands Sunday. Nothing else until then."}</p>
+        <p className="body">{done ? done[1] : "We'll be in touch."}</p>
       </div>
     );
   }

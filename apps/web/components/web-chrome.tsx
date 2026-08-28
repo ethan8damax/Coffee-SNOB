@@ -37,7 +37,7 @@ export function Doors() {
       <div className="door">
         <span className="label">Coming to your phone</span>
         <h3 className="d3">Get the app</h3>
-        <Link href="#get-the-app" className="btn btn-line" style={{ marginTop: 14 }}>Join the waitlist</Link>
+        <Link href="/#get-the-app" className="btn btn-line" style={{ marginTop: 14 }}>Join the waitlist</Link>
       </div>
       <div className="door cr">
         <span className="label">No account needed</span>

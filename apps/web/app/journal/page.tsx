@@ -22,7 +22,7 @@ export default function JournalIndexPage() {
         </section>
         {posts.length === 0 && (
           <section className="wrap" style={{ padding: "clamp(40px,8vw,72px) 0" }}>
-            <p className="lede">First letter&rsquo;s still being written. Sign up below and it&rsquo;ll land in your inbox the day it&rsquo;s ready — nothing before then.</p>
+            <p className="lede">First piece is still being written. Check back soon.</p>
           </section>
         )}
         {featured && (

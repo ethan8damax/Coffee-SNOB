@@ -176,12 +176,14 @@ export default async function LandingPage() {
   return (
     <div className="snob-web">
       <WebNav />
-      <Hero />
-      <CityBand cities={cities} />
-      <Scale />
-      <Guides cities={cities} />
-      <Journal />
-      <AppComingSoon />
+      <main>
+        <Hero />
+        <CityBand cities={cities} />
+        <Scale />
+        <Guides cities={cities} />
+        <Journal />
+        <AppComingSoon />
+      </main>
       <LetterBand />
       <WebFooter />
     </div>

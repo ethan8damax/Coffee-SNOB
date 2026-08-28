@@ -49,7 +49,7 @@ a:hover{color:var(--burnt)}
 
 .photo-ph{background:var(--sage-dk);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
 .photo-ph::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(135deg,rgba(255,255,255,.07) 0 6px,transparent 6px 12px)}
-.photo-ph::before{content:attr(data-label);font-family:'Area Extended','Area',sans-serif;font-weight:700;text-transform:uppercase;font-size:9.5px;max-width:16em;letter-spacing:.12em;color:rgba(255,255,255,.78);text-align:center;padding:6px;position:relative;z-index:1}
+.photo-ph::before{content:"Photo coming soon";font-family:'Area Extended','Area',sans-serif;font-weight:700;text-transform:uppercase;font-size:9.5px;letter-spacing:.12em;color:rgba(255,255,255,.78);text-align:center;padding:6px;position:relative;z-index:1}
 .photo-ph.ox{background:var(--oxblood)}
 .photo-ph.ox::before{color:rgba(233,228,208,.55)}
 .photo-ph.cr{background:var(--paper-2)}

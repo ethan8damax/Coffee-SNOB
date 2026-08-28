@@ -120,7 +120,7 @@ function GetTheApp() {
   return (
     <section id="get-the-app" className="band-fade" style={{ color: "var(--cream)", padding: "96px 0 100px" }}>
       <div className="wrap letter-in">
-        <div>
+        <div data-reveal>
           <Eyebrow color="rgba(233,228,208,.5)">The app</Eyebrow>
           <h2 className="h2" style={{ marginTop: 18 }}>Built for<br />wherever you land.</h2>
         </div>

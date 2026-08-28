@@ -6,9 +6,6 @@ import { MobileNav } from "./mobile-nav";
 const NAV_ITEMS: [string, string][] = [
   ["City guides", "/city-guides"],
   ["Journal", "/journal"],
-  ["Shop", "#"],
-  ["The app", "#"],
-  ["About", "#"],
 ];
 
 export function WebNav({ active }: { active?: string }) {
@@ -21,7 +18,6 @@ export function WebNav({ active }: { active?: string }) {
         ))}
       </nav>
       <div className="nav-right">
-        <a href="#" className="nav-sign">Sign in</a>
         <a href="#letter" className="btn btn-bu nav-cta">Get the letter</a>
       </div>
       <MobileNav items={NAV_ITEMS} active={active} />
@@ -53,10 +49,8 @@ export function LetterBand() {
 
 export function WebFooter() {
   const cols: [string, [string, string][]][] = [
-    ["Discover", [["City guides", "/city-guides"], ["The map", "#"], ["Collections", "#"], ["Submit a shop", "#"]]],
-    ["Read", [["Journal", "/journal"], ["Roaster interviews", "/journal"], ["Brewing", "/journal"], ["The year in coffee", "#"]]],
-    ["Shop", [["Snob merch", "#"], ["Gear we use", "#"], ["Bean subscription", "#"], ["Gift the letter", "#"]]],
-    ["Snob", [["About", "#"], ["The detour scale", "#"], ["The app", "#"], ["Press", "#"], ["Contact", "#"]]],
+    ["Discover", [["City guides", "/city-guides"]]],
+    ["Read", [["Journal", "/journal"]]],
   ];
   return (
     <footer className="foot">
@@ -74,10 +68,6 @@ export function WebFooter() {
       </div>
       <div className="wrap foot-base">
         <span className="body-sm">© {new Date().getFullYear()} Coffee Snob</span>
-        <div className="foot-legal">
-          <a href="#" className="body-sm">Privacy</a>
-          <a href="#" className="body-sm">Terms</a>
-        </div>
       </div>
     </footer>
   );

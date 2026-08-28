@@ -205,7 +205,7 @@ Fully flat. There are no `box-shadow` declarations anywhere in the system. Depth
 ### Navigation
 - **Style:** sticky top, translucent paper background with 10px backdrop blur, 1px `--rule` bottom border, Area Extended 9.5px uppercase links with 0.13em tracking.
 - **States:** default ink-2, hover burnt, active (`.on`) ink with a 2px burnt underline offset 6px below the text.
-- **Mobile:** nav links are hidden entirely below 900px (no hamburger drawer implemented yet — logo, sign-in, and CTA remain).
+- **Mobile:** below 900px, nav links collapse into a hamburger toggle that opens a full-width drawer (`MobileNav`) with the same links plus the CTA; the logo stays visible in the bar.
 
 ### Detour Chip (signature component)
 The five-chevron effort-rating indicator is the brand's most distinctive visual mark: a row of five small chevron strokes, full opacity up to the rating value and faint beyond it. Two forms, chosen by context:

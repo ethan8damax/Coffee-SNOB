@@ -1,10 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
-const SELECTOR = "[data-reveal], [data-reveal-hair], .band-fade, .scale-chevrons";
+const SELECTOR = "[data-reveal], [data-reveal-hair], .band-fade";
 
 export function ScrollReveal() {
+  const pathname = usePathname();
+
   useEffect(() => {
     const targets = document.querySelectorAll(SELECTOR);
     if (targets.length === 0) return;
@@ -23,7 +26,7 @@ export function ScrollReveal() {
 
     targets.forEach((t) => io.observe(t));
     return () => io.disconnect();
-  }, []);
+  }, [pathname]);
 
   return null;
 }

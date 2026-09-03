@@ -36,21 +36,24 @@ export default async function CityGuidePage({ params }: { params: Promise<{ slug
             <h2 className="h2">Every shop, with<br />the verdict attached.</h2>
           </div>
           <ol className="slist" style={{ listStyle: "none", margin: 0, padding: 0 }}>
-            {items.map(({ shops: s, note }) => (
-              <li key={s.id} className="srow">
-                <div className="photo-ph srow-ph" data-label={`${s.name} — counter`} />
-                <div className="srow-body">
-                  <div className="srow-head">
-                    <h3 className="d3">{s.name}</h3>
-                    <span className="label">{s.neighborhood} · {s.tag} · {s.price_tier}</span>
+            {items.map(({ shops: s, note }) => {
+              const c = s.shop_curations;
+              return (
+                <li key={s.id} className="srow">
+                  <div className="photo-ph srow-ph" data-label={`${s.name} — counter`} />
+                  <div className="srow-body">
+                    <div className="srow-head">
+                      <h3 className="d3">{s.name}</h3>
+                      <span className="label">{s.neighborhood} · {c?.tag} · {c?.price_tier}</span>
+                    </div>
+                    <p className="body" style={{ marginTop: 10 }}>{c?.writeup}</p>
+                    {c?.order_note && <p style={{ marginTop: 8 }}><span className="label">Order</span> <span className="body">{c.order_note}</span></p>}
+                    {note && <p className="fine">{note}</p>}
                   </div>
-                  <p className="body" style={{ marginTop: 10 }}>{s.writeup}</p>
-                  {s.order_note && <p style={{ marginTop: 8 }}><span className="label">Order</span> <span className="body">{s.order_note}</span></p>}
-                  {note && <p className="fine">{note}</p>}
-                </div>
-                {s.editorial_rating != null && <div className="srow-rating"><Detour value={s.editorial_rating} short /></div>}
-              </li>
-            ))}
+                  {c?.editorial_rating != null && <div className="srow-rating"><Detour value={c.editorial_rating} short /></div>}
+                </li>
+              );
+            })}
           </ol>
         </div>
       </section>

@@ -26,3 +26,6 @@ left join public.shop_curations sc on sc.shop_id = s.id
 left join public.logs l on l.shop_id = s.id
 group by s.id, sc.shop_id, sc.tag, sc.price_tier, sc.editorial_rating
 having sc.shop_id is not null or count(l.id) > 0;
+
+-- Supports bounding-box filters on this view for the map's viewport queries.
+create index shops_lat_lng_idx on public.shops (lat, lng);

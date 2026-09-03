@@ -119,7 +119,23 @@ describe("getCityGuide", () => {
 
   it("returns { city, guide } when both exist", async () => {
     const city = { id: "1", slug: "lisbon", name: "Lisbon" };
-    const guide = { id: "g1", slug: "lisbon-guide", title: "Lisbon Guide" };
+    const guide = {
+      id: "g1",
+      slug: "lisbon-guide",
+      title: "Lisbon Guide",
+      list_items: [
+        {
+          position: 1,
+          note: null,
+          shops: {
+            id: "s1",
+            name: "Noi Coffee",
+            neighborhood: "Príncipe Real",
+            shop_curations: { price_tier: "€€", tag: "Espresso bar", writeup: "Great bar.", order_note: null, editorial_rating: 5 },
+          },
+        },
+      ],
+    };
     const client = fakeGuideClient(
       { data: city, error: null },
       { data: guide, error: null }

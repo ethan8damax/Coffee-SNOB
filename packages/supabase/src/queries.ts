@@ -42,7 +42,7 @@ export async function getCityGuide(client: Client, citySlug: string) {
   const { data: guide, error: guideError } = await client
     .from("lists")
     .select(
-      "id, slug, title, description, body, cover_photo_alt, save_count, list_items(position, note, shops(id, name, neighborhood, price_tier, tag, writeup, order_note, editorial_rating))"
+      "id, slug, title, description, body, cover_photo_alt, save_count, list_items(position, note, shops(id, name, neighborhood, shop_curations(price_tier, tag, writeup, order_note, editorial_rating)))"
     )
     .eq("type", "city_guide")
     .eq("city_id", city.id)

@@ -35,3 +35,6 @@ $$;
 create trigger on_log_insert_check_promotion
   after insert on public.logs
   for each row execute function public.check_shop_promotion();
+
+-- Supports the promotion-check trigger's per-shop count(*)/avg() lookup on every log insert.
+create index logs_shop_id_idx on public.logs (shop_id);

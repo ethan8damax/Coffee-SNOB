@@ -49,6 +49,8 @@ As a starting point, add to the `"plugins"` array in `apps/app/app.json`:
 ```
 Adjust the key names to match whatever the installed version's README actually specifies if it differs.
 
+**Resolved (as implemented):** at the installed version (`@rnmapbox/maps@10.3.5`, Maps SDK v11), Mapbox dropped the download-token requirement entirely — `RNMapboxMapsDownloadToken` is deprecated (see `plugin/src/withMapbox.ts`, `android/install.md`). The snippet above also conflated a public runtime token with what would need to be a separate secret download token. The plugin is registered as the bare string `"@rnmapbox/maps"` instead, with no options object.
+
 - [ ] **Step 3: Verify the app still boots**
 
 Run: `pnpm --filter app typecheck`
@@ -222,7 +224,6 @@ Expected: FAIL — `./directions` does not exist.
 
 ```typescript
 // apps/app/lib/directions.ts
-import { Linking } from "react-native";
 
 // One universal URL, no per-platform branching (see docs/superpowers/specs/
 // 2026-09-03-map-community-shops-design.md, "Map rendering / integration").
@@ -231,9 +232,12 @@ export function directionsUrl(lat: number, lng: number): string {
 }
 
 export function openDirections(lat: number, lng: number) {
+  const { Linking } = require("react-native");
   return Linking.openURL(directionsUrl(lat, lng));
 }
 ```
+
+**Resolved (as implemented):** a top-level `import { Linking } from "react-native"` breaks Vitest here — it's Flow-typed syntax Rollup's parser can't handle ("Expected 'from', got 'typeOf'"), and since the test file imports `directionsUrl` from this same module, that import is eager regardless of which export is used. Confirmed by direct reproduction. `openDirections` requires `react-native` lazily inside the function body instead, keeping `directionsUrl`'s import graph RN-free.
 
 - [ ] **Step 4: Run to verify it passes**
 

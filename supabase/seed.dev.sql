@@ -7,32 +7,47 @@
 insert into public.cities (slug, name, country, region, status) values
   ('lisbon', 'Lisbon', 'Portugal', 'Europe', 'demo');
 
-with lisbon as (select id from public.cities where slug = 'lisbon')
-insert into public.shops (city_id, name, neighborhood, price_tier, tag, writeup, order_note, editorial_rating)
-select lisbon.id, s.name, s.neighborhood, s.price_tier, s.tag, s.writeup, s.order_note, s.editorial_rating
-from lisbon, (values
-  ('Noi Coffee', 'Príncipe Real', '€€', 'Espresso bar',
+with lisbon as (select id from public.cities where slug = 'lisbon'),
+     inserted as (
+       insert into public.shops (city_id, name, neighborhood)
+       select lisbon.id, s.name, s.neighborhood
+       from lisbon, (values
+         ('Noi Coffee', 'Príncipe Real'),
+         ('Fábrica Coffee Roasters', 'Baixa'),
+         ('Copenhagen Coffee Lab', 'Príncipe Real'),
+         ('Olisipo Roastery', 'Alcântara'),
+         ('Café Graça', 'Graça'),
+         ('Tartine Baixa', 'Baixa'),
+         ('Comoba', 'Cais do Sodré')
+       ) as s(name, neighborhood)
+       returning id, name
+     )
+insert into public.shop_curations (shop_id, price_tier, tag, writeup, order_note, editorial_rating)
+select inserted.id, c.price_tier, c.tag, c.writeup, c.order_note, c.editorial_rating
+from inserted
+join (values
+  ('Noi Coffee', '€€', 'Espresso bar',
    'The best-run bar in the country. Two grinders, one Ethiopian on filter, and a barista who will ask what you drank yesterday. Order at the counter and stay standing.',
    'Filter — whatever is newest', 5::smallint),
-  ('Fábrica Coffee Roasters', 'Baixa', '€€', 'Roaster',
+  ('Fábrica Coffee Roasters', '€€', 'Roaster',
    'Roasts in the back, sells across the counter, and does not pretend the room is anything other than a workshop. The cortado is the control sample.',
    'Cortado, plus a bag of the Colombian', 4::smallint),
-  ('Copenhagen Coffee Lab', 'Príncipe Real', '€€', 'Filter focus',
+  ('Copenhagen Coffee Lab', '€€', 'Filter focus',
    'Nordic import that made light roast normal here. Bright, consistent, occasionally too full to sit. The pastry is better than it needs to be.',
    'V60, single origin', 4::smallint),
-  ('Olisipo Roastery', 'Alcântara', '€€€', 'Roaster',
+  ('Olisipo Roastery', '€€€', 'Roaster',
    'A working roastery with a cupping table open to the public on Fridays. Ask about the Brazilian naturals if the door is open.',
    'Whatever is on the cupping table', 4::smallint),
-  ('Café Graça', 'Graça', '€', 'Neighbourhood',
+  ('Café Graça', '€', 'Neighbourhood',
    'Not a specialty room and not trying to be. Good beans, old tiles, three tables outside facing the wrong way for the view — which is the point.',
    'Espresso, one sugar, standing', 3::smallint),
-  ('Tartine Baixa', 'Baixa', '€€', 'Bakery bar',
+  ('Tartine Baixa', '€€', 'Bakery bar',
    'Coffee is a strong second act to the bread. Reroute if you are already walking past; do not plan a morning around it.',
    'Flat white and the sourdough', 3::smallint),
-  ('Comoba', 'Cais do Sodré', '€€', 'All-day',
+  ('Comoba', '€€', 'All-day',
    'Pleasant, busy, and fine. The kitchen is the reason to come; the coffee follows the room rather than leading it.',
    'Breakfast, coffee incidental', 2::smallint)
-) as s(name, neighborhood, price_tier, tag, writeup, order_note, editorial_rating);
+) as c(name, price_tier, tag, writeup, order_note, editorial_rating) on c.name = inserted.name;
 
 with lisbon as (select id from public.cities where slug = 'lisbon')
 insert into public.lists (type, slug, title, description, body, city_id, save_count)

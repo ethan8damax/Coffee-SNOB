@@ -247,46 +247,37 @@ export type Database = {
       }
       shops: {
         Row: {
-          city_id: string
+          city_id: string | null
           created_at: string
-          editorial_rating: number | null
+          external_id: string | null
           id: string
           lat: number | null
           lng: number | null
           name: string
-          neighborhood: string
-          order_note: string | null
-          price_tier: string
-          tag: string | null
-          writeup: string | null
+          neighborhood: string | null
+          promotion_status: string
         }
         Insert: {
-          city_id: string
+          city_id?: string | null
           created_at?: string
-          editorial_rating?: number | null
+          external_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           name: string
-          neighborhood: string
-          order_note?: string | null
-          price_tier?: string
-          tag?: string | null
-          writeup?: string | null
+          neighborhood?: string | null
+          promotion_status?: string
         }
         Update: {
-          city_id?: string
+          city_id?: string | null
           created_at?: string
-          editorial_rating?: number | null
+          external_id?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           name?: string
-          neighborhood?: string
-          order_note?: string | null
-          price_tier?: string
-          tag?: string | null
-          writeup?: string | null
+          neighborhood?: string | null
+          promotion_status?: string
         }
         Relationships: [
           {
@@ -298,12 +289,76 @@ export type Database = {
           },
         ]
       }
+      shop_curations: {
+        Row: {
+          created_at: string
+          editorial_rating: number | null
+          order_note: string | null
+          price_tier: string
+          shop_id: string
+          tag: string | null
+          writeup: string | null
+        }
+        Insert: {
+          created_at?: string
+          editorial_rating?: number | null
+          order_note?: string | null
+          price_tier?: string
+          shop_id: string
+          tag?: string | null
+          writeup?: string | null
+        }
+        Update: {
+          created_at?: string
+          editorial_rating?: number | null
+          order_note?: string | null
+          price_tier?: string
+          shop_id?: string
+          tag?: string | null
+          writeup?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_curations_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      shop_ratings: {
+        Row: {
+          id: string
+          name: string
+          lat: number | null
+          lng: number | null
+          city_id: string | null
+          neighborhood: string | null
+          is_snob_approved: boolean
+          tag: string | null
+          price_tier: string | null
+          rating: number | null
+          log_count: number
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      log_shop_visit: {
+        Args: {
+          p_external_id: string
+          p_name: string
+          p_lat: number
+          p_lng: number
+          p_rating: number
+          p_note?: string
+          p_visited_at?: string
+        }
+        Returns: Tables<"logs">
+      }
     }
     Enums: {
       [_ in never]: never

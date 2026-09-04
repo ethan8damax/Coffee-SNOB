@@ -55,18 +55,30 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   const [ratedShops, setRatedShops] = useState<RatedShopPin[]>([]);
   const [nearbyShops, setNearbyShops] = useState<NearbyShopPin[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // ponytail: incrementing counter is enough to discard stale in-flight
+  // fetches — no AbortController/cache needed for a debounce-and-discard.
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     if (!bounds) return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
+      const requestId = ++requestIdRef.current;
       const { supabase } = require("../supabase");
       getRatedShopsInBounds(supabase, bounds)
-        .then((rows) => setRatedShops(rows.map(toRatedShopPin)))
-        .catch(() => setRatedShops([]));
+        .then((rows) => {
+          if (requestIdRef.current === requestId) setRatedShops(rows.map(toRatedShopPin));
+        })
+        .catch(() => {
+          if (requestIdRef.current === requestId) setRatedShops([]);
+        });
       fetchNearbyOsmShops(bounds, webAppUrl)
-        .then(setNearbyShops)
-        .catch(() => setNearbyShops([]));
+        .then((shops) => {
+          if (requestIdRef.current === requestId) setNearbyShops(shops);
+        })
+        .catch(() => {
+          if (requestIdRef.current === requestId) setNearbyShops([]);
+        });
     }, DEBOUNCE_MS);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);

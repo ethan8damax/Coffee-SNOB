@@ -59,8 +59,8 @@ a:hover{color:var(--burnt)}
 .nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:40px;padding:18px 56px;background:rgba(240,236,223,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--rule)}
 .nav-logo{display:block;flex-shrink:0}
 .nav-links{display:flex;gap:26px;flex:1}
-.nav-links a{font-family:'Area Extended','Area',sans-serif;font-weight:700;text-transform:uppercase;font-size:9.5px;letter-spacing:.13em;color:var(--ink-2)}
-.nav-links a:hover{color:var(--burnt)}
+.nav-links a,.nav-sign{font-family:'Area Extended','Area',sans-serif;font-weight:700;text-transform:uppercase;font-size:9.5px;letter-spacing:.13em;color:var(--ink-2)}
+.nav-links a:hover,.nav-sign:hover{color:var(--burnt)}
 .nav-links a.on{color:var(--ink);position:relative}
 .nav-links a.on::after{content:'';position:absolute;left:0;right:0;bottom:-6px;height:2px;background:var(--burnt)}
 .nav-right{display:flex;align-items:center;gap:22px}
@@ -79,6 +79,7 @@ a:hover{color:var(--burnt)}
 .nav-drawer-links a.on{color:var(--burnt)}
 .nav-drawer-actions{display:flex;flex-direction:column;gap:16px;padding-top:24px}
 .nav-drawer-actions .btn{width:100%}
+.nav-drawer-actions .nav-sign{font-size:12px}
 @media(prefers-reduced-motion:reduce){
   .nav-toggle span,.nav-drawer{transition:none}
 }
@@ -169,11 +170,7 @@ a:hover{color:var(--burnt)}
 .sortsel select{font-family:'Area',sans-serif;font-size:13px;border:1px solid var(--rule);border-radius:2px;padding:8px 10px}
 
 /* ── Journal ── */
-.jgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:36px}
-.jcard{border-top:1px solid var(--rule);padding-top:20px}
-.jphoto{aspect-ratio:4/3;margin-bottom:22px;border-radius:2px}
 .jkicker{color:var(--burnt);display:block;margin-bottom:12px}
-.jcard .d3{margin-bottom:10px;max-width:22ch}
 
 .byline{display:flex;align-items:center;gap:10px;min-width:0}
 .bl-name{color:var(--ink)}
@@ -225,21 +222,17 @@ a:hover{color:var(--burnt)}
 .rail-author{display:flex;gap:12px;margin-top:10px}
 .rail-toc{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:8px}
 
-/* ── Letter band ── */
-.letter{background:var(--burnt);padding:96px 0 100px}
+/* ── GetTheApp layout (shared with the deleted LetterBand) ── */
 .letter-in{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:end}
-.letter-h{color:var(--ink)}
-.letter .lede{color:rgba(22,19,16,.78);max-width:440px}
-.letter-form{display:grid;gap:26px}
-.letter-form .signup input{border-color:rgba(22,19,16,.55);color:var(--ink)}
-.letter-form .signup input::placeholder{color:rgba(22,19,16,.5)}
-.letter-form .signup .btn{background:var(--oxblood);color:var(--cream)}
-.letter-meta{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;gap:8px 24px}
-.letter-meta li{color:rgba(22,19,16,.62);display:flex;align-items:center;gap:7px}
-.letter-meta li::before{content:'';width:4px;height:4px;background:var(--oxblood)}
-.letter .signed .label-lg{color:var(--oxblood)}
-.letter .signed{border-color:var(--oxblood)}
-.letter .signed .body{color:rgba(22,19,16,.72)}
+
+/* ── Doors (closing recap strip) ── */
+.doors{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.door{padding:40px 32px}
+.door:not(:last-child){border-right:1px solid var(--rule)}
+.door.ox{background:var(--oxblood);color:var(--cream)}
+.door.ox .label{color:rgba(233,228,208,.5)}
+.door.cr{background:var(--cream)}
+.door .d3{margin-top:8px}
 
 /* ── Footer ── */
 .foot{background:var(--oxblood);color:var(--cream);padding:80px 0 26px}
@@ -262,21 +255,21 @@ a:hover{color:var(--burnt)}
   .ggrid,.cgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .scale-head{grid-template-columns:1fr;gap:24px}
   .scale-row{grid-template-columns:1fr;gap:10px;padding:20px 0}
-  .jgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:36px 28px}
   .pgrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:48px 28px}
   .jfeat{grid-template-columns:1fr}
   .letter-in,.post-in{grid-template-columns:1fr}
+  .doors{grid-template-columns:1fr}
+  .door:not(:last-child){border-right:none;border-bottom:1px solid var(--rule)}
   .foot-in{grid-template-columns:repeat(2,1fr)}
 }
 
 @media(max-width:640px){
   .wrap,.nav,.cityband-in{padding-left:24px;padding-right:24px}
   .hero-type{padding:44px 24px 40px}
-  .ggrid,.cgrid,.jgrid,.pgrid{grid-template-columns:1fr}
+  .ggrid,.cgrid,.pgrid{grid-template-columns:1fr}
   .foot-in{grid-template-columns:1fr;gap:36px}
   .pagehead{padding:44px 0 32px}
   .allcities{padding-bottom:64px}
-  .letter{padding:64px 0 72px}
   .foot{padding:56px 0 20px}
   .signup{flex-wrap:wrap}
   .signup input{flex-basis:100%}
@@ -284,4 +277,29 @@ a:hover{color:var(--burnt)}
   .chero-photo{aspect-ratio:3/2}
   .srow{flex-direction:column;gap:14px}
   .srow-ph{width:100%;aspect-ratio:16/9}
+}
+
+/* ── Scroll reveal ── */
+[data-reveal]{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+[data-reveal].is-in{opacity:1;transform:translateY(0)}
+
+[data-reveal-hair]{position:relative}
+[data-reveal-hair]::after{content:'';position:absolute;inset:0;background:var(--burnt);transform:scaleX(0);transform-origin:left;transition:transform .9s cubic-bezier(.16,1,.3,1)}
+[data-reveal-hair].is-in::after{transform:scaleX(1)}
+
+.band-fade{background:var(--paper);transition:background-color 1.1s cubic-bezier(.16,1,.3,1)}
+.band-fade.is-in{background:var(--oxblood)}
+.band-fade [data-reveal]{transition-delay:.25s}
+
+.scale-chevrons svg{opacity:0;transition:opacity .4s ease-out}
+.scale-chevrons.is-in svg{opacity:var(--fill-opacity)}
+.scale-chevrons.is-in svg:nth-child(1){transition-delay:0s}
+.scale-chevrons.is-in svg:nth-child(2){transition-delay:.12s}
+.scale-chevrons.is-in svg:nth-child(3){transition-delay:.24s}
+.scale-chevrons.is-in svg:nth-child(4){transition-delay:.36s}
+.scale-chevrons.is-in svg:nth-child(5){transition-delay:.48s}
+
+@media(prefers-reduced-motion:reduce){
+  [data-reveal],[data-reveal-hair]::after,.band-fade,.scale-chevrons svg{transition-duration:.01ms!important;transform:none!important;opacity:1!important}
+  .scale-chevrons svg{opacity:var(--fill-opacity)!important}
 }

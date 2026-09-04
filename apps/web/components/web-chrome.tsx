@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Script, Eyebrow } from "./primitives";
-import { SignupForm } from "./signup-form";
 import { MobileNav } from "./mobile-nav";
+import { APP_SIGN_UP_URL, APP_SIGN_IN_URL } from "@/lib/app-url";
 
 const NAV_ITEMS: [string, string][] = [
   ["City guides", "/city-guides"],
@@ -18,30 +18,31 @@ export function WebNav({ active }: { active?: string }) {
         ))}
       </nav>
       <div className="nav-right">
-        <a href="#letter" className="btn btn-bu nav-cta">Get the letter</a>
+        <a href={APP_SIGN_IN_URL} className="nav-sign">Sign in</a>
+        <a href={APP_SIGN_UP_URL} className="btn btn-bu nav-cta">Create account</a>
       </div>
-      <MobileNav items={NAV_ITEMS} active={active} />
+      <MobileNav items={NAV_ITEMS} active={active} signInHref={APP_SIGN_IN_URL} signUpHref={APP_SIGN_UP_URL} />
     </header>
   );
 }
 
-export function LetterBand() {
+export function Doors() {
   return (
-    <section className="letter" id="letter">
-      <div className="wrap letter-in">
-        <div>
-          <Eyebrow color="rgba(240,236,223,.55)">The Sunday letter</Eyebrow>
-          <h2 className="h2 letter-h">One shop.<br />One roaster.<br />Nothing else.</h2>
-        </div>
-        <div className="letter-form">
-          <p className="lede">Sent every Sunday morning. A shop worth the detour, the roaster behind the bar, and where we are opening the map next.</p>
-          <SignupForm dark />
-          <ul className="letter-meta">
-            <li className="body-sm">Free, and it stays free</li>
-            <li className="body-sm">No sponsored placements</li>
-            <li className="body-sm">Early access when the app ships</li>
-          </ul>
-        </div>
+    <section className="doors">
+      <div className="door ox">
+        <span className="label">Do this now</span>
+        <h3 className="d3">Log what you drink</h3>
+        <Link href={APP_SIGN_UP_URL} className="btn" style={{ background: "var(--cream)", color: "var(--ink)", marginTop: 14 }}>Create your account</Link>
+      </div>
+      <div className="door">
+        <span className="label">Coming to your phone</span>
+        <h3 className="d3">Get the app</h3>
+        <Link href="/#get-the-app" className="btn btn-line" style={{ marginTop: 14 }}>Join the waitlist</Link>
+      </div>
+      <div className="door cr">
+        <span className="label">No account needed</span>
+        <h3 className="d3">Browse the guides</h3>
+        <Link href="/city-guides" className="btn btn-line" style={{ marginTop: 14 }}>City guides →</Link>
       </div>
     </section>
   );

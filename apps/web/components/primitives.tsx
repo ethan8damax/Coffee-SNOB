@@ -33,7 +33,7 @@ export function Eyebrow({
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, ...style }}>
       <span className="label" style={{ color, flexShrink: 0 }}>{children}</span>
-      {rule && <span style={{ flex: 1, height: 1, background: "var(--rule)" }} />}
+      {rule && <span data-reveal-hair style={{ flex: 1, height: 1, background: "var(--rule)" }} />}
     </div>
   );
 }

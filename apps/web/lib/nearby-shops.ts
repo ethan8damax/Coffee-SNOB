@@ -25,14 +25,19 @@ export type NearbyShop = {
 
 export type Bounds = { minLat: number; minLng: number; maxLat: number; maxLng: number };
 
-// Keyed on the box's center, rounded to ~0.01 degrees (~1km), so small pans
-// or zoom jitter around the same spot share a cache entry instead of each
-// pixel of movement missing the cache. (Corner-by-corner rounding doesn't
-// work here: two boxes centered on the same point but with slightly
-// different spans can round each corner to a different tile.)
+// Keyed on the box's center (rounded to ~0.01 degrees, ~1km, so small pans
+// or zoom jitter around the same spot share a cache entry) plus a zoom
+// bucket derived from the box's span. Center-only wasn't enough: a zoomed-in
+// box and a zoomed-out box can share a center point but cover wildly
+// different areas, so the span also has to be part of the key — bucketed
+// via log2 (roughly "zoom level") rather than rounded raw, since raw
+// rounding of a ~0.005 span is unstable across the pan-jitter this key
+// needs to tolerate (0.0048 and 0.0052 round to different hundredths).
 export function tileKey(minLat: number, minLng: number, maxLat: number, maxLng: number): string {
   const round = (n: number) => Math.round(n * 100) / 100;
-  return `${round((minLat + maxLat) / 2)},${round((minLng + maxLng) / 2)}`;
+  const span = Math.max(maxLat - minLat, 1e-6);
+  const zoomBucket = Math.round(Math.log2(span));
+  return `${round((minLat + maxLat) / 2)},${round((minLng + maxLng) / 2)},${zoomBucket}`;
 }
 
 export function buildOverpassQuery(bounds: Bounds): string {

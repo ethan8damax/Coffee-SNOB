@@ -9,6 +9,10 @@ describe("tileKey", () => {
   it("produces different keys for distant boxes", () => {
     expect(tileKey(38.7, -9.1, 38.8, -9.0)).not.toBe(tileKey(40.7, -74.0, 40.8, -73.9));
   });
+
+  it("produces different keys for a tight and a huge box sharing a center", () => {
+    expect(tileKey(38.706, -9.144, 38.714, -9.136)).not.toBe(tileKey(35.0, -11.0, 42.42, -7.28));
+  });
 });
 
 describe("buildOverpassQuery", () => {

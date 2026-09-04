@@ -224,7 +224,6 @@ Expected: FAIL — `./directions` does not exist.
 
 ```typescript
 // apps/app/lib/directions.ts
-import { Linking } from "react-native";
 
 // One universal URL, no per-platform branching (see docs/superpowers/specs/
 // 2026-09-03-map-community-shops-design.md, "Map rendering / integration").
@@ -233,9 +232,12 @@ export function directionsUrl(lat: number, lng: number): string {
 }
 
 export function openDirections(lat: number, lng: number) {
+  const { Linking } = require("react-native");
   return Linking.openURL(directionsUrl(lat, lng));
 }
 ```
+
+**Resolved (as implemented):** a top-level `import { Linking } from "react-native"` breaks Vitest here — it's Flow-typed syntax Rollup's parser can't handle ("Expected 'from', got 'typeOf'"), and since the test file imports `directionsUrl` from this same module, that import is eager regardless of which export is used. Confirmed by direct reproduction. `openDirections` requires `react-native` lazily inside the function body instead, keeping `directionsUrl`'s import graph RN-free.
 
 - [ ] **Step 4: Run to verify it passes**
 

@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { View } from "react-native";
+import { Text, View } from "react-native";
 import Mapbox, { MapView as RNMapboxMapView, Camera, PointAnnotation } from "@rnmapbox/maps";
 import type { MapState } from "@rnmapbox/maps";
 import { colors } from "@coffeesnob/design-tokens";
@@ -66,8 +66,12 @@ export function MapView({
                   backgroundColor: style.background,
                   borderWidth: selected ? 2 : 1,
                   borderColor: selected ? colors.ink : style.border,
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
+              >
+                <Text style={{ color: style.foreground, fontSize: 11, fontWeight: "700" }}>{String(shop.rating)}</Text>
+              </View>
             </PointAnnotation>
           );
         })}

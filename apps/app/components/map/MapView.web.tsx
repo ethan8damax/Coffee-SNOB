@@ -74,8 +74,13 @@ export function MapView({
                 background: style.background,
                 border: `${selected ? 2 : 1}px solid ${selected ? colors.ink : style.border}`,
                 cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
-            />
+            >
+              <span style={{ color: style.foreground, fontSize: 11, fontWeight: 700 }}>{shop.rating}</span>
+            </div>
           </Marker>
         );
       })}

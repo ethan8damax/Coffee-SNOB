@@ -2,6 +2,13 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
+    // Metro resolves "./MapView" to MapView.native.tsx or MapView.web.tsx
+    // per platform at bundle time; tsc needs the same suffixes to type-check
+    // that import at all (moduleSuffixes is TS's built-in match for this,
+    // see https://www.typescriptlang.org/tsconfig#moduleSuffixes). Order
+    // doesn't matter for correctness here since both variants implement the
+    // same MapViewProps.
+    "moduleSuffixes": [".native", ".web", ""],
     "paths": {
       "@/*": ["./*"]
     }

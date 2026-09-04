@@ -67,7 +67,10 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
       const { supabase } = require("../supabase");
       getRatedShopsInBounds(supabase, bounds)
         .then((rows) => {
-          if (requestIdRef.current === requestId) setRatedShops(rows.map(toRatedShopPin));
+          // A Snob-Approved shop with no editorial_rating set yet and no
+          // community logs has rating = null in the view — can't render
+          // as a tiered pin, so drop it rather than show a broken value.
+          if (requestIdRef.current === requestId) setRatedShops(rows.filter((r) => r.rating != null).map(toRatedShopPin));
         })
         .catch(() => {
           if (requestIdRef.current === requestId) setRatedShops([]);

@@ -35,4 +35,20 @@ describe("toRatedShopPin", () => {
       isSnobApproved: true, tag: "Espresso bar", priceTier: "€€", rating: 5, logCount: 12,
     });
   });
+
+  it("is not meant to be called on a row with a null rating — callers must filter those out first", () => {
+    // A Snob-Approved shop with no editorial_rating and no community logs
+    // yet has rating = null (shop_ratings view). useNearbyMapData filters
+    // these out before mapping (see nearby-map-data.ts), since there's no
+    // valid tiered pin to render. This test documents that composition:
+    // filter-then-map should drop null-rating rows before they ever reach
+    // toRatedShopPin.
+    const rows = [
+      { id: "s1", name: "Approved, unrated", lat: 38.7, lng: -9.1, neighborhood: null, is_snob_approved: true, tag: null, price_tier: null, rating: null, log_count: 0 },
+      { id: "s2", name: "Rated", lat: 38.71, lng: -9.14, neighborhood: null, is_snob_approved: false, tag: null, price_tier: null, rating: 4, log_count: 3 },
+    ];
+    const pins = rows.filter((r) => r.rating != null).map(toRatedShopPin);
+    expect(pins).toHaveLength(1);
+    expect(pins[0].id).toBe("s2");
+  });
 });

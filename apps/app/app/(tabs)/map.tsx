@@ -60,16 +60,32 @@ export default function MapScreen() {
         <View style={{ position: "absolute", left: 16, right: 16, bottom: 16, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 2, padding: 12 }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
             <Text style={{ fontWeight: "700", color: colors.ink }}>{selectedRatedShop.name}</Text>
-            <Pressable onPress={() => selectRated(null)} hitSlop={8}>
-              <Text style={{ color: colors.ink3, fontWeight: "700" }}>×</Text>
+            <Pressable
+              onPress={() => selectRated(null)}
+              hitSlop={10}
+              style={{ padding: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel="Dismiss"
+            >
+              <Text style={{ color: colors.ink2, fontWeight: "700" }}>×</Text>
             </Pressable>
           </View>
-          <Text style={{ color: colors.ink3, marginTop: 4 }}>{selectedRatedShop.neighborhood} · {selectedRatedShop.tag}</Text>
+          <Text style={{ color: colors.ink2, marginTop: 4 }}>{selectedRatedShop.neighborhood} · {selectedRatedShop.tag}</Text>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-            <Pressable onPress={logRatedVisit} style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}>
+            <Pressable
+              onPress={logRatedVisit}
+              style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}
+              accessibilityRole="button"
+              accessibilityLabel={`Log a visit to ${selectedRatedShop.name}`}
+            >
               <Text style={{ color: colors.cream, fontWeight: "700" }}>Log a visit</Text>
             </Pressable>
-            <Pressable onPress={() => openDirections(selectedRatedShop.lat, selectedRatedShop.lng)} style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}>
+            <Pressable
+              onPress={() => openDirections(selectedRatedShop.lat, selectedRatedShop.lng)}
+              style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Directions to ${selectedRatedShop.name}`}
+            >
               <Text style={{ color: colors.ink }}>Directions</Text>
             </Pressable>
           </View>
@@ -81,17 +97,33 @@ export default function MapScreen() {
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
             <Text style={{ fontWeight: "700", color: colors.ink }}>{selectedNearbyShop.name}</Text>
             <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ color: colors.ink3 }}>Not yet rated</Text>
-              <Pressable onPress={() => selectNearby(null)} hitSlop={8}>
-                <Text style={{ color: colors.ink3, fontWeight: "700" }}>×</Text>
+              <Text style={{ color: colors.ink2 }}>Not yet rated</Text>
+              <Pressable
+                onPress={() => selectNearby(null)}
+                hitSlop={10}
+                style={{ padding: 10 }}
+                accessibilityRole="button"
+                accessibilityLabel="Dismiss"
+              >
+                <Text style={{ color: colors.ink2, fontWeight: "700" }}>×</Text>
               </Pressable>
             </View>
           </View>
           <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-            <Pressable onPress={logNearbyVisit} style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}>
+            <Pressable
+              onPress={logNearbyVisit}
+              style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}
+              accessibilityRole="button"
+              accessibilityLabel={`Log a visit to ${selectedNearbyShop.name}`}
+            >
               <Text style={{ color: colors.cream, fontWeight: "700" }}>Log a visit</Text>
             </Pressable>
-            <Pressable onPress={() => openDirections(selectedNearbyShop.lat, selectedNearbyShop.lng)} style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}>
+            <Pressable
+              onPress={() => openDirections(selectedNearbyShop.lat, selectedNearbyShop.lng)}
+              style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Directions to ${selectedNearbyShop.name}`}
+            >
               <Text style={{ color: colors.ink }}>Directions</Text>
             </Pressable>
           </View>

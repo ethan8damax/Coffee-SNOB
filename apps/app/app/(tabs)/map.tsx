@@ -9,8 +9,16 @@ import type { MapBounds } from "../../components/map/types";
 
 const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
+// Seed bounds so the first fetch fires on mount instead of waiting for
+// onBoundsChange (onMoveEnd/onMapIdle don't fire for the initial camera
+// settle — see map-screen bugfix notes). ±0.03° around the same Lisbon
+// center (-9.14, 38.71) hardcoded as the initial viewport in both
+// MapView.native.tsx and MapView.web.tsx — a rough zoom-13 city-level
+// span; the first real pan corrects it via onBoundsChange.
+const INITIAL_BOUNDS: MapBounds = { minLat: 38.68, minLng: -9.17, maxLat: 38.74, maxLng: -9.11 };
+
 export default function MapScreen() {
-  const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [bounds, setBounds] = useState<MapBounds | null>(INITIAL_BOUNDS);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
   const { ratedShops, nearbyShops } = useNearbyMapData(bounds, WEB_APP_URL);

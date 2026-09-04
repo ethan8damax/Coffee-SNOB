@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -253,5 +253,65 @@ describe("saveTastePicks", () => {
     expect(payload.taste_picks).toEqual(["espresso", "filter"]);
     expect(typeof payload.onboarded_at).toBe("string");
     expect(eqSpy).toHaveBeenCalledWith("id", "u1");
+  });
+});
+
+describe("getRatedShopsInBounds", () => {
+  it("queries shop_ratings within the given lat/lng box", async () => {
+    const geSpy = vi.fn(() => ({ lte: vi.fn(() => ({ gte: vi.fn(() => ({ lte: () => Promise.resolve({ data: [{ id: "s1", name: "Noi Coffee" }], error: null }) })) })) }));
+    const selectSpy = vi.fn(() => ({ gte: geSpy }));
+    const client = { from: () => ({ select: selectSpy }) } as any;
+
+    const shops = await getRatedShopsInBounds(client, { minLat: 38.7, maxLat: 38.8, minLng: -9.2, maxLng: -9.1 });
+
+    expect(shops).toEqual([{ id: "s1", name: "Noi Coffee" }]);
+    expect(selectSpy).toHaveBeenCalledWith("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count");
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = {
+      from: () => ({
+        select: () => ({
+          gte: () => ({ lte: () => ({ gte: () => ({ lte: () => Promise.resolve({ data: null, error: new Error("boom") }) }) }) }),
+        }),
+      }),
+    } as any;
+    await expect(
+      getRatedShopsInBounds(client, { minLat: 0, maxLat: 1, minLng: 0, maxLng: 1 })
+    ).rejects.toThrow("boom");
+  });
+});
+
+describe("logShopVisit", () => {
+  it("calls the log_shop_visit RPC with snake_case params", async () => {
+    const rpcSpy = vi.fn(() => Promise.resolve({ data: { id: "l1" }, error: null }));
+    const client = { rpc: rpcSpy } as any;
+
+    const log = await logShopVisit(client, {
+      externalId: "node/1",
+      name: "Corner Cafe",
+      lat: 38.7,
+      lng: -9.1,
+      rating: 5,
+      note: "Great",
+    });
+
+    expect(log).toEqual({ id: "l1" });
+    expect(rpcSpy).toHaveBeenCalledWith("log_shop_visit", {
+      p_external_id: "node/1",
+      p_name: "Corner Cafe",
+      p_lat: 38.7,
+      p_lng: -9.1,
+      p_rating: 5,
+      p_note: "Great",
+      p_visited_at: undefined,
+    });
+  });
+
+  it("throws when the RPC returns an error", async () => {
+    const client = { rpc: () => Promise.resolve({ data: null, error: new Error("must be authenticated to log a visit") }) } as any;
+    await expect(
+      logShopVisit(client, { externalId: "node/1", name: "Corner Cafe", lat: 38.7, lng: -9.1, rating: 5 })
+    ).rejects.toThrow("must be authenticated to log a visit");
   });
 });

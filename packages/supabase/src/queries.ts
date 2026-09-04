@@ -93,3 +93,35 @@ export async function saveTastePicks(client: Client, userId: string, tastePicks:
     .eq("id", userId);
   if (error) throw error;
 }
+
+export async function getRatedShopsInBounds(
+  client: Client,
+  bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }
+) {
+  const { data, error } = await client
+    .from("shop_ratings")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count")
+    .gte("lat", bounds.minLat)
+    .lte("lat", bounds.maxLat)
+    .gte("lng", bounds.minLng)
+    .lte("lng", bounds.maxLng);
+  if (error) throw error;
+  return data;
+}
+
+export async function logShopVisit(
+  client: Client,
+  params: { externalId: string; name: string; lat: number; lng: number; rating: number; note?: string; visitedAt?: string }
+) {
+  const { data, error } = await client.rpc("log_shop_visit", {
+    p_external_id: params.externalId,
+    p_name: params.name,
+    p_lat: params.lat,
+    p_lng: params.lng,
+    p_rating: params.rating,
+    p_note: params.note,
+    p_visited_at: params.visitedAt,
+  });
+  if (error) throw error;
+  return data;
+}

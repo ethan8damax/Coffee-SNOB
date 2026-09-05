@@ -11,6 +11,7 @@ Mapbox.setAccessToken(process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? "");
 export function MapView({
   ratedShops,
   nearbyShops,
+  initialCenter,
   onBoundsChange,
   selectedRatedShopId,
   selectedNearbyExternalId,
@@ -33,7 +34,7 @@ export function MapView({
   return (
     <View style={{ flex: 1 }}>
       <RNMapboxMapView style={{ flex: 1 }} styleURL="mapbox://styles/mapbox/light-v11" onMapIdle={handleMapIdle}>
-        <Camera defaultSettings={{ centerCoordinate: [-9.14, 38.71], zoomLevel: 13 }} />
+        <Camera defaultSettings={{ centerCoordinate: [initialCenter.lng, initialCenter.lat], zoomLevel: 13 }} />
 
         {nearbyShops.map((shop) => {
           const selected = selectedNearbyExternalId === shop.externalId;

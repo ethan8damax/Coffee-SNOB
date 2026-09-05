@@ -31,6 +31,7 @@ export type NearbyShopPin = {
 export type MapViewProps = {
   ratedShops: RatedShopPin[];
   nearbyShops: NearbyShopPin[];
+  initialCenter: { lat: number; lng: number };
   onBoundsChange: (bounds: MapBounds) => void;
   selectedRatedShopId: string | null;
   selectedNearbyExternalId: string | null;

@@ -16,6 +16,7 @@ import type { MapViewProps } from "./types";
 export function MapView({
   ratedShops,
   nearbyShops,
+  initialCenter,
   onBoundsChange,
   selectedRatedShopId,
   selectedNearbyExternalId,
@@ -39,7 +40,7 @@ export function MapView({
     <Map
       ref={mapRef}
       mapboxAccessToken={process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""}
-      initialViewState={{ longitude: -9.14, latitude: 38.71, zoom: 13 }}
+      initialViewState={{ longitude: initialCenter.lng, latitude: initialCenter.lat, zoom: 13 }}
       style={{ width: "100%", height: "100%" }}
       mapStyle="mapbox://styles/mapbox/light-v11"
       onMoveEnd={handleMoveEnd}

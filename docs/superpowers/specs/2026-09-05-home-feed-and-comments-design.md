@@ -38,9 +38,16 @@ doesn't support yet. Resolved:
   placeholder rendered.
 - **Likes and comments**: real, schema-backed (see §2), not decorative.
 
-### 2. New schema: `comments` and `comment_likes`
+### 2. New schema: `log_likes`, `comments`, `comment_likes`
 
 ```sql
+create table public.log_likes (
+  log_id uuid not null references public.logs(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (log_id, user_id)
+);
+
 create table public.comments (
   id uuid primary key default gen_random_uuid(),
   log_id uuid not null references public.logs(id) on delete cascade,
@@ -77,13 +84,16 @@ create table public.comment_likes (
 );
 ```
 
+- `log_likes` covers the heart-and-count on the log card itself — §1 said
+  likes are "real, schema-backed, not decorative," which the first draft of
+  this spec forgot to actually back with a table. Mirrors `list_saves`.
 - Comments attach to **log entries only** — not city guides or collections.
   That's what the mockup actually shows, and those content types don't have
   an obvious single "owner" the way a log entry does.
 - One level of replies via a self-referencing `parent_comment_id`, enforced
   by a `before insert` trigger (a reply's parent must itself be a top-level
   comment) rather than at the application layer only.
-- `comment_likes` mirrors the existing `list_saves` shape (composite PK, no
+- `comment_likes` mirrors `list_saves`/`log_likes` (composite PK, no
   surrogate id).
 - RLS: publicly readable (matches `logs`/`list_saves`/`follows`); insert/
   delete restricted to the acting user, matching every other user-generated
@@ -110,14 +120,21 @@ splitting guides/collections out into "Guides" only.
   covered by the Following tab's mixed feed and by the separate Lists tab
   (`apps/app/app/(tabs)/lists.tsx`, itself a stub and a future sub-project).
 
-### 4. Card navigation: inert for this pass
+### 4. Card navigation: inert, except the like heart and comment icon
 
-Tapping a log, guide, or collection card does not navigate anywhere. Shop
-detail, the guide reader, and collection detail are not yet built as routes
-— each is its own future sub-project (shop detail was explicitly deferred
-when this session picked Home over it). This matches how the map screen
-shipped with some taps not going anywhere yet. Only the comment icon is
-interactive on a log card.
+Tapping a log, guide, or collection card's body (photo, shop name, guide
+title, collection cover) does not navigate anywhere. Shop detail, the guide
+reader, and collection detail are not yet built as routes — each is its own
+future sub-project (shop detail was explicitly deferred when this session
+picked Home over it). This matches how the map screen shipped with some taps
+not going anywhere yet.
+
+Two affordances on a log card are real, per §1/§2: the like heart (toggles
+`log_likes`) and the comment icon (expands the thread). The bookmark/"Save"
+affordance stays inert — it has no backing table (`list_saves` saves a
+*list*, not a log entry) and "save this log somewhere" would mean building
+an add-to-collection picker, which is meaningfully more scope than a heart
+toggle. It's a plain icon for now, not a button.
 
 ### 5. Comments UI: inline, one level of replies, per-comment like
 

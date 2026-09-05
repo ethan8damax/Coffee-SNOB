@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export function MobileNav({ items, active, signInHref, signUpHref }: { items: [string, string][]; active?: string; signInHref: string; signUpHref: string }) {
+export function MobileNav({ items, active, signInHref, mapHref }: { items: [string, string][]; active?: string; signInHref: string; mapHref: string }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
 
@@ -29,7 +29,7 @@ export function MobileNav({ items, active, signInHref, signUpHref }: { items: [s
         </nav>
         <div className="nav-drawer-actions">
           <a href={signInHref} className="nav-sign" onClick={close}>Sign in</a>
-          <a href={signUpHref} className="btn btn-bu nav-cta" onClick={close}>Create account</a>
+          <a href={mapHref} className="btn btn-bu nav-cta" onClick={close}>See what's near you</a>
         </div>
       </div>
     </>

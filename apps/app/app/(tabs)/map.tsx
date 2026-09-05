@@ -1,26 +1,36 @@
-import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
+import { useUserLocation } from "../../lib/map/use-user-location";
+import { boundsAround } from "../../lib/map/bounds";
 import { openDirections } from "../../lib/directions";
 import type { MapBounds } from "../../components/map/types";
 
 const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
-// Seed bounds so the first fetch fires on mount instead of waiting for
-// onBoundsChange (onMoveEnd/onMapIdle don't fire for the initial camera
-// settle — see map-screen bugfix notes). ±0.03° around the same Lisbon
-// center (-9.14, 38.71) hardcoded as the initial viewport in both
-// MapView.native.tsx and MapView.web.tsx — a rough zoom-13 city-level
-// span; the first real pan corrects it via onBoundsChange.
-const INITIAL_BOUNDS: MapBounds = { minLat: 38.68, minLng: -9.17, maxLat: 38.74, maxLng: -9.11 };
+// Used only when the visitor's real location can't be resolved (denied,
+// unavailable, or timed out) — see useUserLocation.
+const LISBON_FALLBACK = { lat: 38.71, lng: -9.14 };
 
 export default function MapScreen() {
-  const [bounds, setBounds] = useState<MapBounds | null>(INITIAL_BOUNDS);
+  const { center: userCenter, loading: locationLoading } = useUserLocation();
+  const center = userCenter ?? LISBON_FALLBACK;
+  const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
+
+  // Seed bounds once location settles, so the first data fetch fires
+  // immediately instead of waiting for onBoundsChange (onMoveEnd/onMapIdle
+  // don't fire for the initial camera settle — see map-screen bugfix
+  // notes). Runs once: the `!bounds` check stops it from re-seeding after
+  // a real pan has already set bounds to something else.
+  useEffect(() => {
+    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.03));
+  }, [locationLoading, bounds, center]);
+
   const { ratedShops, nearbyShops } = useNearbyMapData(bounds, WEB_APP_URL);
 
   const selectedRatedShop = ratedShops.find((s) => s.id === selectedRatedShopId) ?? null;
@@ -52,11 +62,20 @@ export default function MapScreen() {
     });
   };
 
+  if (locationLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.paper }}>
+        <ActivityIndicator color={colors.oxblood} />
+      </View>
+    );
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <MapView
         ratedShops={ratedShops}
         nearbyShops={nearbyShops}
+        initialCenter={center}
         onBoundsChange={setBounds}
         selectedRatedShopId={selectedRatedShopId}
         selectedNearbyExternalId={selectedNearbyExternalId}

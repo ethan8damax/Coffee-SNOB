@@ -29,7 +29,7 @@ export function MobileNav({ items, active, signInHref, mapHref }: { items: [stri
         </nav>
         <div className="nav-drawer-actions">
           <a href={signInHref} className="nav-sign" onClick={close}>Sign in</a>
-          <a href={mapHref} className="btn btn-bu nav-cta" onClick={close}>See what's near you</a>
+          <a href={mapHref} className="btn btn-bu nav-cta" onClick={close}>See what&apos;s near you</a>
         </div>
       </div>
     </>

@@ -19,7 +19,7 @@ export function WebNav({ active }: { active?: string }) {
       </nav>
       <div className="nav-right">
         <a href={APP_SIGN_IN_URL} className="nav-sign">Sign in</a>
-        <a href={APP_MAP_URL} className="btn btn-bu nav-cta">See what's near you</a>
+        <a href={APP_MAP_URL} className="btn btn-bu nav-cta">See what&apos;s near you</a>
       </div>
       <MobileNav items={NAV_ITEMS} active={active} signInHref={APP_SIGN_IN_URL} mapHref={APP_MAP_URL} />
     </header>

@@ -130,6 +130,18 @@ Replace with:
   });
 ```
 
+**Resolved (as implemented):** `pathname === "/map"` was wrong. `usePathname()`
+is a global, app-wide hook, not scoped to the active navigator, so
+`RootNavigator` recomputes `group` on every pathname change anywhere in the
+app — including tab switches inside the nested `(tabs)` navigator. That meant
+`isPublicTabRoute` went false (and the whole `(tabs)` group got evicted to
+`(auth)`) the moment an anonymous visitor tapped any tab other than Map, or a
+signed-in user signed out while on a gated tab. Found during final review.
+Fixed by replacing this line with `isPublicTabRoute: isPublicTabPath(pathname)`,
+using a new tested helper in `resolve-route-group.ts` that treats all five tab
+routes (`/`, `/map`, `/log`, `/lists`, `/profile`) as public, letting the
+per-screen `SignInPrompt` checks (Tasks 3-6) do the actual content gating.
+
 - [ ] **Step 6: Verify the whole app typechecks and tests pass**
 
 Run: `pnpm --filter app typecheck && pnpm --filter app test`

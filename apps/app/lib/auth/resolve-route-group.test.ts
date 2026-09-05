@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveRouteGroup } from "./resolve-route-group";
+import { resolveRouteGroup, isPublicTabPath } from "./resolve-route-group";
 
 describe("resolveRouteGroup", () => {
   it("sends an unauthenticated user to (auth)", () => {
@@ -48,5 +48,20 @@ describe("resolveRouteGroup", () => {
     expect(
       resolveRouteGroup({ hasSession: true, isRecoveryRoute: false, isPublicTabRoute: true, onboarded: true })
     ).toBe("(tabs)");
+  });
+});
+
+describe("isPublicTabPath", () => {
+  it("treats every tab route as public", () => {
+    expect(isPublicTabPath("/")).toBe(true);
+    expect(isPublicTabPath("/map")).toBe(true);
+    expect(isPublicTabPath("/log")).toBe(true);
+    expect(isPublicTabPath("/lists")).toBe(true);
+    expect(isPublicTabPath("/profile")).toBe(true);
+  });
+
+  it("treats non-tab routes as not public", () => {
+    expect(isPublicTabPath("/sign-in")).toBe(false);
+    expect(isPublicTabPath("/reset-password")).toBe(false);
   });
 });

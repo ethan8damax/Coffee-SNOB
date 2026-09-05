@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { Stack, SplashScreen, usePathname } from "expo-router";
 import { useFonts } from "expo-font";
 import { AuthProvider, useAuth } from "@/context/auth";
-import { resolveRouteGroup } from "@/lib/auth/resolve-route-group";
+import { resolveRouteGroup, isPublicTabPath } from "@/lib/auth/resolve-route-group";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,7 +20,7 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const group = resolveRouteGroup({
     hasSession: !!session,
     isRecoveryRoute: pathname === "/reset-password",
-    isPublicTabRoute: pathname === "/map",
+    isPublicTabRoute: isPublicTabPath(pathname),
     onboarded: !!profile?.onboarded_at,
   });
 

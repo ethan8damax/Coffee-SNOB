@@ -17,16 +17,21 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
 
   if (!ready) return null;
 
+  const isRecoveryRoute = pathname === "/reset-password";
   const group = resolveRouteGroup({
     hasSession: !!session,
-    isRecoveryRoute: pathname === "/reset-password",
+    isRecoveryRoute,
     isPublicTabRoute: isPublicTabPath(pathname),
     onboarded: !!profile?.onboarded_at,
   });
+  // (auth) must stay reachable via router.push from a public tab even though
+  // `group` (driven by the current pathname) says we're in "(tabs)" right now —
+  // otherwise Stack.Protected never registers the sign-in route to navigate to.
+  const authReachable = !session && !isRecoveryRoute;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={group === "(auth)"}>
+      <Stack.Protected guard={authReachable}>
         <Stack.Screen name="(auth)" />
       </Stack.Protected>
       <Stack.Protected guard={group === "reset-password"}>

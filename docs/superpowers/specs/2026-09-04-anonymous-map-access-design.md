@@ -48,6 +48,21 @@ A logged-out visitor on `/map` now resolves to `(tabs)` instead of `(auth)`;
 every other path is unaffected. Onboarding is correctly bypassed for
 anonymous visitors (it was already gated behind `hasSession` first).
 
+**Resolved (as implemented):** this section's carve-out was itself wrong.
+`usePathname()` is a global, app-wide hook, not scoped to whichever
+navigator has focus — so `RootNavigator` re-renders and recomputes `group`
+on every pathname change anywhere in the app, including tab switches inside
+the nested `(tabs)` navigator. A carve-out limited to `pathname === "/map"`
+meant that the instant an anonymous visitor tapped any other tab (or a
+signed-in user signed out while on a gated tab), `isPublicTabRoute` flipped
+false and the entire `(tabs)` group was evicted, redirecting into `(auth)`
+instead of showing that tab's `SignInPrompt`. Found during final review;
+fixed by broadening the check to every tab path via a new `isPublicTabPath`
+helper (`apps/app/lib/auth/resolve-route-group.ts`), so the root gate just
+decides whether an anonymous visitor is let into the `(tabs)` experience at
+all, and the already-correct per-screen `SignInPrompt` checks do the actual
+content gating.
+
 Extend `apps/app/lib/auth/resolve-route-group.test.ts` with cases for the
 new parameter: public route + no session → `(tabs)`; public route + session
 → unaffected (existing behavior); non-public route + no session → `(auth)`

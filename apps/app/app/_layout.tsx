@@ -20,6 +20,7 @@ function RootNavigator({ fontsLoaded }: { fontsLoaded: boolean }) {
   const group = resolveRouteGroup({
     hasSession: !!session,
     isRecoveryRoute: pathname === "/reset-password",
+    isPublicTabRoute: pathname === "/map",
     onboarded: !!profile?.onboarded_at,
   });
 

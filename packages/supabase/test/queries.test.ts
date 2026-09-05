@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -395,5 +395,97 @@ describe("setLogLike", () => {
   it("throws when the insert errors", async () => {
     const client = { from: () => ({ insert: () => Promise.resolve({ error: new Error("boom") }) }) } as any;
     await expect(setLogLike(client, "l1", "u1", true)).rejects.toThrow("boom");
+  });
+});
+
+describe("getComments", () => {
+  it("queries comments for a log ordered oldest first", async () => {
+    const orderSpy = vi.fn(() => Promise.resolve({ data: [{ id: "c1", parent_comment_id: null, user_id: "u1", body: "hi", created_at: "t1" }], error: null }));
+    const eqSpy = vi.fn(() => ({ order: orderSpy }));
+    const selectSpy = vi.fn(() => ({ eq: eqSpy }));
+    const client = { from: () => ({ select: selectSpy }) } as any;
+
+    const comments = await getComments(client, "l1");
+
+    expect(comments).toEqual([{ id: "c1", parent_comment_id: null, user_id: "u1", body: "hi", created_at: "t1" }]);
+    expect(eqSpy).toHaveBeenCalledWith("log_id", "l1");
+    expect(orderSpy).toHaveBeenCalledWith("created_at", { ascending: true });
+  });
+});
+
+describe("getCommentLikes", () => {
+  it("returns an empty array without querying when given no comment ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getCommentLikes(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries comment_likes for the given comment ids", async () => {
+    const inSpy = vi.fn(() => Promise.resolve({ data: [{ comment_id: "c1", user_id: "u1" }], error: null }));
+    const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
+    expect(await getCommentLikes(client, ["c1"])).toEqual([{ comment_id: "c1", user_id: "u1" }]);
+  });
+});
+
+describe("setCommentLike", () => {
+  it("inserts a row when liked is true", async () => {
+    const insertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ insert: insertSpy }) } as any;
+    await setCommentLike(client, "c1", "u1", true);
+    expect(insertSpy).toHaveBeenCalledWith({ comment_id: "c1", user_id: "u1" });
+  });
+
+  it("deletes the row when liked is false", async () => {
+    const eqSpy2 = vi.fn(() => Promise.resolve({ error: null }));
+    const eqSpy1 = vi.fn(() => ({ eq: eqSpy2 }));
+    const client = { from: () => ({ delete: () => ({ eq: eqSpy1 }) }) } as any;
+    await setCommentLike(client, "c1", "u1", false);
+    expect(eqSpy1).toHaveBeenCalledWith("comment_id", "c1");
+    expect(eqSpy2).toHaveBeenCalledWith("user_id", "u1");
+  });
+});
+
+describe("postComment", () => {
+  it("inserts a comment and returns the created row", async () => {
+    const singleSpy = vi.fn(() => Promise.resolve({ data: { id: "c1", log_id: "l1", user_id: "u1", parent_comment_id: null, body: "hi", created_at: "t1" }, error: null }));
+    const selectSpy = vi.fn(() => ({ single: singleSpy }));
+    const insertSpy = vi.fn(() => ({ select: selectSpy }));
+    const client = { from: () => ({ insert: insertSpy }) } as any;
+
+    const comment = await postComment(client, { logId: "l1", userId: "u1", body: "hi" });
+
+    expect(comment).toEqual({ id: "c1", log_id: "l1", user_id: "u1", parent_comment_id: null, body: "hi", created_at: "t1" });
+    expect(insertSpy).toHaveBeenCalledWith({ log_id: "l1", user_id: "u1", body: "hi", parent_comment_id: null });
+  });
+
+  it("passes parentCommentId through when replying", async () => {
+    const singleSpy = vi.fn(() => Promise.resolve({ data: {}, error: null }));
+    const insertSpy = vi.fn(() => ({ select: () => ({ single: singleSpy }) }));
+    const client = { from: () => ({ insert: insertSpy }) } as any;
+
+    await postComment(client, { logId: "l1", userId: "u1", body: "reply", parentCommentId: "c1" });
+
+    expect(insertSpy).toHaveBeenCalledWith({ log_id: "l1", user_id: "u1", body: "reply", parent_comment_id: "c1" });
+  });
+
+  it("throws when the insert errors", async () => {
+    const client = { from: () => ({ insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("cannot reply to a reply") }) }) }) }) } as any;
+    await expect(postComment(client, { logId: "l1", userId: "u1", body: "x", parentCommentId: "c2" })).rejects.toThrow("cannot reply to a reply");
+  });
+});
+
+describe("getCommentCountsByLog", () => {
+  it("returns an empty array without querying when given no log ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getCommentCountsByLog(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries comment log_ids for the given log ids", async () => {
+    const inSpy = vi.fn(() => Promise.resolve({ data: [{ log_id: "l1" }, { log_id: "l1" }], error: null }));
+    const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
+    expect(await getCommentCountsByLog(client, ["l1"])).toEqual([{ log_id: "l1" }, { log_id: "l1" }]);
   });
 });

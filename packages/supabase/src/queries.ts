@@ -159,3 +159,50 @@ export async function setLogLike(client: Client, logId: string, userId: string, 
     if (error) throw error;
   }
 }
+
+export async function getComments(client: Client, logId: string) {
+  const { data, error } = await client
+    .from("comments")
+    .select("id, parent_comment_id, user_id, body, created_at")
+    .eq("log_id", logId)
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data;
+}
+
+export async function getCommentLikes(client: Client, commentIds: string[]) {
+  if (commentIds.length === 0) return [];
+  const { data, error } = await client.from("comment_likes").select("comment_id, user_id").in("comment_id", commentIds);
+  if (error) throw error;
+  return data;
+}
+
+export async function setCommentLike(client: Client, commentId: string, userId: string, liked: boolean) {
+  if (liked) {
+    const { error } = await client.from("comment_likes").insert({ comment_id: commentId, user_id: userId });
+    if (error) throw error;
+  } else {
+    const { error } = await client.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", userId);
+    if (error) throw error;
+  }
+}
+
+export async function postComment(
+  client: Client,
+  params: { logId: string; userId: string; body: string; parentCommentId?: string }
+) {
+  const { data, error } = await client
+    .from("comments")
+    .insert({ log_id: params.logId, user_id: params.userId, body: params.body, parent_comment_id: params.parentCommentId ?? null })
+    .select("id, log_id, parent_comment_id, user_id, body, created_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getCommentCountsByLog(client: Client, logIds: string[]) {
+  if (logIds.length === 0) return [];
+  const { data, error } = await client.from("comments").select("log_id").in("log_id", logIds);
+  if (error) throw error;
+  return data;
+}

@@ -125,3 +125,37 @@ export async function logShopVisit(
   if (error) throw error;
   return data;
 }
+
+export async function getProfilesByIds(client: Client, ids: string[]) {
+  if (ids.length === 0) return [];
+  const { data, error } = await client
+    .from("profiles")
+    .select("id, username, display_name, avatar_url")
+    .in("id", ids);
+  if (error) throw error;
+  return data;
+}
+
+export async function getCitiesByIds(client: Client, ids: string[]) {
+  if (ids.length === 0) return [];
+  const { data, error } = await client.from("cities").select("id, name").in("id", ids);
+  if (error) throw error;
+  return data;
+}
+
+export async function getLogLikes(client: Client, logIds: string[]) {
+  if (logIds.length === 0) return [];
+  const { data, error } = await client.from("log_likes").select("log_id, user_id").in("log_id", logIds);
+  if (error) throw error;
+  return data;
+}
+
+export async function setLogLike(client: Client, logId: string, userId: string, liked: boolean) {
+  if (liked) {
+    const { error } = await client.from("log_likes").insert({ log_id: logId, user_id: userId });
+    if (error) throw error;
+  } else {
+    const { error } = await client.from("log_likes").delete().eq("log_id", logId).eq("user_id", userId);
+    if (error) throw error;
+  }
+}

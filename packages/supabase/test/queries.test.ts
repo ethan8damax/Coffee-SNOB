@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -313,5 +313,87 @@ describe("logShopVisit", () => {
     await expect(
       logShopVisit(client, { externalId: "node/1", name: "Corner Cafe", lat: 38.7, lng: -9.1, rating: 5 })
     ).rejects.toThrow("must be authenticated to log a visit");
+  });
+});
+
+describe("getProfilesByIds", () => {
+  it("returns an empty array without querying when given no ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getProfilesByIds(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries profiles by id", async () => {
+    const inSpy = vi.fn(() => Promise.resolve({ data: [{ id: "u1", username: "mara", display_name: "Mara K.", avatar_url: null }], error: null }));
+    const selectSpy = vi.fn(() => ({ in: inSpy }));
+    const client = { from: () => ({ select: selectSpy }) } as any;
+
+    const profiles = await getProfilesByIds(client, ["u1"]);
+
+    expect(profiles).toEqual([{ id: "u1", username: "mara", display_name: "Mara K.", avatar_url: null }]);
+    expect(selectSpy).toHaveBeenCalledWith("id, username, display_name, avatar_url");
+    expect(inSpy).toHaveBeenCalledWith("id", ["u1"]);
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = { from: () => ({ select: () => ({ in: () => Promise.resolve({ data: null, error: new Error("boom") }) }) }) } as any;
+    await expect(getProfilesByIds(client, ["u1"])).rejects.toThrow("boom");
+  });
+});
+
+describe("getCitiesByIds", () => {
+  it("returns an empty array without querying when given no ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getCitiesByIds(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries cities by id", async () => {
+    const inSpy = vi.fn(() => Promise.resolve({ data: [{ id: "c1", name: "Berlin" }], error: null }));
+    const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
+    expect(await getCitiesByIds(client, ["c1"])).toEqual([{ id: "c1", name: "Berlin" }]);
+    expect(inSpy).toHaveBeenCalledWith("id", ["c1"]);
+  });
+});
+
+describe("getLogLikes", () => {
+  it("returns an empty array without querying when given no log ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getLogLikes(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries log_likes for the given log ids", async () => {
+    const inSpy = vi.fn(() => Promise.resolve({ data: [{ log_id: "l1", user_id: "u1" }], error: null }));
+    const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
+    expect(await getLogLikes(client, ["l1"])).toEqual([{ log_id: "l1", user_id: "u1" }]);
+    expect(inSpy).toHaveBeenCalledWith("log_id", ["l1"]);
+  });
+});
+
+describe("setLogLike", () => {
+  it("inserts a row when liked is true", async () => {
+    const insertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ insert: insertSpy }) } as any;
+    await setLogLike(client, "l1", "u1", true);
+    expect(insertSpy).toHaveBeenCalledWith({ log_id: "l1", user_id: "u1" });
+  });
+
+  it("deletes the row when liked is false", async () => {
+    const eqSpy2 = vi.fn(() => Promise.resolve({ error: null }));
+    const eqSpy1 = vi.fn(() => ({ eq: eqSpy2 }));
+    const deleteSpy = vi.fn(() => ({ eq: eqSpy1 }));
+    const client = { from: () => ({ delete: deleteSpy }) } as any;
+    await setLogLike(client, "l1", "u1", false);
+    expect(eqSpy1).toHaveBeenCalledWith("log_id", "l1");
+    expect(eqSpy2).toHaveBeenCalledWith("user_id", "u1");
+  });
+
+  it("throws when the insert errors", async () => {
+    const client = { from: () => ({ insert: () => Promise.resolve({ error: new Error("boom") }) }) } as any;
+    await expect(setLogLike(client, "l1", "u1", true)).rejects.toThrow("boom");
   });
 });

@@ -29,7 +29,13 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-font",
-      "@rnmapbox/maps"
+      "@rnmapbox/maps",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Coffee Snob uses your location to show cafés nearby."
+        }
+      ]
     ]
   }
 }

@@ -11,6 +11,7 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
   const [liked, setLiked] = useState(item.likedByMe);
   const [likeCount, setLikeCount] = useState(item.likeCount);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState(item.commentCount);
 
   async function toggleLike() {
     const next = !liked;
@@ -47,12 +48,12 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
         </Pressable>
         <Pressable onPress={() => setCommentsOpen((o) => !o)} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
           <Text style={{ color: commentsOpen ? colors.ink : colors.ink2 }}>💬</Text>
-          <Label style={{ color: colors.ink2 }}>{String(item.commentCount)}</Label>
+          <Label style={{ color: colors.ink2 }}>{String(commentCount)}</Label>
         </Pressable>
         <Text style={{ color: colors.ink3 }}>🔖 Save</Text>
       </View>
 
-      {commentsOpen && <CommentThread logId={item.id} userId={userId} />}
+      {commentsOpen && <CommentThread logId={item.id} userId={userId} onCountChange={setCommentCount} />}
     </View>
   );
 }

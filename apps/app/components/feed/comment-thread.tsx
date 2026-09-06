@@ -5,14 +5,16 @@ import { getComments, getCommentLikes, getProfilesByIds, postComment, setComment
 import { Avatar, BodySm, Label } from "../primitives";
 import { buildCommentTree, type CommentWithMeta } from "../../lib/feed/comment-tree";
 
-export function CommentThread({ logId, userId }: { logId: string; userId: string }) {
+export function CommentThread({ logId, userId, onCountChange }: { logId: string; userId: string; onCountChange?: (count: number) => void }) {
   const [comments, setComments] = useState<CommentWithMeta[] | null>(null);
   const [draft, setDraft] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    load(() => cancelled);
+    load(() => cancelled).catch(() => {
+      if (!cancelled) setComments([]);
+    });
     return () => {
       cancelled = true;
     };
@@ -29,18 +31,18 @@ export function CommentThread({ logId, userId }: { logId: string; userId: string
     ]);
     const nameById = new Map(profiles.map((p) => [p.id, p.display_name || p.username]));
     if (isCancelled()) return;
-    setComments(
-      rows.map((r) => ({
-        id: r.id,
-        parentCommentId: r.parent_comment_id,
-        userId: r.user_id,
-        body: r.body,
-        createdAt: r.created_at,
-        authorName: nameById.get(r.user_id) ?? "Someone",
-        likeCount: likes.filter((l) => l.comment_id === r.id).length,
-        likedByMe: likes.some((l) => l.comment_id === r.id && l.user_id === userId),
-      }))
-    );
+    const mapped = rows.map((r) => ({
+      id: r.id,
+      parentCommentId: r.parent_comment_id,
+      userId: r.user_id,
+      body: r.body,
+      createdAt: r.created_at,
+      authorName: nameById.get(r.user_id) ?? "Someone",
+      likeCount: likes.filter((l) => l.comment_id === r.id).length,
+      likedByMe: likes.some((l) => l.comment_id === r.id && l.user_id === userId),
+    }));
+    setComments(mapped);
+    onCountChange?.(mapped.length);
   }
 
   async function toggleLike(comment: CommentWithMeta) {
@@ -62,13 +64,21 @@ export function CommentThread({ logId, userId }: { logId: string; userId: string
     const body = draft.trim();
     if (!body) return;
     const { supabase } = require("../../lib/supabase");
-    const row = await postComment(supabase, { logId, userId, body, parentCommentId: parentCommentId ?? undefined });
-    setComments((prev) => [
-      ...(prev ?? []),
-      { id: row.id, parentCommentId: row.parent_comment_id, userId: row.user_id, body: row.body, createdAt: row.created_at, authorName: "You", likeCount: 0, likedByMe: false },
-    ]);
-    setDraft("");
-    setReplyingTo(null);
+    try {
+      const row = await postComment(supabase, { logId, userId, body, parentCommentId: parentCommentId ?? undefined });
+      const newComment = { id: row.id, parentCommentId: row.parent_comment_id, userId: row.user_id, body: row.body, createdAt: row.created_at, authorName: "You", likeCount: 0, likedByMe: false };
+      setComments((prev) => {
+        const next = [...(prev ?? []), newComment];
+        onCountChange?.(next.length);
+        return next;
+      });
+      setDraft("");
+      setReplyingTo(null);
+    } catch {
+      // Leave draft/replyingTo as-is so the user can retry — no logging
+      // convention exists elsewhere in this app yet, matching the silent-
+      // fail pattern already used by the feed hooks.
+    }
   }
 
   if (comments === null) {

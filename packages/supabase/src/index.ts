@@ -1,3 +1,28 @@
 export { createSupabaseClient } from "./client";
-export { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit } from "./queries";
+export {
+  getCities,
+  getCitiesWithShopCounts,
+  getCityGuide,
+  getProfile,
+  isUsernameAvailable,
+  saveIdentity,
+  saveTastePicks,
+  getRatedShopsInBounds,
+  logShopVisit,
+  getProfilesByIds,
+  getCitiesByIds,
+  getLogLikes,
+  setLogLike,
+  getComments,
+  getCommentLikes,
+  setCommentLike,
+  postComment,
+  getCommentCountsByLog,
+  getFollowedUserIds,
+  getFollowingFeedLogs,
+  getFollowingFeedLists,
+  getShopsInBounds,
+  getLogsForShops,
+  getLiveCityGuides,
+} from "./queries";
 export type { Database } from "./types";

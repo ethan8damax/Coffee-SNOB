@@ -20,7 +20,7 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
       const { supabase } = require("../../lib/supabase");
       await setLogLike(supabase, item.id, userId, next);
     } catch {
-      setLiked((l) => !l);
+      setLiked(!next);
       setLikeCount((c) => c + (next ? -1 : 1));
     }
   }

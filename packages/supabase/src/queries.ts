@@ -206,3 +206,82 @@ export async function getCommentCountsByLog(client: Client, logIds: string[]) {
   if (error) throw error;
   return data;
 }
+
+export async function getFollowedUserIds(client: Client, userId: string) {
+  const { data, error } = await client.from("follows").select("followee_id").eq("follower_id", userId);
+  if (error) throw error;
+  return data.map((row) => row.followee_id);
+}
+
+export async function getFollowingFeedLogs(client: Client, followeeIds: string[]) {
+  if (followeeIds.length === 0) return [];
+  const { data, error } = await client
+    .from("logs")
+    .select("id, user_id, shop_id, rating, note, visited_at, created_at, shops(name, neighborhood)")
+    .in("user_id", followeeIds)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
+}
+
+export async function getFollowingFeedLists(client: Client, followeeIds: string[]) {
+  const orFilter =
+    followeeIds.length > 0 ? `curator_id.is.null,curator_id.in.(${followeeIds.join(",")})` : "curator_id.is.null";
+  const { data, error } = await client
+    .from("lists")
+    .select("id, slug, type, title, description, curator_id, city_id, cover_photo_alt, created_at, list_items(count)")
+    .or(orFilter)
+    .order("created_at", { ascending: false })
+    .limit(10);
+  if (error) throw error;
+  return data;
+}
+
+export async function getShopsInBounds(
+  client: Client,
+  bounds: { minLat: number; maxLat: number; minLng: number; maxLng: number }
+) {
+  const { data, error } = await client
+    .from("shops")
+    .select("id, name, neighborhood, lat, lng")
+    .gte("lat", bounds.minLat)
+    .lte("lat", bounds.maxLat)
+    .gte("lng", bounds.minLng)
+    .lte("lng", bounds.maxLng);
+  if (error) throw error;
+  return data;
+}
+
+export async function getLogsForShops(client: Client, shopIds: string[]) {
+  if (shopIds.length === 0) return [];
+  const { data, error } = await client
+    .from("logs")
+    .select("id, user_id, shop_id, rating, note, visited_at, created_at")
+    .in("shop_id", shopIds)
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  return data;
+}
+
+export async function getLiveCityGuides(client: Client) {
+  const { data: liveCities, error: citiesError } = await client.from("cities").select("id, name").eq("status", "live");
+  if (citiesError) throw citiesError;
+  if (liveCities.length === 0) return [];
+
+  const { data, error } = await client
+    .from("lists")
+    .select("id, slug, title, description, cover_photo_alt, created_at, city_id, list_items(count)")
+    .eq("type", "city_guide")
+    .in(
+      "city_id",
+      liveCities.map((c) => c.id)
+    )
+    .order("created_at", { ascending: false })
+    .limit(20);
+  if (error) throw error;
+
+  const cityNameById = new Map(liveCities.map((c) => [c.id, c.name]));
+  return data.map((guide) => ({ ...guide, cityName: cityNameById.get(guide.city_id as string) ?? null }));
+}

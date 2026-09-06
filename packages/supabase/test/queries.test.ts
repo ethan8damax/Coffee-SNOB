@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -487,5 +487,123 @@ describe("getCommentCountsByLog", () => {
     const inSpy = vi.fn(() => Promise.resolve({ data: [{ log_id: "l1" }, { log_id: "l1" }], error: null }));
     const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
     expect(await getCommentCountsByLog(client, ["l1"])).toEqual([{ log_id: "l1" }, { log_id: "l1" }]);
+  });
+});
+
+describe("getFollowedUserIds", () => {
+  it("returns the followee ids for a follower", async () => {
+    const eqSpy = vi.fn(() => Promise.resolve({ data: [{ followee_id: "u2" }, { followee_id: "u3" }], error: null }));
+    const client = { from: () => ({ select: () => ({ eq: eqSpy }) }) } as any;
+    expect(await getFollowedUserIds(client, "u1")).toEqual(["u2", "u3"]);
+    expect(eqSpy).toHaveBeenCalledWith("follower_id", "u1");
+  });
+});
+
+describe("getFollowingFeedLogs", () => {
+  it("returns an empty array without querying when given no followee ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getFollowingFeedLogs(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries logs from the given users, newest first, with shop details", async () => {
+    const orderSpy = vi.fn(() => ({ limit: () => Promise.resolve({ data: [{ id: "l1", shops: { name: "Noi Coffee", neighborhood: "Príncipe Real" } }], error: null }) }));
+    const inSpy = vi.fn(() => ({ order: orderSpy }));
+    const selectSpy = vi.fn(() => ({ in: inSpy }));
+    const client = { from: () => ({ select: selectSpy }) } as any;
+
+    const logs = await getFollowingFeedLogs(client, ["u2"]);
+
+    expect(logs).toEqual([{ id: "l1", shops: { name: "Noi Coffee", neighborhood: "Príncipe Real" } }]);
+    expect(inSpy).toHaveBeenCalledWith("user_id", ["u2"]);
+    expect(orderSpy).toHaveBeenCalledWith("created_at", { ascending: false });
+  });
+});
+
+describe("getFollowingFeedLists", () => {
+  it("includes editorial lists (curator_id is null) even with no followees", async () => {
+    const orSpy = vi.fn(() => ({ order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }));
+    const client = { from: () => ({ select: () => ({ or: orSpy }) }) } as any;
+
+    await getFollowingFeedLists(client, []);
+
+    expect(orSpy).toHaveBeenCalledWith("curator_id.is.null");
+  });
+
+  it("includes followees' lists when there are any", async () => {
+    const orSpy = vi.fn(() => ({ order: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }));
+    const client = { from: () => ({ select: () => ({ or: orSpy }) }) } as any;
+
+    await getFollowingFeedLists(client, ["u2", "u3"]);
+
+    expect(orSpy).toHaveBeenCalledWith("curator_id.is.null,curator_id.in.(u2,u3)");
+  });
+});
+
+describe("getShopsInBounds", () => {
+  it("queries shops within the given lat/lng box", async () => {
+    const geSpy = vi.fn(() => ({ lte: vi.fn(() => ({ gte: vi.fn(() => ({ lte: () => Promise.resolve({ data: [{ id: "s1", name: "Noi Coffee" }], error: null }) })) })) }));
+    const client = { from: () => ({ select: () => ({ gte: geSpy }) }) } as any;
+
+    const shops = await getShopsInBounds(client, { minLat: 38.7, maxLat: 38.8, minLng: -9.2, maxLng: -9.1 });
+
+    expect(shops).toEqual([{ id: "s1", name: "Noi Coffee" }]);
+  });
+});
+
+describe("getLogsForShops", () => {
+  it("returns an empty array without querying when given no shop ids", async () => {
+    const fromSpy = vi.fn();
+    const client = { from: fromSpy } as any;
+    expect(await getLogsForShops(client, [])).toEqual([]);
+    expect(fromSpy).not.toHaveBeenCalled();
+  });
+
+  it("queries logs for the given shops, newest first", async () => {
+    const orderSpy = vi.fn(() => ({ limit: () => Promise.resolve({ data: [{ id: "l1", shop_id: "s1" }], error: null }) }));
+    const inSpy = vi.fn(() => ({ order: orderSpy }));
+    const client = { from: () => ({ select: () => ({ in: inSpy }) }) } as any;
+
+    expect(await getLogsForShops(client, ["s1"])).toEqual([{ id: "l1", shop_id: "s1" }]);
+    expect(inSpy).toHaveBeenCalledWith("shop_id", ["s1"]);
+  });
+});
+
+describe("getLiveCityGuides", () => {
+  it("returns an empty array without querying lists when no cities are live", async () => {
+    const client = {
+      from: (table: string) => {
+        if (table === "cities") return { select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }) };
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as any;
+    expect(await getLiveCityGuides(client)).toEqual([]);
+  });
+
+  it("queries city_guide lists in live cities and attaches the city name", async () => {
+    const client = {
+      from: (table: string) => {
+        if (table === "cities") {
+          return { select: () => ({ eq: () => Promise.resolve({ data: [{ id: "c1", name: "Berlin" }], error: null }) }) };
+        }
+        if (table === "lists") {
+          return {
+            select: () => ({
+              eq: () => ({
+                in: () => ({
+                  order: () => ({
+                    limit: () => Promise.resolve({ data: [{ id: "g1", title: "Six cups", city_id: "c1" }], error: null }),
+                  }),
+                }),
+              }),
+            }),
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as any;
+
+    expect(await getLiveCityGuides(client)).toEqual([{ id: "g1", title: "Six cups", city_id: "c1", cityName: "Berlin" }]);
   });
 });

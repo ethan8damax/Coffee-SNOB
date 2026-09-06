@@ -53,7 +53,7 @@ export function CommentThread({ logId, userId }: { logId: string; userId: string
       await setCommentLike(supabase, comment.id, userId, nextLiked);
     } catch {
       setComments((prev) =>
-        (prev ?? []).map((c) => (c.id === comment.id ? { ...c, likedByMe: comment.likedByMe, likeCount: comment.likeCount } : c))
+        (prev ?? []).map((c) => (c.id === comment.id ? { ...c, likedByMe: !nextLiked, likeCount: c.likeCount + (nextLiked ? -1 : 1) } : c))
       );
     }
   }

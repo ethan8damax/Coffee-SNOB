@@ -24,6 +24,11 @@ const EMPTY_MESSAGE: Record<Tab, string> = {
   Guides: "No live guides yet.",
 };
 
+// Used only when the visitor's real location can't be resolved (denied,
+// unavailable, or timed out) — see useUserLocation. Mirrors the same
+// fallback in apps/app/app/(tabs)/map.tsx.
+const LISBON_FALLBACK = { lat: 38.71, lng: -9.14 };
+
 function renderItem(item: FeedItem, userId: string) {
   if (item.type === "log") return <LogCard item={item} userId={userId} />;
   if (item.type === "guide") return <GuideCard item={item} />;
@@ -33,12 +38,13 @@ function renderItem(item: FeedItem, userId: string) {
 export default function HomeScreen() {
   const { session } = useAuth();
   const [tab, setTab] = useState<Tab>("Following");
-  const { center, loading: locationLoading } = useUserLocation();
+  const { center: userCenter, loading: locationLoading } = useUserLocation();
+  const center = userCenter ?? LISBON_FALLBACK;
   const [bounds, setBounds] = useState<ReturnType<typeof boundsAround> | null>(null);
 
   useEffect(() => {
-    if (!locationLoading && center && !bounds) setBounds(boundsAround(center, 0.03));
-  }, [locationLoading, center, bounds]);
+    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.03));
+  }, [locationLoading, bounds, center]);
 
   const following = useFollowingFeed(session?.user.id ?? null);
   const nearby = useNearbyFeed(bounds, session?.user.id ?? null);

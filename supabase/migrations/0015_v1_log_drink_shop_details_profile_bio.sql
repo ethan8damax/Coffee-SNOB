@@ -17,7 +17,9 @@
 
 alter table public.logs
   add column drink text,
-  add constraint logs_drink_length check (char_length(drink) <= 40);
+  add constraint logs_drink_length check (char_length(drink) <= 40),
+  -- The app caps notes at 500; enforce it at the table too (direct inserts bypass the RPC).
+  add constraint logs_note_length check (char_length(note) <= 500);
 
 alter table public.profiles
   add column bio text,
@@ -93,8 +95,9 @@ begin
     left(nullif(btrim(p_phone), ''), 50),
     left(nullif(btrim(p_hours), ''), 500)
   )
+  -- The shop's name is NOT updated on conflict: any signed-in user can call this RPC, so
+  -- letting a repeat log overwrite the name would let anyone rename an existing shop.
   on conflict (external_id) where external_id is not null do update set
-    name    = excluded.name,
     address = coalesce(shops.address, excluded.address),
     website = coalesce(shops.website, excluded.website),
     phone   = coalesce(shops.phone,   excluded.phone),
@@ -106,7 +109,7 @@ begin
     auth.uid(),
     v_shop_id,
     p_rating,
-    p_note,
+    left(p_note, 500),
     left(nullif(btrim(p_drink), ''), 40),
     coalesce(p_visited_at, current_date)
   )

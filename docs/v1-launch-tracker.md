@@ -101,6 +101,7 @@ it short — details live in the spec.
 - Overpass (nearby cafés) takes ~12s cold, then cached 10 min; occasional 502 on larger areas. Consider a mirror/retry or bigger cache before launch.
 - Map fallback area is now Atlanta (was Lisbon). The Home feed's Nearby tab still uses the Lisbon fallback.
 - Vercel: the app project was CLI-only until 9/21 (no Git link); now connected. Production still has an unused `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` env var to remove.
+- **Basemap first paint is slow on a cold load** (~15–30s before streets appear; instant on repeat visits) in both dev and production. Pins/list work meanwhile. Investigate before launch: start the style fetch at module load, preconnect to tiles.openfreemap.org, check whether the raster `ne2_shaded` source or the worker start is the bottleneck, or consider self-hosting tiles.
 - Desktop (≥1024px) map layout was verified in a scaled iframe because the test browser window can't be resized past phone width.
 - `log_shop_visit` previously let repeat logs rename a shop; fixed in 0015.
 
@@ -126,3 +127,4 @@ notifications/mentions, Parish-style HQ patterns.
 - 2026-09-21 — M1 done: Leaflet + OpenFreeMap map (recolored to the design palette), design pins, locate-me; Mapbox removed. Parallel agents built the data layer (migration 0015 + queries), shop page + log screen, and profile UI; all merged to local `main`, 200 tests green. Navbar spacing fixed. Migration not applied; nothing pushed since M0.
 - 2026-09-21 — Migration 0015 applied to production and smoke-tested (rolled back). Mockup is source of truth for the shop page's Average. `main` pushed to GitHub (M0, M1, data layer, shop/log/profile UI).
 - 2026-09-21 — M2 done and merged: map chrome (phone sheet/chips/top bar, desktop panel), preview cards, states. Verified shop page + public profile with a temporary test shop (removed; DB back to 0 shops/0 logs). Fixed follow-button height and clipped names. Vercel app project connected to GitHub.
+- 2026-09-21 — Pushed M2; the newly Git-connected Vercel app project auto-deployed it to production (Ready in ~1 min). Live `/map` verified: real Kennesaw cafés, list, tab bar; basemap draws but slowly on first load.

@@ -1,12 +1,11 @@
-import { View, Text } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { ProfileView } from "@/components/profile/profile-view";
+import { useAuth } from "@/context/auth";
 
-// Placeholder — the real profile page is built in phase U1.
+// Public: signed-out visitors can view. If the username is the signed-in
+// user's own, ProfileView detects that via viewerId and renders it as own.
 export default function UserProfileScreen() {
   const { username } = useLocalSearchParams<{ username: string }>();
-  return (
-    <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
-      <Text>@{username} (not yet built)</Text>
-    </View>
-  );
+  const { session } = useAuth();
+  return <ProfileView username={String(username ?? "")} viewerId={session?.user.id ?? null} />;
 }

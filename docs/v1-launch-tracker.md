@@ -8,7 +8,7 @@ Design source: Claude Design project "Coffee Snob" (`019df027-97af-74d2-a376-2a8
 line to the Status log at the bottom, and move anything new to "Parked". Keep
 it short — details live in the spec.
 
-**Now:** M0 + M1 done; M3, M4, U1 UI and the data layer are built and merged to local `main` (not pushed) but **need the migration applied + a design-parity pass**. Next: M2 (map chrome/list/preview), apply migration 0015, visual QA of shop/log/profile against the design.
+**Now:** M0 + M1 done and pushed; migration 0015 applied to production (9/21); M3/M4/U1 built and live in `main` but still need a real-data check and a design-parity pass. Next: M2 (map chrome/list/preview/desktop panel), then verify shop/log/profile against the design.
 
 ## Setup (done)
 
@@ -59,7 +59,7 @@ it short — details live in the spec.
 - [~] Desktop two-column layout
 
 ### M4 · Log flow (Fri 9/25)
-- [~] Migration `0015` written (logs.drink, shop detail columns, profiles.bio, new `log_shop_visit`) — **not yet applied to production**. Rated-pin threshold was already 1 log.
+- [x] Migration `0015` applied to production 9/21 (logs.drink, shop detail columns, profiles.bio, new `log_shop_visit`); verified grants and a rolled-back smoke test. Rated-pin threshold was already 1 log.
 - [~] Log screen: verdict chips, drink, note, Publish
 - [~] Entry points wired (map preview, shop page, nav)
 - [~] Works for rated shops and OSM shops (`log_shop_visit`); pin updates after publish
@@ -68,7 +68,7 @@ it short — details live in the spec.
 ## Track 2 — User
 
 ### U1 · Profile core + follow (Sat 9/26)
-- [~] `profiles.bio` in migration 0015 (not applied)
+- [x] `profiles.bio` (migration 0015, applied)
 - [~] Own profile + `/u/[username]`: avatar, name, stats, entries with chevrons
 - [~] Follow / unfollow
 - [~] Edit profile (name, bio), sign out
@@ -92,12 +92,12 @@ it short — details live in the spec.
 - [ ] Phone smoke test: sign up → log a visit → see it on profile and map
 - [ ] Launch Tue 9/29
 
-**Legend:** `[x]` done and verified · `[~]` built and merged locally, NOT yet verified end-to-end (needs migration applied and a browser/design check).
+**Legend:** `[x]` done and verified · `[~]` built and merged, NOT yet verified end-to-end (needs a real-data run and a browser/design check).
 
 ## Known issues / follow-ups (found 9/21)
 
 - Shop, log and profile screens were built by parallel agents that could not read the Claude Design files — they match the brief, not necessarily the design. Needs a parity pass (shop page, log verdict chips + sub-copy, profile tiles).
-- PRODUCT.md forbids numeric scores/averages; the design mockup shows "Average 4.6". Followed PRODUCT.md (verdict word only). Decide which wins.
+- ~~PRODUCT.md vs mockup on numeric average~~ — decided 9/21: the mockup wins. The shop page shows "Average" beside the consensus word; PRODUCT.md carries the exception.
 - Overpass (nearby cafés) takes ~12s cold, then cached 10 min; occasional 502 on larger areas. Consider a mirror/retry or bigger cache before launch.
 - Map's map.tsx still has the old preview cards and a Lisbon fallback center; M2 replaces both.
 - `log_shop_visit` previously let repeat logs rename a shop; fixed in 0015.
@@ -122,3 +122,4 @@ notifications/mentions, Parish-style HQ patterns.
 - 2026-09-21 — Setup done, scope reset, design reviewed, phases and tracker written. Next: M0 once D1–D4 are confirmed.
 - 2026-09-21 — M0 built on `worktree-v1-m0-foundation`: oxblood tab bar (phones) + rail (desktop ≥1024px), ButtonBu, Chip, guides removed from feed. 102 tests pass, web build OK. Forevs dropped (headlines stay Area).
 - 2026-09-21 — M1 done: Leaflet + OpenFreeMap map (recolored to the design palette), design pins, locate-me; Mapbox removed. Parallel agents built the data layer (migration 0015 + queries), shop page + log screen, and profile UI; all merged to local `main`, 200 tests green. Navbar spacing fixed. Migration not applied; nothing pushed since M0.
+- 2026-09-21 — Migration 0015 applied to production and smoke-tested (rolled back). Mockup is source of truth for the shop page's Average. `main` pushed to GitHub (M0, M1, data layer, shop/log/profile UI).

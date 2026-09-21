@@ -86,7 +86,7 @@ it short — details live in the spec.
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs
 - [ ] Keyboard + screen-reader pass (map, sheet, forms)
 - [x] Supabase Auth → URL Configuration: Site URL `https://app.coffeesnobproject.com` + redirect URL `https://app.coffeesnobproject.com/**` set by you 9/21 (verify links were going to localhost). Still to confirm with a fresh sign-up.
-- [ ] **LAUNCH BLOCKER — Supabase email sending:** sign-ups use Supabase's built-in mailer, capped at a handful of emails per hour project-wide (`429 over_email_send_rate_limit`, hit 9/21 by testers). Set up custom SMTP (Resend: `smtp.resend.com`, port 465, user `resend`, password = API key, verified sending domain) in Supabase → Auth → SMTP Settings, then raise Auth → Rate Limits → emails/hour. **Needs you** (domain verification + API key; same Resend account as the site's waitlist keys).
+- [ ] **LAUNCH BLOCKER — Supabase email sending:** sign-ups use Supabase's built-in mailer, capped at a handful of emails per hour project-wide (`429 over_email_send_rate_limit`, hit 9/21 by testers). Set up custom SMTP (Resend: `smtp.resend.com`, port 465, user `resend`, password = API key, verified sending domain) in Supabase → Auth → SMTP Settings, then raise Auth → Rate Limits → emails/hour. Branded templates + logo + step-by-step written (`docs/email-setup.md`, `supabase/templates/`). **Needs you**: verify the domain in Resend (DNS at GoDaddy), create the API key, paste SMTP settings + templates into Supabase.
 - [ ] Supabase: enable leaked-password protection
 - [ ] Supabase: review `log_shop_visit` execute grant
 - [ ] Confirm tile provider commercial terms + attribution visible

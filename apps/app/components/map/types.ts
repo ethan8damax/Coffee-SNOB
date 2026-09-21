@@ -35,8 +35,11 @@ export type MapViewProps = {
   // The device's real location (null when denied/unavailable) — drawn as the
   // "you are here" dot, and the target of a recenter.
   userLocation: { lat: number; lng: number } | null;
-  // Bump this number to fly the map back to userLocation (0 = never).
-  recenterKey: number;
+  // Fly the map somewhere (locate-me, tapping a list row). `nonce` must change
+  // for every request so repeating the same target still moves the map.
+  cameraTarget: { lat: number; lng: number; zoom?: number; nonce: number } | null;
+  // Zoom controls (desktop). Same nonce rule.
+  zoomRequest: { delta: 1 | -1; nonce: number } | null;
   onBoundsChange: (bounds: MapBounds) => void;
   selectedRatedShopId: string | null;
   selectedNearbyExternalId: string | null;

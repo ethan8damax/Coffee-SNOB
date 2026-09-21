@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Pressable, Linking, Platform } from "react-native";
+import { View, Text, Pressable, Linking, Platform } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
@@ -40,9 +40,18 @@ export function Consensus({ shop }: { shop: ShopDetail }) {
     <View style={{ gap: 8 }}>
       <Label>{line ? verdictCountLabel(shop.logCount) : "Snob consensus"}</Label>
       {line ? (
-        <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 12 }}>
-          <D1 style={{ color: colors.burnt, fontSize: 30, lineHeight: 32, letterSpacing: -0.96 }}>{line.word}</D1>
-          {line.average ? <Label style={{ color: colors.ink2 }}>{`${line.average} avg`}</Label> : null}
+        // Mirrors the design's consensus block: verdict word left, average right.
+        <View style={{ flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", gap: 12 }}>
+          <View style={{ flexShrink: 1, gap: 8 }}>
+            <D1 style={{ color: colors.burnt, fontSize: 30, lineHeight: 32, letterSpacing: -0.96 }}>{line.word}</D1>
+            <Label>Most common verdict</Label>
+          </View>
+          {line.average ? (
+            <View style={{ alignItems: "flex-end", gap: 5 }}>
+              <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 30, lineHeight: 30, letterSpacing: -0.6, color: colors.ink }}>{line.average}</Text>
+              <Label>Average</Label>
+            </View>
+          ) : null}
         </View>
       ) : (
         <Body style={{ color: colors.ink2 }}>No verdicts yet. Be the first to say if it's worth the trip.</Body>

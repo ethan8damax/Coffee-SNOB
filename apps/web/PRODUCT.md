@@ -38,6 +38,8 @@ Voice rules:
 
 **The rating system is core brand, not just UI:** five levels shown as chevrons (↑ to ↑↑↑↑↑), each an *effort level* ("Stay home" → "Catch a flight"), never a number. "How far would you go for this?" Never introduce numeric scores or decimal averages — the scale is the brand.
 
+> **Exception (owner decision, 2026-09-21):** the app's shop page shows the mean verdict as a number labelled "Average" beside the consensus word, exactly as in the Claude Design mockup (the mockup is the source of truth). Every other surface stays numberless.
+
 ## Anti-references
 
 - Generic listicle coffee blogs and round-ups. No affiliate padding, ever. No paid placement.

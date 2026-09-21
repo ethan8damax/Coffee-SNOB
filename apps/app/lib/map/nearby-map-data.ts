@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
+import { containsBounds, padBounds } from "./bounds";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
+// Fetch a box this much bigger than the viewport on every side (0.5 → 2x wide and tall).
+const FETCH_PADDING = 0.5;
 
 export async function fetchNearbyOsmShops(bounds: MapBounds, webAppUrl: string): Promise<NearbyShopPin[]> {
   const params = new URLSearchParams({
@@ -64,15 +67,20 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   // ponytail: incrementing counter is enough to discard stale in-flight
   // fetches — no AbortController/cache needed for a debounce-and-discard.
   const requestIdRef = useRef(0);
+  // The box we last fetched (viewport + padding). Panning inside it needs no
+  // refetch, so the list keeps every café around you, not just the ones on screen.
+  const fetchedRef = useRef<MapBounds | null>(null);
 
   useEffect(() => {
     if (!bounds) return;
+    if (fetchedRef.current && containsBounds(fetchedRef.current, bounds)) return;
     setStatus("loading");
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       const requestId = ++requestIdRef.current;
+      const box = padBounds(bounds, FETCH_PADDING);
       const { supabase } = require("../supabase");
-      getRatedShopsInBounds(supabase, bounds)
+      getRatedShopsInBounds(supabase, box)
         .then((rows) => {
           // A Snob-Approved shop with no editorial_rating set yet and no
           // community logs has rating = null in the view — can't render
@@ -82,9 +90,10 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
         .catch(() => {
           if (requestIdRef.current === requestId) setRatedShops([]);
         });
-      fetchNearbyOsmShops(bounds, webAppUrl)
+      fetchNearbyOsmShops(box, webAppUrl)
         .then((shops) => {
           if (requestIdRef.current !== requestId) return;
+          fetchedRef.current = box;
           setNearbyShops(shops);
           setStatus("ready");
         })
@@ -99,5 +108,8 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
     };
   }, [bounds, webAppUrl, reloadKey]);
 
-  return { ratedShops, nearbyShops, status, reload: () => setReloadKey((k) => k + 1) };
+  return { ratedShops, nearbyShops, status, reload: () => {
+      fetchedRef.current = null;
+      setReloadKey((k) => k + 1);
+    } };
 }

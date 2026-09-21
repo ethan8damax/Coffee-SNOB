@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { boundsAround } from "./bounds";
+import { boundsAround, containsBounds, padBounds } from "./bounds";
 
 describe("boundsAround", () => {
   it("builds a symmetric box around the center point", () => {
@@ -18,5 +18,17 @@ describe("boundsAround", () => {
       minLng: -74.1,
       maxLng: -73.9,
     });
+  });
+});
+
+describe("padBounds / containsBounds", () => {
+  const box = { minLat: 10, maxLat: 12, minLng: 20, maxLng: 24 };
+  it("pads each side by a fraction of the box size", () => {
+    expect(padBounds(box, 0.5)).toEqual({ minLat: 9, maxLat: 13, minLng: 18, maxLng: 26 });
+  });
+  it("detects whether a viewport is inside the fetched box", () => {
+    const padded = padBounds(box, 0.5);
+    expect(containsBounds(padded, box)).toBe(true);
+    expect(containsBounds(padded, { ...box, maxLng: 27 })).toBe(false);
   });
 });

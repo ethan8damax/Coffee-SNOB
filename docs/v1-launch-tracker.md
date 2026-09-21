@@ -8,7 +8,7 @@ Design source: Claude Design project "Coffee Snob" (`019df027-97af-74d2-a376-2a8
 line to the Status log at the bottom, and move anything new to "Parked". Keep
 it short — details live in the spec.
 
-**Now:** M0 done and merged to local `main`. Next: M1 map core (also removes the Mapbox console errors on /map).
+**Now:** M0 + M1 done; M3, M4, U1 UI and the data layer are built and merged to local `main` (not pushed) but **need the migration applied + a design-parity pass**. Next: M2 (map chrome/list/preview), apply migration 0015, visual QA of shop/log/profile against the design.
 
 ## Setup (done)
 
@@ -26,7 +26,7 @@ it short — details live in the spec.
 - [x] D3 Saved shops in v1, collections after *(confirmed 9/21)*
 - [x] D4 Admin dashboard after launch *(confirmed 9/21)*
 - [x] Leaflet only, Mapbox removed entirely
-- [x] Basemap: free raster tiles + warm tint, one swap point (`basemap.ts`)
+- [x] Basemap: OpenFreeMap vector tiles recolored to the design palette via `brandStyle()`, one swap point (`basemap.ts`). CARTO's free tiles now need an API key ("API KEY REQUIRED" watermark), so they were dropped. maplibre-gl is pinned to v5 (v6 needs module workers Metro can't bundle).
 
 ## Track 1 — Map experience
 
@@ -38,12 +38,13 @@ it short — details live in the spec.
 - [x] v1 nav: Feed · Map · Log (+) · You
 
 ### M1 · Map core (Tue 9/22)
-- [ ] Remove Mapbox packages, token env var, `app.json` plugin, doc mentions (swapped atomically with Leaflet)
-- [ ] `react-leaflet` `MapView.web.tsx`; native placeholder
-- [ ] `basemap.ts` (tile URL, tint, attribution)
-- [ ] Dot layer (unrated) + chevron-tag layer (rated) + selected states
-- [ ] User-location dot + locate-me control
-- [ ] Pan/zoom reload via `useNearbyMapData`; dense-area cap/clustering
+- [x] Remove Mapbox packages, `app.json` plugin (swapped atomically with Leaflet)
+- [x] `react-leaflet` `MapView.web.tsx`; native placeholder
+- [x] `basemap.ts` + `brand-style.ts` (style URL, palette, attribution)
+- [x] Dot layer (unrated) + chevron-tag layer (rated) + selected states (verified visually with injected sample pins; no rated shops exist yet)
+- [x] User-location dot + locate-me control (interim button top-right; M2 moves it into the top bar)
+- [x] Pan/zoom reload via `useNearbyMapData`; dots capped at 400 (clustering later)
+- [x] Map opens after 5s even if the browser location prompt is unanswered (was an infinite spinner)
 
 ### M2 · Chrome, list, preview, responsive (Wed 9/23)
 - [ ] Mobile top bar, chips (All / Rated / 4+), bottom sheet + Map/List toggle
@@ -52,25 +53,25 @@ it short — details live in the spec.
 - [ ] States: loading, location denied, Overpass error, empty, offline
 
 ### M3 · Shop page (Thu 9/24)
-- [ ] `/shop/[id]` route + data query
-- [ ] Hero, consensus, Log / Save / Share
-- [ ] Tabs: Reviews · Hours · About
-- [ ] Desktop two-column layout
+- [~] `/shop/[id]` route + data query
+- [~] Hero, consensus, Log / Save / Share
+- [~] Tabs: Reviews · Hours · About
+- [~] Desktop two-column layout
 
 ### M4 · Log flow (Fri 9/25)
-- [ ] Migration: `logs.drink`; rated-pin threshold → 1
-- [ ] Log screen: verdict chips, drink, note, Publish
-- [ ] Entry points wired (map preview, shop page, nav)
-- [ ] Works for rated shops and OSM shops (`log_shop_visit`); pin updates after publish
-- [ ] Validation / failed-submit / signed-out states
+- [~] Migration `0015` written (logs.drink, shop detail columns, profiles.bio, new `log_shop_visit`) — **not yet applied to production**. Rated-pin threshold was already 1 log.
+- [~] Log screen: verdict chips, drink, note, Publish
+- [~] Entry points wired (map preview, shop page, nav)
+- [~] Works for rated shops and OSM shops (`log_shop_visit`); pin updates after publish
+- [~] Validation / failed-submit / signed-out states
 
 ## Track 2 — User
 
 ### U1 · Profile core + follow (Sat 9/26)
-- [ ] Migration: `profiles.bio`
-- [ ] Own profile + `/u/[username]`: avatar, name, stats, entries with chevrons
-- [ ] Follow / unfollow
-- [ ] Edit profile (name, bio), sign out
+- [~] `profiles.bio` in migration 0015 (not applied)
+- [~] Own profile + `/u/[username]`: avatar, name, stats, entries with chevrons
+- [~] Follow / unfollow
+- [~] Edit profile (name, bio), sign out
 
 ### U2 · Status, history, faves (Sun 9/27)
 - [ ] Snob status tiers derived from log counts
@@ -91,6 +92,16 @@ it short — details live in the spec.
 - [ ] Phone smoke test: sign up → log a visit → see it on profile and map
 - [ ] Launch Tue 9/29
 
+**Legend:** `[x]` done and verified · `[~]` built and merged locally, NOT yet verified end-to-end (needs migration applied and a browser/design check).
+
+## Known issues / follow-ups (found 9/21)
+
+- Shop, log and profile screens were built by parallel agents that could not read the Claude Design files — they match the brief, not necessarily the design. Needs a parity pass (shop page, log verdict chips + sub-copy, profile tiles).
+- PRODUCT.md forbids numeric scores/averages; the design mockup shows "Average 4.6". Followed PRODUCT.md (verdict word only). Decide which wins.
+- Overpass (nearby cafés) takes ~12s cold, then cached 10 min; occasional 502 on larger areas. Consider a mirror/retry or bigger cache before launch.
+- Map's map.tsx still has the old preview cards and a Lisbon fallback center; M2 replaces both.
+- `log_shop_visit` previously let repeat logs rename a shop; fixed in 0015.
+
 ## Cut line (drop from the bottom if time slips)
 
 1. Saved shops / Faves
@@ -110,3 +121,4 @@ notifications/mentions, Parish-style HQ patterns.
 
 - 2026-09-21 — Setup done, scope reset, design reviewed, phases and tracker written. Next: M0 once D1–D4 are confirmed.
 - 2026-09-21 — M0 built on `worktree-v1-m0-foundation`: oxblood tab bar (phones) + rail (desktop ≥1024px), ButtonBu, Chip, guides removed from feed. 102 tests pass, web build OK. Forevs dropped (headlines stay Area).
+- 2026-09-21 — M1 done: Leaflet + OpenFreeMap map (recolored to the design palette), design pins, locate-me; Mapbox removed. Parallel agents built the data layer (migration 0015 + queries), shop page + log screen, and profile UI; all merged to local `main`, 200 tests green. Navbar spacing fixed. Migration not applied; nothing pushed since M0.

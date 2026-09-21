@@ -631,7 +631,7 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 ---
 
-### Task 8: Forevs display typeface (needs font file from the user)
+### Task 8: ~~Forevs display typeface~~ — DROPPED 2026-09-21 (user decision: headlines stay Area; do not implement)
 
 The design sets `.d1`/`.d2` in **Forevs Bold** (`--f-display`); the app currently uses Area Bold for both. Forevs is not in this repo.
 

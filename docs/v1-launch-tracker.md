@@ -8,7 +8,7 @@ Design source: Claude Design project "Coffee Snob" (`019df027-97af-74d2-a376-2a8
 line to the Status log at the bottom, and move anything new to "Parked". Keep
 it short — details live in the spec.
 
-**Now:** Phase M0 — plan written (`docs/superpowers/plans/2026-09-21-m0-foundation.md`), executing.
+**Now:** M0 done and merged to local `main`. Next: M1 map core (also removes the Mapbox console errors on /map).
 
 ## Setup (done)
 
@@ -31,11 +31,11 @@ it short — details live in the spec.
 ## Track 1 — Map experience
 
 ### M0 · Foundation (Mon 9/21)
-- [ ] Remove city/guide UI (Home Guides sub-tab, GuideCard use, city bits on map)
-- [ ] Primitives vs design: oxblood TabBar, ButtonBu, Chip
-- [ ] Forevs display typeface for D1/D2 *(needs `Forevs-Bold.otf` from you)*
-- [ ] Responsive shell: bottom tabs <1024px, oxblood left rail ≥1024px (top bar/search skipped — no search in v1)
-- [ ] v1 nav: Home · Map · Log · You
+- [x] Remove city/guide UI from Home feed (city bits on the map itself go with the Leaflet swap in M1/M2)
+- [x] Primitives vs design: oxblood TabBar, ButtonBu, Chip
+- [x] ~~Forevs display typeface~~ — dropped 9/21: headlines stay Area (design's Forevs headlines are not being used)
+- [x] Responsive shell: bottom tabs <1024px, oxblood left rail ≥1024px (top bar/search skipped — no search in v1)
+- [x] v1 nav: Feed · Map · Log (+) · You
 
 ### M1 · Map core (Tue 9/22)
 - [ ] Remove Mapbox packages, token env var, `app.json` plugin, doc mentions (swapped atomically with Leaflet)
@@ -109,3 +109,4 @@ notifications/mentions, Parish-style HQ patterns.
 ## Status log
 
 - 2026-09-21 — Setup done, scope reset, design reviewed, phases and tracker written. Next: M0 once D1–D4 are confirmed.
+- 2026-09-21 — M0 built on `worktree-v1-m0-foundation`: oxblood tab bar (phones) + rail (desktop ≥1024px), ButtonBu, Chip, guides removed from feed. 102 tests pass, web build OK. Forevs dropped (headlines stay Area).

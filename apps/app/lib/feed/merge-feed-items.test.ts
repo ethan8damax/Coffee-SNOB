@@ -8,14 +8,14 @@ function log(id: string, createdAt: string): FeedItem {
     shopNeighborhood: null, rating: 4, note: null, likeCount: 0, likedByMe: false, commentCount: 0,
   };
 }
-function guide(id: string, createdAt: string): FeedItem {
-  return { type: "guide", id, createdAt, title: "Six cups", description: null, cityName: "Berlin", shopCount: 6 };
+function collection(id: string, createdAt: string): FeedItem {
+  return { type: "collection", id, createdAt, title: "Tiny bars", description: null, curatorName: "Ines L.", shopCount: 9 };
 }
 
 describe("mergeFeedItems", () => {
   it("interleaves multiple sources sorted by createdAt descending", () => {
-    const result = mergeFeedItems([[log("l1", "2026-09-01T00:00:00Z")], [guide("g1", "2026-09-03T00:00:00Z"), guide("g2", "2026-08-01T00:00:00Z")]]);
-    expect(result.map((r) => r.id)).toEqual(["g1", "l1", "g2"]);
+    const result = mergeFeedItems([[log("l1", "2026-09-01T00:00:00Z")], [collection("c1", "2026-09-03T00:00:00Z"), collection("c2", "2026-08-01T00:00:00Z")]]);
+    expect(result.map((r) => r.id)).toEqual(["c1", "l1", "c2"]);
   });
 
   it("returns an empty array when every source is empty", () => {

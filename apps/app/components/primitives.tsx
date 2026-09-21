@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Text, View, Pressable, StyleSheet, type TextProps, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import Svg, { Path } from "react-native-svg";
 import { colors } from "@coffeesnob/design-tokens";
@@ -126,6 +127,20 @@ export function ButtonLine({
   );
 }
 
+export function ButtonBu({
+  title,
+  icon,
+  style,
+  ...rest
+}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
+  return (
+    <Pressable {...rest} style={[styles.btn, styles.btnBu, style]}>
+      {icon}
+      <Text style={styles.btnBuText}>{title}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   avatar: { alignItems: "center", justifyContent: "center", flexShrink: 0 },
   eyebrowRow: { flexDirection: "row", alignItems: "center", gap: 10 },
@@ -150,6 +165,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1.05,
     textTransform: "uppercase",
     color: colors.cream,
+  },
+  btnBu: { backgroundColor: colors.burnt, flexDirection: "row", gap: 7 },
+  btnBuText: {
+    fontFamily: "AreaExtended-Black",
+    fontSize: 10.5,
+    letterSpacing: 1.05,
+    textTransform: "uppercase",
+    color: colors.ink,
   },
   btnLine: { backgroundColor: "transparent", borderWidth: 1, borderColor: colors.ink },
   btnLineText: {

@@ -13,16 +13,6 @@ export type LogFeedCard = {
   commentCount: number;
 };
 
-export type GuideFeedCard = {
-  type: "guide";
-  id: string;
-  createdAt: string;
-  title: string;
-  description: string | null;
-  cityName: string | null;
-  shopCount: number;
-};
-
 export type CollectionFeedCard = {
   type: "collection";
   id: string;
@@ -33,4 +23,4 @@ export type CollectionFeedCard = {
   shopCount: number;
 };
 
-export type FeedItem = LogFeedCard | GuideFeedCard | CollectionFeedCard;
+export type FeedItem = LogFeedCard | CollectionFeedCard;

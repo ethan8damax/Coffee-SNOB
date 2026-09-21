@@ -6,22 +6,19 @@ import { SignInPrompt } from "@/components/sign-in-prompt";
 import { EmptyState } from "@/components/empty-state";
 import { Label } from "@/components/primitives";
 import { LogCard } from "@/components/feed/log-card";
-import { GuideCard } from "@/components/feed/guide-card";
 import { CollectionCard } from "@/components/feed/collection-card";
 import { useFollowingFeed } from "@/lib/feed/use-following-feed";
 import { useNearbyFeed } from "@/lib/feed/use-nearby-feed";
-import { useGuidesFeed } from "@/lib/feed/use-guides-feed";
 import { useUserLocation } from "@/lib/map/use-user-location";
 import { boundsAround } from "@/lib/map/bounds";
 import type { FeedItem } from "@/lib/feed/types";
 
-const TABS = ["Following", "Nearby", "Guides"] as const;
+const TABS = ["Following", "Nearby"] as const;
 type Tab = (typeof TABS)[number];
 
 const EMPTY_MESSAGE: Record<Tab, string> = {
   Following: "Nobody you follow has logged a visit yet.",
   Nearby: "Nothing logged nearby yet.",
-  Guides: "No live guides yet.",
 };
 
 // Used only when the visitor's real location can't be resolved (denied,
@@ -31,7 +28,6 @@ const LISBON_FALLBACK = { lat: 38.71, lng: -9.14 };
 
 function renderItem(item: FeedItem, userId: string) {
   if (item.type === "log") return <LogCard item={item} userId={userId} />;
-  if (item.type === "guide") return <GuideCard item={item} />;
   return <CollectionCard item={item} />;
 }
 
@@ -48,11 +44,10 @@ export default function HomeScreen() {
 
   const following = useFollowingFeed(session?.user.id ?? null);
   const nearby = useNearbyFeed(bounds, session?.user.id ?? null);
-  const guides = useGuidesFeed();
 
   if (!session) return <SignInPrompt message="Sign in to see what's near you." />;
 
-  const active = tab === "Following" ? following : tab === "Nearby" ? nearby : guides;
+  const active = tab === "Following" ? following : nearby;
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>

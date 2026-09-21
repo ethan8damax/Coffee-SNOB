@@ -26,3 +26,23 @@ export {
   getLiveCityGuides,
 } from "./queries";
 export type { Database } from "./types";
+// Contract stubs — replaced by real implementations (see contract-stubs.ts header).
+export {
+  getShopDetail,
+  getShopReviews,
+  logVisit,
+  getPublicProfileByUsername,
+  getProfileStats,
+  getProfileEntries,
+  isFollowing,
+  setFollow,
+  updateProfile,
+} from "./contract-stubs";
+export type {
+  ShopDetail,
+  ShopReview,
+  LogVisitInput,
+  PublicProfile,
+  ProfileStats,
+  ProfileEntry,
+} from "./contract-stubs";

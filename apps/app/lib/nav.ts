@@ -33,6 +33,7 @@ export function isNavRoute(name: string): name is NavRoute {
 const PATH_PREFIX_ROUTES: { prefix: string; route: NavRoute }[] = [
   { prefix: "/shop/", route: "map" },
   { prefix: "/u/", route: "profile" },
+  { prefix: "/people", route: "profile" },
 ];
 
 export function routeForPath(pathname: string): NavRoute | null {

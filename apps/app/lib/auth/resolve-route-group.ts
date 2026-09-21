@@ -11,7 +11,7 @@ export function resolveRouteGroup(params: {
   return params.onboarded ? "(tabs)" : "(onboarding)";
 }
 
-export const PUBLIC_TAB_PATHS = ["/", "/map", "/log", "/lists", "/profile"];
+export const PUBLIC_TAB_PATHS = ["/", "/map", "/log", "/lists", "/profile", "/people"];
 
 // Detail pages that live inside (tabs) so they keep the tab bar / rail.
 export const PUBLIC_TAB_PREFIXES = ["/shop/", "/u/"];

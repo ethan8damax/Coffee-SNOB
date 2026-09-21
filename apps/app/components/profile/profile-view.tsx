@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { ActivityIndicator, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { Body, ButtonLine, ButtonOx, Label } from "@/components/primitives";
 import { isDesktopWidth } from "@/lib/nav";
 import { PROFILE_MAX_WIDTH, gridColumns } from "@/lib/profile/profile-helpers";
 import { useProfile } from "@/lib/profile/use-profile";
+import { useFaves, useSaved } from "@/lib/profile/use-extras";
 import { EntryTile } from "./entry-tile";
 import { ProfileHeader } from "./profile-header";
+import { StatusBlock } from "./status-block";
 
 function Centered({ children }: { children: React.ReactNode }) {
   return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 16, backgroundColor: colors.paper }}>{children}</View>;
@@ -15,10 +17,81 @@ function Centered({ children }: { children: React.ReactNode }) {
 
 const message = { textAlign: "center", color: colors.ink3, maxWidth: 260 } as const;
 
+
+type Tab = "Entries" | "Faves" | "Saved";
+
+function TabStrip({ tabs, tab, counts, onChange }: { tabs: Tab[]; tab: Tab; counts: Partial<Record<Tab, number>>; onChange: (t: Tab) => void }) {
+  return (
+    <View accessibilityRole="tablist" style={{ marginTop: 22, flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+      {tabs.map((t) => (
+        <Pressable
+          key={t}
+          onPress={() => onChange(t)}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: tab === t }}
+          style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, borderBottomWidth: 2, borderBottomColor: tab === t ? colors.ink : "transparent", marginBottom: -1 }}
+        >
+          <Label style={{ color: tab === t ? colors.ink : colors.ink3 }}>
+            {t}
+            {counts[t] !== undefined ? ` ${counts[t]}` : ""}
+          </Label>
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+function Note({ children, onRetry }: { children: string; onRetry?: () => void }) {
+  return (
+    <View style={{ alignItems: "center", padding: 32, gap: 16 }}>
+      <Body style={message}>{children}</Body>
+      {onRetry && <ButtonLine title="Try again" onPress={onRetry} accessibilityRole="button" accessibilityLabel="Try again" />}
+    </View>
+  );
+}
+
+function FavesTab({ userId, isOwn, columns }: { userId: string; isOwn: boolean; columns: number }) {
+  const faves = useFaves(userId, true);
+  if (faves.status === "error") return <Note onRetry={faves.retry}>Couldn't load faves.</Note>;
+  if (!faves.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
+  if (faves.data.length === 0) return <Note>{isOwn ? "Faves are your 4 and 5 verdicts. Nothing here yet." : "No faves yet."}</Note>;
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", paddingTop: 1 }}>
+      {faves.data.map((e, i) => (
+        <EntryTile key={e.id} entry={e} index={i} total={faves.data!.length} columns={columns} />
+      ))}
+    </View>
+  );
+}
+
+function SavedTab({ userId }: { userId: string }) {
+  const saved = useSaved(userId, true);
+  if (saved.status === "error") return <Note onRetry={saved.retry}>Couldn't load your saved shops.</Note>;
+  if (!saved.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
+  if (saved.data.length === 0) return <Note>Nothing saved. Tap Save on a shop page to keep it for later.</Note>;
+  return (
+    <View style={{ paddingHorizontal: 16 }}>
+      {saved.data.map((s) => (
+        <Pressable
+          key={s.shopId}
+          onPress={() => router.push(`/shop/${s.shopId}`)}
+          accessibilityRole="link"
+          accessibilityLabel={s.name}
+          style={{ minHeight: 56, justifyContent: "center", gap: 3, borderBottomWidth: 1, borderBottomColor: colors.rule2, paddingVertical: 10 }}
+        >
+          <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{s.name}</Body>
+          {s.neighborhood ? <Label>{s.neighborhood}</Label> : null}
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
 export function ProfileView({ username, viewerId }: { username: string; viewerId: string | null }) {
   const { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, applyEdit } = useProfile(username, viewerId);
   const { width } = useWindowDimensions();
   const [followFailed, setFollowFailed] = useState(false);
+  const [tab, setTab] = useState<Tab>("Entries");
 
   if (state.status === "loading") {
     return (
@@ -67,15 +140,15 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
           onEdited={applyEdit}
         />
 
-        <View style={{ marginTop: 22, flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.rule }}>
-          <View style={{ paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: colors.ink, marginBottom: -1 }}>
-            <Label accessibilityRole="header" style={{ color: colors.ink }}>
-              Entries {stats.entries}
-            </Label>
-          </View>
-        </View>
+        <StatusBlock userId={profile.id} entries={total} />
 
-        {entries.length === 0 ? (
+        <TabStrip tabs={isOwn ? ["Entries", "Faves", "Saved"] : ["Entries", "Faves"]} tab={tab} counts={{ Entries: stats.entries }} onChange={setTab} />
+
+        {tab === "Faves" && <FavesTab userId={profile.id} isOwn={isOwn} columns={columns} />}
+        {tab === "Saved" && isOwn && <SavedTab userId={profile.id} />}
+
+        {tab === "Entries" &&
+          (entries.length === 0 ? (
           <View style={{ alignItems: "center", padding: 32, gap: 16 }}>
             <Body style={message}>{isOwn ? "Nothing logged yet. Go find somewhere worth the trip." : "Nothing logged yet."}</Body>
             {isOwn && <ButtonOx title="Log your first visit" onPress={() => router.push("/map")} accessibilityRole="button" accessibilityLabel="Log your first visit" />}
@@ -100,7 +173,7 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
               </View>
             )}
           </>
-        )}
+        ))}
       </View>
     </ScrollView>
   );

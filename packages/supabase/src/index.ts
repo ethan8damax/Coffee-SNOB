@@ -33,6 +33,13 @@ export {
   isFollowing,
   setFollow,
   updateProfile,
+  getProfileVisitDates,
+  getProfileFaves,
+  getSavedShops,
+  isShopSaved,
+  setShopSaved,
+  getFollowList,
+  searchProfiles,
 } from "./queries";
 export type {
   ShopDetail,
@@ -41,5 +48,7 @@ export type {
   PublicProfile,
   ProfileStats,
   ProfileEntry,
+  SavedShop,
+  PersonRow,
 } from "./queries";
 export type { Database } from "./types";

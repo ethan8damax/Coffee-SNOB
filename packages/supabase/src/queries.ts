@@ -571,3 +571,99 @@ export async function updateProfile(
   const { error } = await client.from("profiles").update(update).eq("id", userId);
   if (error) throw error;
 }
+
+// ── U2: history, faves, saves, people ─────────────────────────────
+// Just the visit dates (for the heatmap), newest first; 1000 rows is far past what the grid shows.
+export async function getProfileVisitDates(client: Client, userId: string, since: string): Promise<string[]> {
+  const { data, error } = await client
+    .from("logs")
+    .select("visited_at")
+    .eq("user_id", userId)
+    .gte("visited_at", since)
+    .order("visited_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return data.map((l) => l.visited_at);
+}
+
+// Their 4–5 verdicts, best and newest first.
+export async function getProfileFaves(client: Client, userId: string, limit = 30): Promise<ProfileEntry[]> {
+  const { data, error } = await client
+    .from("logs")
+    .select("id, shop_id, rating, note, drink, visited_at, created_at, shops(name, neighborhood)")
+    .eq("user_id", userId)
+    .gte("rating", 4)
+    .order("rating", { ascending: false })
+    .order("visited_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.map((l) => ({
+    id: l.id,
+    shopId: l.shop_id,
+    shopName: l.shops?.name ?? "",
+    shopNeighborhood: l.shops?.neighborhood ?? null,
+    rating: l.rating,
+    note: l.note,
+    drink: l.drink,
+    visitedAt: l.visited_at,
+    createdAt: l.created_at,
+  }));
+}
+
+export type SavedShop = { shopId: string; name: string; neighborhood: string | null; savedAt: string };
+
+// Private: RLS only ever returns the signed-in user's own saves.
+export async function getSavedShops(client: Client, userId: string): Promise<SavedShop[]> {
+  const { data, error } = await client
+    .from("shop_saves")
+    .select("shop_id, created_at, shops(name, neighborhood)")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map((s) => ({ shopId: s.shop_id, name: s.shops?.name ?? "", neighborhood: s.shops?.neighborhood ?? null, savedAt: s.created_at }));
+}
+
+export async function isShopSaved(client: Client, userId: string, shopId: string): Promise<boolean> {
+  const { data, error } = await client.from("shop_saves").select("shop_id").eq("user_id", userId).eq("shop_id", shopId).maybeSingle();
+  if (error) throw error;
+  return data !== null;
+}
+
+export async function setShopSaved(client: Client, userId: string, shopId: string, saved: boolean): Promise<void> {
+  if (saved) {
+    const { error } = await client
+      .from("shop_saves")
+      .upsert({ user_id: userId, shop_id: shopId }, { onConflict: "user_id,shop_id", ignoreDuplicates: true });
+    if (error) throw error;
+  } else {
+    const { error } = await client.from("shop_saves").delete().eq("user_id", userId).eq("shop_id", shopId);
+    if (error) throw error;
+  }
+}
+
+export type PersonRow = { id: string; username: string; displayName: string | null };
+
+// Who follows `userId` ("followers") or who they follow ("following").
+export async function getFollowList(client: Client, userId: string, kind: "followers" | "following"): Promise<PersonRow[]> {
+  const [mine, theirs] = kind === "followers" ? (["followee_id", "follower_id"] as const) : (["follower_id", "followee_id"] as const);
+  const { data, error } = await client.from("follows").select(theirs).eq(mine, userId).order("created_at", { ascending: false }).limit(200);
+  if (error) throw error;
+  const ids = data.map((r) => (r as Record<string, string>)[theirs]);
+  if (ids.length === 0) return [];
+  const { data: profiles, error: pErr } = await client.from("profiles").select("id, username, display_name").in("id", ids);
+  if (pErr) throw pErr;
+  const byId = new Map(profiles.map((p) => [p.id, p]));
+  return ids.flatMap((id) => {
+    const p = byId.get(id);
+    return p ? [{ id: p.id, username: p.username, displayName: p.display_name }] : [];
+  });
+}
+
+// Prefix match on username. `%` `_` `\` are stripped so a query can't act as a wildcard.
+export async function searchProfiles(client: Client, query: string): Promise<PersonRow[]> {
+  const q = query.trim().toLowerCase().replace(/[%_\\]/g, "");
+  if (q.length < 2) return [];
+  const { data, error } = await client.from("profiles").select("id, username, display_name").ilike("username", `${q}%`).order("username").limit(20);
+  if (error) throw error;
+  return data.map((p) => ({ id: p.id, username: p.username, displayName: p.display_name }));
+}

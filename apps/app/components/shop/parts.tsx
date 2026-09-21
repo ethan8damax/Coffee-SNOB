@@ -7,6 +7,8 @@ import { Avatar, Body, BodySm, ButtonLine, ButtonOx, D1, IconBack, Label } from 
 import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
+import { useAuth } from "../../context/auth";
+import { useShopSaved } from "../../lib/profile/use-extras";
 import { openDirections } from "../../lib/directions";
 import { hoursLines } from "../../lib/shop/hours";
 import { consensusLine, relativeDate, telUrl, verdictCountLabel, websiteUrl } from "../../lib/shop/format";
@@ -62,6 +64,8 @@ export function Consensus({ shop }: { shop: ShopDetail }) {
 }
 
 export function Actions({ shopId }: { shopId: string }) {
+  const { session } = useAuth();
+  const { saved, failed, toggle } = useShopSaved(session?.user.id ?? null, shopId);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => () => void (timer.current && clearTimeout(timer.current)), []);
@@ -86,6 +90,12 @@ export function Actions({ shopId }: { shopId: string }) {
         accessibilityRole="button"
         accessibilityLabel="Log a visit"
         onPress={() => router.push({ pathname: "/log", params: { shopId } })}
+      />
+      <ButtonLine
+        title={saved ? "Saved" : failed ? "Retry save" : "Save"}
+        accessibilityRole="button"
+        accessibilityLabel={saved ? "Saved, tap to remove from your saved shops" : "Save this shop"}
+        onPress={session ? toggle : () => router.push("/sign-in")}
       />
       {Platform.OS === "web" && (
         <ButtonLine

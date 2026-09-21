@@ -7,16 +7,18 @@ import { Avatar, Body, ButtonLine, ButtonOx, D2, IconCheck, Label } from "@/comp
 import { useAuth } from "@/context/auth";
 import { BIO_MAX, NAME_MAX, displayNameFor, formatCount, normalizeEdit, remaining } from "@/lib/profile/profile-helpers";
 
-function Stat({ value, label, last }: { value: number; label: string; last?: boolean }) {
+function Stat({ value, label, last, onPress }: { value: number; label: string; last?: boolean; onPress?: () => void }) {
   return (
-    <View
-      accessible
+    <Pressable
+      disabled={!onPress}
+      onPress={onPress}
+      accessibilityRole={onPress ? "link" : undefined}
       accessibilityLabel={`${value} ${label}`}
       style={{ flex: 1, paddingVertical: 12, alignItems: "center", gap: 4, borderRightWidth: last ? 0 : 1, borderRightColor: colors.rule }}
     >
       <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 22, letterSpacing: -0.4, color: colors.ink }}>{formatCount(value)}</Text>
       <Label>{label}</Label>
-    </View>
+    </Pressable>
   );
 }
 
@@ -151,6 +153,7 @@ export function ProfileHeader({
   const { signOut } = useAuth();
   const [editing, setEditing] = useState(false);
   const name = displayNameFor(profile);
+  const openPeople = (tab: "followers" | "following") => router.push({ pathname: "/people", params: { id: profile.id, u: profile.username, tab } });
 
   return (
     <View>
@@ -173,8 +176,8 @@ export function ProfileHeader({
 
       <View style={{ flexDirection: "row", marginTop: 18, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule }}>
         <Stat value={stats.entries} label="Entries" />
-        <Stat value={stats.followers} label="Followers" />
-        <Stat value={stats.following} label="Following" last />
+        <Stat value={stats.followers} label="Followers" onPress={() => openPeople("followers")} />
+        <Stat value={stats.following} label="Following" last onPress={() => openPeople("following")} />
       </View>
 
       {!editing && (
@@ -182,6 +185,14 @@ export function ProfileHeader({
           {isOwn ? (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
               <ButtonLine title="Edit profile" onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel="Edit profile" style={{ flex: 1 }} />
+              <Pressable
+                onPress={() => router.push({ pathname: "/people", params: { id: profile.id, u: profile.username, tab: "find" } })}
+                accessibilityRole="button"
+                accessibilityLabel="Find people"
+                style={{ minHeight: 44, minWidth: 44, paddingHorizontal: 6, alignItems: "center", justifyContent: "center" }}
+              >
+                <Label style={{ color: colors.ink2, textDecorationLine: "underline" }}>Find people</Label>
+              </Pressable>
               <Pressable
                 onPress={signOut}
                 accessibilityRole="button"

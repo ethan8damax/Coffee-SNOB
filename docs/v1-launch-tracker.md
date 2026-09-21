@@ -8,7 +8,7 @@ Design source: Claude Design project "Coffee Snob" (`019df027-97af-74d2-a376-2a8
 line to the Status log at the bottom, and move anything new to "Parked". Keep
 it short — details live in the spec.
 
-**Now:** M0–M2 done; migration 0015 applied; `app.coffeesnobproject.com` is now Git-connected (pushes to `main` auto-deploy). Shop page and public profile verified with real data; **log form and your own profile still need a signed-in check** (needs you to sign in, or a test account). Next: U2 (status, faves, saved), design-parity pass on the log screen, then QA.
+**Now:** M0–M2 done; migration 0015 applied; `app.coffeesnobproject.com` is now Git-connected (pushes to `main` auto-deploy). Shop page and public profile verified with real data; **log form and your own profile still need a signed-in check** (needs you to sign in, or a test account). U2 built (Saved waits on migration 0016). Next: apply 0016, design-parity pass (log screen, profile), then QA.
 
 ## Setup (done)
 
@@ -74,11 +74,12 @@ it short — details live in the spec.
 - [~] Edit profile (name, bio), sign out
 
 ### U2 · Status, history, faves (Sun 9/27)
-- [ ] Snob status tiers derived from log counts
-- [ ] Visit heatmap from `visited_at`
-- [ ] Faves (own 4–5 verdicts)
-- [ ] Saved shops (`shop_saves` migration + UI)
-- [ ] Followers / Following lists; find people by username
+- [x] Snob status tiers derived from log counts (Beginner 0 · Regular 5 · Connoisseur 15 · Snob 30 · Head Snob 60), verified on a real profile
+- [x] Visit heatmap (last 12 weeks from `visited_at`), verified on a real profile
+- [~] Faves tab (own/their 4–5 verdicts): empty state verified; not yet with a real 4–5 log
+- [~] Saved shops: **migration `0016_shop_saves.sql` written but NOT applied** (the production apply was blocked; needs your OK). Save button on the shop page + Saved tab on your profile are built and show a retry error until it lands.
+- [x] Followers / Following lists + Find people by username (`/people`), verified search against real profiles
+- [ ] Design-parity pass on status block, heatmap, tabs, people screen (couldn't navigate the design canvas in the small test window)
 
 ## Q · QA + launch prep (Mon 9/28)
 

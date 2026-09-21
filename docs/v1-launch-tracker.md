@@ -8,7 +8,7 @@ Design source: Claude Design project "Coffee Snob" (`019df027-97af-74d2-a376-2a8
 line to the Status log at the bottom, and move anything new to "Parked". Keep
 it short — details live in the spec.
 
-**Now:** M0 + M1 done and pushed; migration 0015 applied to production (9/21); M3/M4/U1 built and live in `main` but still need a real-data check and a design-parity pass. Next: M2 (map chrome/list/preview/desktop panel), then verify shop/log/profile against the design.
+**Now:** M0–M2 done; migration 0015 applied; `app.coffeesnobproject.com` is now Git-connected (pushes to `main` auto-deploy). Shop page and public profile verified with real data; **log form and your own profile still need a signed-in check** (needs you to sign in, or a test account). Next: U2 (status, faves, saved), design-parity pass on the log screen, then QA.
 
 ## Setup (done)
 
@@ -47,15 +47,15 @@ it short — details live in the spec.
 - [x] Map opens after 5s even if the browser location prompt is unanswered (was an infinite spinner)
 
 ### M2 · Chrome, list, preview, responsive (Wed 9/23)
-- [ ] Mobile top bar, chips (All / Rated / 4+), bottom sheet + Map/List toggle
-- [ ] Desktop 380px list panel + map canvas + zoom controls
-- [ ] Pin preview cards (rated → shop page; unrated → Log a visit + Directions)
-- [ ] States: loading, location denied, Overpass error, empty, offline
+- [x] Mobile top bar (area pill + locate), chips (All / Rated / Make the trip +), bottom sheet + Map/List toggle
+- [x] Desktop 380px list panel + map canvas + zoom/locate stack
+- [x] Pin preview cards (rated → shop page; unrated → Log a visit + Directions)
+- [x] States: loading, location off (falls back to Atlanta), Overpass error + retry, empty, offline (error/offline paths by code, not forced in browser)
 
 ### M3 · Shop page (Thu 9/24)
-- [~] `/shop/[id]` route + data query
-- [~] Hero, consensus, Log / Save / Share
-- [~] Tabs: Reviews · Hours · About
+- [x] `/shop/[id]` route + data query
+- [x] Hero, consensus + Average, Log / Share (Save comes with U2), verified with real data
+- [x] Tabs: Reviews · Hours · About
 - [~] Desktop two-column layout
 
 ### M4 · Log flow (Fri 9/25)
@@ -69,7 +69,7 @@ it short — details live in the spec.
 
 ### U1 · Profile core + follow (Sat 9/26)
 - [x] `profiles.bio` (migration 0015, applied)
-- [~] Own profile + `/u/[username]`: avatar, name, stats, entries with chevrons
+- [~] `/u/[username]` verified with real data (stats, entries tiles); own `/profile` needs a signed-in check
 - [~] Follow / unfollow
 - [~] Edit profile (name, bio), sign out
 
@@ -99,7 +99,9 @@ it short — details live in the spec.
 - Shop, log and profile screens were built by parallel agents that could not read the Claude Design files — they match the brief, not necessarily the design. Needs a parity pass (shop page, log verdict chips + sub-copy, profile tiles).
 - ~~PRODUCT.md vs mockup on numeric average~~ — decided 9/21: the mockup wins. The shop page shows "Average" beside the consensus word; PRODUCT.md carries the exception.
 - Overpass (nearby cafés) takes ~12s cold, then cached 10 min; occasional 502 on larger areas. Consider a mirror/retry or bigger cache before launch.
-- Map's map.tsx still has the old preview cards and a Lisbon fallback center; M2 replaces both.
+- Map fallback area is now Atlanta (was Lisbon). The Home feed's Nearby tab still uses the Lisbon fallback.
+- Vercel: the app project was CLI-only until 9/21 (no Git link); now connected. Production still has an unused `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` env var to remove.
+- Desktop (≥1024px) map layout was verified in a scaled iframe because the test browser window can't be resized past phone width.
 - `log_shop_visit` previously let repeat logs rename a shop; fixed in 0015.
 
 ## Cut line (drop from the bottom if time slips)
@@ -123,3 +125,4 @@ notifications/mentions, Parish-style HQ patterns.
 - 2026-09-21 — M0 built on `worktree-v1-m0-foundation`: oxblood tab bar (phones) + rail (desktop ≥1024px), ButtonBu, Chip, guides removed from feed. 102 tests pass, web build OK. Forevs dropped (headlines stay Area).
 - 2026-09-21 — M1 done: Leaflet + OpenFreeMap map (recolored to the design palette), design pins, locate-me; Mapbox removed. Parallel agents built the data layer (migration 0015 + queries), shop page + log screen, and profile UI; all merged to local `main`, 200 tests green. Navbar spacing fixed. Migration not applied; nothing pushed since M0.
 - 2026-09-21 — Migration 0015 applied to production and smoke-tested (rolled back). Mockup is source of truth for the shop page's Average. `main` pushed to GitHub (M0, M1, data layer, shop/log/profile UI).
+- 2026-09-21 — M2 done and merged: map chrome (phone sheet/chips/top bar, desktop panel), preview cards, states. Verified shop page + public profile with a temporary test shop (removed; DB back to 0 shops/0 logs). Fixed follow-button height and clipped names. Vercel app project connected to GitHub.

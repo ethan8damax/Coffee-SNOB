@@ -1,9 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 import L from "leaflet";
-import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
+import "@maplibre/maplibre-gl-leaflet";
 import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
 import { BASEMAP } from "./basemap";
+import { brandStyle, type StyleLike } from "./brand-style";
 import { nearbyDotHtml, ratedPinHtml, userDotHtml } from "./pin-markup";
 import type { MapBounds, MapViewProps } from "./types";
 
@@ -19,12 +22,51 @@ function ensureMapStyles() {
   const el = document.createElement("style");
   el.id = STYLE_ID;
   el.textContent = [
-    `.snob-tiles{filter:${BASEMAP.tintFilter}}`,
     ".snob-pin{background:none;border:none}",
     ".leaflet-container{background:#e6dec9;font-family:'Area',sans-serif}",
     ".leaflet-control-attribution{font-size:9px;background:rgba(240,236,223,.85)!important}",
   ].join("");
   document.head.appendChild(el);
+}
+
+// One fetch of the style per page load, recolored to the design palette.
+let styleRequest: Promise<StyleLike> | null = null;
+function loadBrandStyle(): Promise<StyleLike> {
+  styleRequest ??= fetch(BASEMAP.styleUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error(`basemap style request failed: ${response.status}`);
+      return response.json() as Promise<StyleLike>;
+    })
+    .then(brandStyle)
+    .catch((error) => {
+      styleRequest = null;
+      throw error;
+    });
+  return styleRequest;
+}
+
+// Vector basemap drawn by MapLibre inside a Leaflet layer. If the style can't
+// load, the container's land-colored background stays and pins still work.
+function Basemap() {
+  const map = useMap();
+  useEffect(() => {
+    let cancelled = false;
+    let layer: L.MaplibreGL | null = null;
+    loadBrandStyle()
+      .then((style) => {
+        if (cancelled) return;
+        // `attribution` is a standard Leaflet layer option that the plugin's
+        // typings don't list; it is read by Leaflet's attribution control.
+        layer = L.maplibreGL({ style, attribution: BASEMAP.attribution } as never).addTo(map);
+        layer.getMaplibreMap().on("error", (event) => console.warn("basemap:", event.error?.message ?? event));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      layer?.remove();
+    };
+  }, [map]);
+  return null;
 }
 
 function pinIcon(html: string) {
@@ -79,7 +121,7 @@ export function MapView({
         // isolation keeps Leaflet's internal z-indexes from covering the app's own overlays.
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate" }}
       >
-        <TileLayer url={BASEMAP.url} subdomains={BASEMAP.subdomains} maxZoom={BASEMAP.maxZoom} attribution={BASEMAP.attribution} className="snob-tiles" />
+        <Basemap />
         <ViewportEvents
           onBoundsChange={onBoundsChange}
           onClearSelection={() => {

@@ -28,6 +28,15 @@ export function isNavRoute(name: string): name is NavRoute {
   return NAV_ITEMS.some((i) => i.route === name);
 }
 
+// Detail pages nested under a tab keep that tab highlighted (shop pages live
+// under Map, other people's profiles under You).
+const PATH_PREFIX_ROUTES: { prefix: string; route: NavRoute }[] = [
+  { prefix: "/shop/", route: "map" },
+  { prefix: "/u/", route: "profile" },
+];
+
 export function routeForPath(pathname: string): NavRoute | null {
-  return NAV_ITEMS.find((i) => i.path === pathname)?.route ?? null;
+  const exact = NAV_ITEMS.find((i) => i.path === pathname);
+  if (exact) return exact.route;
+  return PATH_PREFIX_ROUTES.find((p) => pathname.startsWith(p.prefix))?.route ?? null;
 }

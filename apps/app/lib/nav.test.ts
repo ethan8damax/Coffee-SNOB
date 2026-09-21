@@ -24,4 +24,9 @@ describe("nav", () => {
     expect(routeForPath("/profile")).toBe("profile");
     expect(routeForPath("/somewhere-else")).toBeNull();
   });
+
+  it("highlights Map on shop pages and You on profile pages", () => {
+    expect(routeForPath("/shop/abc-123")).toBe("map");
+    expect(routeForPath("/u/mara")).toBe("profile");
+  });
 });

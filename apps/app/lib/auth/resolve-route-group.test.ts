@@ -65,3 +65,15 @@ describe("isPublicTabPath", () => {
     expect(isPublicTabPath("/reset-password")).toBe(false);
   });
 });
+
+describe("isPublicTabPath — detail pages", () => {
+  it("treats shop and profile detail pages as public so anonymous visitors can open them", () => {
+    expect(isPublicTabPath("/shop/abc-123")).toBe(true);
+    expect(isPublicTabPath("/u/mara")).toBe(true);
+  });
+
+  it("does not treat lookalike prefixes as public", () => {
+    expect(isPublicTabPath("/shopping")).toBe(false);
+    expect(isPublicTabPath("/user/mara")).toBe(false);
+  });
+});

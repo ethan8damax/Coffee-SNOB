@@ -85,7 +85,7 @@ it short — details live in the spec.
 
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs
 - [ ] Keyboard + screen-reader pass (map, sheet, forms)
-- [ ] Supabase Auth → URL Configuration: Site URL `https://app.coffeesnobproject.com` + redirect URL `https://app.coffeesnobproject.com/**` (verify links were going to localhost) — **needs you**
+- [x] Supabase Auth → URL Configuration: Site URL `https://app.coffeesnobproject.com` + redirect URL `https://app.coffeesnobproject.com/**` set by you 9/21 (verify links were going to localhost). Still to confirm with a fresh sign-up.
 - [ ] Supabase: enable leaked-password protection
 - [ ] Supabase: review `log_shop_visit` execute grant
 - [ ] Confirm tile provider commercial terms + attribution visible
@@ -103,7 +103,7 @@ it short — details live in the spec.
 - Overpass (nearby cafés) takes ~12s cold, then cached 10 min; occasional 502 on larger areas. Consider a mirror/retry or bigger cache before launch.
 - Map fallback area is now Atlanta (was Lisbon). The Home feed's Nearby tab still uses the Lisbon fallback.
 - Vercel: the app project was CLI-only until 9/21 (no Git link); now connected. Production still has an unused `EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN` env var to remove.
-- **Basemap first paint is slow on a cold load** (~15–30s before streets appear; instant on repeat visits) in both dev and production. Pins/list work meanwhile. Investigate before launch: start the style fetch at module load, preconnect to tiles.openfreemap.org, check whether the raster `ne2_shaded` source or the worker start is the bottleneck, or consider self-hosting tiles.
+- ~~Basemap slow first paint~~ — **not a real issue (9/21).** OpenFreeMap answers in ~45ms; the delay only happened in the automated test tab, which is `visibilityState: hidden`, so the browser pauses animation frames and MapLibre only draws when a screenshot forces a repaint. Confirm once on a real phone during the Q smoke test.
 - Desktop (≥1024px) map layout was verified in a scaled iframe because the test browser window can't be resized past phone width.
 - `log_shop_visit` previously let repeat logs rename a shop; fixed in 0015.
 

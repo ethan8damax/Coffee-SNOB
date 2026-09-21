@@ -24,10 +24,6 @@ export {
   getShopsInBounds,
   getLogsForShops,
   getLiveCityGuides,
-} from "./queries";
-export type { Database } from "./types";
-// Contract stubs — replaced by real implementations (see contract-stubs.ts header).
-export {
   getShopDetail,
   getShopReviews,
   logVisit,
@@ -37,7 +33,7 @@ export {
   isFollowing,
   setFollow,
   updateProfile,
-} from "./contract-stubs";
+} from "./queries";
 export type {
   ShopDetail,
   ShopReview,
@@ -45,4 +41,5 @@ export type {
   PublicProfile,
   ProfileStats,
   ProfileEntry,
-} from "./contract-stubs";
+} from "./queries";
+export type { Database } from "./types";

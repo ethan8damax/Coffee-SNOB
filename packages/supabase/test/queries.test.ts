@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -605,5 +605,371 @@ describe("getLiveCityGuides", () => {
     } as any;
 
     expect(await getLiveCityGuides(client)).toEqual([{ id: "g1", title: "Six cups", city_id: "c1", cityName: "Berlin" }]);
+  });
+});
+
+describe("summarizeVerdicts", () => {
+  it("returns nulls and zero count for no ratings", () => {
+    expect(summarizeVerdicts([])).toEqual({ rating: null, logCount: 0, topVerdict: null });
+  });
+
+  it("averages to one decimal and picks the most common verdict", () => {
+    expect(summarizeVerdicts([5, 4, 4])).toEqual({ rating: 4.3, logCount: 3, topVerdict: 4 });
+  });
+
+  it("breaks verdict ties toward the higher verdict", () => {
+    expect(summarizeVerdicts([2, 5, 2, 5, 3])).toEqual({ rating: 3.4, logCount: 5, topVerdict: 5 });
+  });
+});
+
+describe("getShopDetail", () => {
+  const shopRow = { id: "s1", name: "Corner", neighborhood: null, lat: 38.7, lng: -9.1, address: "1 Main", website: null, phone: null, hours: "Mo-Fr 07:00-18:00" };
+
+  function shopClient(shop: unknown, logs: { data: unknown; error: unknown }, shopError: unknown = null) {
+    return {
+      from: (table: string) => {
+        if (table === "shops") {
+          return { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: shop, error: shopError }) }) }) };
+        }
+        if (table === "logs") return { select: () => ({ eq: () => Promise.resolve(logs) }) };
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as any;
+  }
+
+  it("returns null when the shop does not exist", async () => {
+    expect(await getShopDetail(shopClient(null, { data: [], error: null }), "nope")).toBeNull();
+  });
+
+  it("merges the shop row with aggregated verdicts", async () => {
+    const client = shopClient(shopRow, { data: [{ rating: 5 }, { rating: 4 }, { rating: 5 }], error: null });
+    expect(await getShopDetail(client, "s1")).toEqual({ ...shopRow, rating: 4.7, logCount: 3, topVerdict: 5 });
+  });
+
+  it("has null rating and topVerdict and zero count when the shop has no logs", async () => {
+    const client = shopClient(shopRow, { data: [], error: null });
+    expect(await getShopDetail(client, "s1")).toMatchObject({ rating: null, logCount: 0, topVerdict: null });
+  });
+
+  it("throws when the shop query errors", async () => {
+    await expect(getShopDetail(shopClient(null, { data: [], error: null }, new Error("boom")), "s1")).rejects.toThrow("boom");
+  });
+
+  it("throws when the logs query errors", async () => {
+    await expect(getShopDetail(shopClient(shopRow, { data: null, error: new Error("logs boom") }), "s1")).rejects.toThrow("logs boom");
+  });
+});
+
+describe("getShopReviews", () => {
+  const logRow = { id: "l1", user_id: "u1", rating: 5, note: "great", drink: "flat white", visited_at: "2026-09-01", created_at: "2026-09-01T10:00:00Z" };
+
+  function reviewsClient(logs: { data: unknown; error: unknown }, profiles: { data: unknown; error: unknown }) {
+    const limitSpy = vi.fn();
+    const client = {
+      from: (table: string) => {
+        if (table === "logs") {
+          return {
+            select: () => ({
+              eq: () => ({
+                order: () => ({
+                  limit: (n: number) => {
+                    limitSpy(n);
+                    return Promise.resolve(logs);
+                  },
+                }),
+              }),
+            }),
+          };
+        }
+        if (table === "profiles") return { select: () => ({ in: () => Promise.resolve(profiles) }) };
+        throw new Error(`unexpected table ${table}`);
+      },
+    } as any;
+    return { client, limitSpy };
+  }
+
+  it("maps logs + author profiles into camelCase reviews", async () => {
+    const { client, limitSpy } = reviewsClient(
+      { data: [logRow], error: null },
+      { data: [{ id: "u1", username: "mara", display_name: "Mara K.", avatar_url: null }], error: null }
+    );
+    expect(await getShopReviews(client, "s1", { limit: 5 })).toEqual([
+      { id: "l1", userId: "u1", username: "mara", displayName: "Mara K.", rating: 5, note: "great", drink: "flat white", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z" },
+    ]);
+    expect(limitSpy).toHaveBeenCalledWith(5);
+  });
+
+  it("returns [] without querying profiles when there are no logs", async () => {
+    const { client } = reviewsClient({ data: [], error: null }, { data: null, error: new Error("should not be called") });
+    expect(await getShopReviews(client, "s1")).toEqual([]);
+  });
+
+  it("throws when the logs query errors", async () => {
+    const { client } = reviewsClient({ data: null, error: new Error("boom") }, { data: [], error: null });
+    await expect(getShopReviews(client, "s1")).rejects.toThrow("boom");
+  });
+});
+
+describe("logVisit", () => {
+  it("inserts a log for an existing shop and returns shop and log ids", async () => {
+    const insertSpy = vi.fn(() => ({ select: () => ({ single: () => Promise.resolve({ data: { id: "l1", shop_id: "s1" }, error: null }) }) }));
+    const client = { from: () => ({ insert: insertSpy }) } as any;
+
+    const result = await logVisit(client, "u1", { kind: "existing", shopId: "s1", rating: 4, drink: "  cortado ", note: "" });
+
+    expect(result).toEqual({ shopId: "s1", logId: "l1" });
+    expect(insertSpy).toHaveBeenCalledWith({ user_id: "u1", shop_id: "s1", rating: 4, note: null, drink: "cortado", visited_at: undefined });
+  });
+
+  it("throws when the existing-shop insert errors", async () => {
+    const client = { from: () => ({ insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("rls") }) }) }) }) } as any;
+    await expect(logVisit(client, "u1", { kind: "existing", shopId: "s1", rating: 4 })).rejects.toThrow("rls");
+  });
+
+  it("calls the log_shop_visit RPC for an OSM shop and unwraps the returned row", async () => {
+    const rpcSpy = vi.fn(() => Promise.resolve({ data: [{ shop_id: "s9", log_id: "l9" }], error: null }));
+    const client = { rpc: rpcSpy } as any;
+
+    const result = await logVisit(client, "u1", {
+      kind: "osm",
+      externalId: "node/1",
+      name: "Corner",
+      lat: 38.7,
+      lng: -9.1,
+      rating: 5,
+      note: "yes",
+      drink: "espresso",
+      address: "1 Main",
+      website: "https://x.co",
+      phone: "555",
+      hours: "Mo-Fr 07:00-18:00",
+      visitedAt: "2026-09-01",
+    });
+
+    expect(result).toEqual({ shopId: "s9", logId: "l9" });
+    expect(rpcSpy).toHaveBeenCalledWith("log_shop_visit", {
+      p_external_id: "node/1",
+      p_name: "Corner",
+      p_lat: 38.7,
+      p_lng: -9.1,
+      p_rating: 5,
+      p_note: "yes",
+      p_visited_at: "2026-09-01",
+      p_drink: "espresso",
+      p_address: "1 Main",
+      p_website: "https://x.co",
+      p_phone: "555",
+      p_hours: "Mo-Fr 07:00-18:00",
+    });
+  });
+
+  it("throws when the RPC errors", async () => {
+    const client = { rpc: () => Promise.resolve({ data: null, error: new Error("must be authenticated to log a visit") }) } as any;
+    await expect(logVisit(client, "u1", { kind: "osm", externalId: "n/1", name: "C", lat: 1, lng: 2, rating: 3 })).rejects.toThrow("must be authenticated");
+  });
+
+  it("throws when the RPC returns no row", async () => {
+    const client = { rpc: () => Promise.resolve({ data: [], error: null }) } as any;
+    await expect(logVisit(client, "u1", { kind: "osm", externalId: "n/1", name: "C", lat: 1, lng: 2, rating: 3 })).rejects.toThrow();
+  });
+});
+
+describe("getPublicProfileByUsername", () => {
+  it("maps the profile row to camelCase", async () => {
+    const eqSpy = vi.fn(() => ({
+      maybeSingle: () =>
+        Promise.resolve({ data: { id: "u1", username: "mara", display_name: "Mara K.", bio: "hi", avatar_url: null, created_at: "2026-01-01T00:00:00Z" }, error: null }),
+    }));
+    const client = { from: () => ({ select: () => ({ eq: eqSpy }) }) } as any;
+    expect(await getPublicProfileByUsername(client, "mara")).toEqual({
+      id: "u1", username: "mara", displayName: "Mara K.", bio: "hi", avatarUrl: null, createdAt: "2026-01-01T00:00:00Z",
+    });
+    expect(eqSpy).toHaveBeenCalledWith("username", "mara");
+  });
+
+  it("returns null when no profile matches", async () => {
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: null }) }) }) }) } as any;
+    expect(await getPublicProfileByUsername(client, "ghost")).toBeNull();
+  });
+
+  it("throws on error", async () => {
+    const client = { from: () => ({ select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: null, error: new Error("boom") }) }) }) }) } as any;
+    await expect(getPublicProfileByUsername(client, "x")).rejects.toThrow("boom");
+  });
+});
+
+describe("getProfileStats", () => {
+  function statsClient(counts: Record<string, { count: number | null; error: unknown }>) {
+    const eqSpy = vi.fn();
+    const client = {
+      from: (table: string) => ({
+        select: () => ({
+          eq: (col: string, val: string) => {
+            eqSpy(table, col, val);
+            return Promise.resolve(counts[`${table}.${col}`]);
+          },
+        }),
+      }),
+    } as any;
+    return { client, eqSpy };
+  }
+
+  it("counts entries, followers and following", async () => {
+    const { client, eqSpy } = statsClient({
+      "logs.user_id": { count: 7, error: null },
+      "follows.followee_id": { count: 3, error: null },
+      "follows.follower_id": { count: 2, error: null },
+    });
+    expect(await getProfileStats(client, "u1")).toEqual({ entries: 7, followers: 3, following: 2 });
+    expect(eqSpy).toHaveBeenCalledWith("logs", "user_id", "u1");
+    expect(eqSpy).toHaveBeenCalledWith("follows", "followee_id", "u1");
+    expect(eqSpy).toHaveBeenCalledWith("follows", "follower_id", "u1");
+  });
+
+  it("treats null counts as zero", async () => {
+    const { client } = statsClient({
+      "logs.user_id": { count: null, error: null },
+      "follows.followee_id": { count: null, error: null },
+      "follows.follower_id": { count: null, error: null },
+    });
+    expect(await getProfileStats(client, "u1")).toEqual({ entries: 0, followers: 0, following: 0 });
+  });
+
+  it("throws when any count errors", async () => {
+    const { client } = statsClient({
+      "logs.user_id": { count: 1, error: null },
+      "follows.followee_id": { count: null, error: new Error("boom") },
+      "follows.follower_id": { count: 1, error: null },
+    });
+    await expect(getProfileStats(client, "u1")).rejects.toThrow("boom");
+  });
+});
+
+describe("getProfileEntries", () => {
+  const row = {
+    id: "l1", shop_id: "s1", rating: 4, note: null, drink: "drip", visited_at: "2026-09-01", created_at: "2026-09-01T10:00:00Z",
+    shops: { name: "Corner", neighborhood: "Alfama" },
+  };
+
+  function entriesClient(result: { data: unknown; error: unknown }) {
+    const rangeSpy = vi.fn(() => Promise.resolve(result));
+    const orderSpy = vi.fn();
+    const client = {
+      from: () => ({
+        select: () => ({
+          eq: () => ({
+            order: (col: string, opts: unknown) => {
+              orderSpy(col, opts);
+              return {
+                order: (col2: string, opts2: unknown) => {
+                  orderSpy(col2, opts2);
+                  return { range: rangeSpy };
+                },
+              };
+            },
+          }),
+        }),
+      }),
+    } as any;
+    return { client, rangeSpy, orderSpy };
+  }
+
+  it("maps rows, orders newest first and pages with offset/limit", async () => {
+    const { client, rangeSpy, orderSpy } = entriesClient({ data: [row], error: null });
+    expect(await getProfileEntries(client, "u1", { limit: 10, offset: 20 })).toEqual([
+      { id: "l1", shopId: "s1", shopName: "Corner", shopNeighborhood: "Alfama", rating: 4, note: null, drink: "drip", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z" },
+    ]);
+    expect(orderSpy).toHaveBeenNthCalledWith(1, "visited_at", { ascending: false });
+    expect(orderSpy).toHaveBeenNthCalledWith(2, "created_at", { ascending: false });
+    expect(rangeSpy).toHaveBeenCalledWith(20, 29);
+  });
+
+  it("defaults to the first 20 entries and returns [] when empty", async () => {
+    const { client, rangeSpy } = entriesClient({ data: [], error: null });
+    expect(await getProfileEntries(client, "u1")).toEqual([]);
+    expect(rangeSpy).toHaveBeenCalledWith(0, 19);
+  });
+
+  it("throws on error", async () => {
+    const { client } = entriesClient({ data: null, error: new Error("boom") });
+    await expect(getProfileEntries(client, "u1")).rejects.toThrow("boom");
+  });
+});
+
+describe("isFollowing", () => {
+  function followClient(result: { data: unknown; error: unknown }) {
+    return { from: () => ({ select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve(result) }) }) }) }) } as any;
+  }
+
+  it("is true when a follow row exists", async () => {
+    expect(await isFollowing(followClient({ data: { follower_id: "a" }, error: null }), "a", "b")).toBe(true);
+  });
+
+  it("is false when there is no row", async () => {
+    expect(await isFollowing(followClient({ data: null, error: null }), "a", "b")).toBe(false);
+  });
+
+  it("throws on error", async () => {
+    await expect(isFollowing(followClient({ data: null, error: new Error("boom") }), "a", "b")).rejects.toThrow("boom");
+  });
+});
+
+describe("setFollow", () => {
+  it("upserts (ignoring duplicates) when following", async () => {
+    const upsertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ upsert: upsertSpy }) } as any;
+    await setFollow(client, "a", "b", true);
+    expect(upsertSpy).toHaveBeenCalledWith({ follower_id: "a", followee_id: "b" }, { onConflict: "follower_id,followee_id", ignoreDuplicates: true });
+  });
+
+  it("deletes the pair when unfollowing", async () => {
+    const eq2 = vi.fn(() => Promise.resolve({ error: null }));
+    const eq1 = vi.fn(() => ({ eq: eq2 }));
+    const client = { from: () => ({ delete: () => ({ eq: eq1 }) }) } as any;
+    await setFollow(client, "a", "b", false);
+    expect(eq1).toHaveBeenCalledWith("follower_id", "a");
+    expect(eq2).toHaveBeenCalledWith("followee_id", "b");
+  });
+
+  it("throws on follow error", async () => {
+    const client = { from: () => ({ upsert: () => Promise.resolve({ error: new Error("boom") }) }) } as any;
+    await expect(setFollow(client, "a", "b", true)).rejects.toThrow("boom");
+  });
+
+  it("throws on unfollow error", async () => {
+    const client = { from: () => ({ delete: () => ({ eq: () => ({ eq: () => Promise.resolve({ error: new Error("boom") }) }) }) }) } as any;
+    await expect(setFollow(client, "a", "b", false)).rejects.toThrow("boom");
+  });
+});
+
+describe("updateProfile", () => {
+  function updateClient(error: unknown = null) {
+    const eqSpy = vi.fn(() => Promise.resolve({ error }));
+    const updateSpy = vi.fn(() => ({ eq: eqSpy }));
+    return { client: { from: () => ({ update: updateSpy }) } as any, updateSpy, eqSpy };
+  }
+
+  it("updates only the provided fields, trimming and nulling blanks", async () => {
+    const { client, updateSpy, eqSpy } = updateClient();
+    await updateProfile(client, "u1", { displayName: "  Mara K. ", bio: "   " });
+    expect(updateSpy).toHaveBeenCalledWith({ display_name: "Mara K.", bio: null });
+    expect(eqSpy).toHaveBeenCalledWith("id", "u1");
+  });
+
+  it("leaves untouched fields out of the update", async () => {
+    const { client, updateSpy } = updateClient();
+    await updateProfile(client, "u1", { bio: "hello" });
+    expect(updateSpy).toHaveBeenCalledWith({ bio: "hello" });
+  });
+
+  it("does nothing when no fields are given", async () => {
+    const { client, updateSpy } = updateClient();
+    await updateProfile(client, "u1", {});
+    expect(updateSpy).not.toHaveBeenCalled();
+  });
+
+  it("throws on error", async () => {
+    const { client } = updateClient(new Error("boom"));
+    await expect(updateProfile(client, "u1", { bio: "x" })).rejects.toThrow("boom");
   });
 });

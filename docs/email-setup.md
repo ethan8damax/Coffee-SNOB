@@ -28,12 +28,19 @@ Then **Authentication → Rate Limits** → raise "emails sent per hour" (defaul
 the free Resend plan allows about 100/day, so ~30–60 is a sane cap until you upgrade).
 
 ## 3. Supabase → Authentication → Email Templates
-Paste the HTML files as-is (they use `{{ .ConfirmationURL }}`):
+Paste each HTML file as-is into the matching tab (they use Supabase's `{{ .ConfirmationURL }}` / `{{ .Token }}`
+variables). Edit copy in `supabase/templates/generate.py`, run `python3 supabase/templates/generate.py`, re-paste.
 
-| Template | Subject | File |
+| Supabase tab | Subject | File |
 | --- | --- | --- |
-| Confirm signup | `Confirm your email for Coffee Snob` | `supabase/templates/confirm-signup.html` |
+| Confirm sign up | `Confirm your email for Coffee Snob` | `supabase/templates/confirm-signup.html` |
+| Invite user | `You're invited to Coffee Snob` | `supabase/templates/invite-user.html` |
+| Magic link | `Your Coffee Snob sign-in link` | `supabase/templates/magic-link.html` |
+| Change email address | `Confirm your new Coffee Snob email` | `supabase/templates/change-email.html` |
 | Reset password | `Reset your Coffee Snob password` | `supabase/templates/reset-password.html` |
+| Reauthentication | `Your Coffee Snob code` | `supabase/templates/reauthentication.html` |
+
+Only Confirm sign up and Reset password are used by v1; the rest are there so nothing ever goes out unbranded.
 
 ## 4. Test
 Sign up with a fresh address at `https://app.coffeesnobproject.com/sign-up`. The email should arrive from

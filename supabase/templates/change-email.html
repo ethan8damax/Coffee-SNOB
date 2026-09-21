@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
-<title>Reset your password</title>
+<title>Confirm your new email</title>
 </head>
 <body style="margin:0;padding:0;background:#f0ecdf;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Use this link to choose a new Coffee Snob password.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Confirm the new address for your Coffee Snob account.</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0ecdf;">
 <tr><td align="center" style="padding:32px 16px;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
@@ -15,15 +15,15 @@
       <a href="https://app.coffeesnobproject.com" style="text-decoration:none;"><img src="https://app.coffeesnobproject.com/email/snob-logo.png" width="132" alt="Snob" style="display:block;border:0;height:auto;width:132px;"></a>
     </td></tr>
     <tr><td style="background:#faf8ef;border:1px solid #dcd7c8;border-radius:2px;padding:36px 32px 32px 32px;">
-      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10.5px;line-height:14px;letter-spacing:1.4px;text-transform:uppercase;color:#c46a17;font-weight:700;">Password reset</div>
-      <h1 style="margin:14px 0 14px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:32px;line-height:36px;letter-spacing:-0.9px;font-weight:800;color:#161310;">Reset your password.</h1>
-      <p style="margin:0 0 28px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#4b423a;">Someone asked to reset the password for this Coffee Snob account. Tap below to choose a new one. The link works once and expires soon.</p>
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#4a1206;border-radius:2px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 28px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:14px;letter-spacing:1.4px;text-transform:uppercase;font-weight:800;color:#e9e4d0;text-decoration:none;">Choose a new password</a></td></tr></table>
+      <div style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:10.5px;line-height:14px;letter-spacing:1.4px;text-transform:uppercase;color:#c46a17;font-weight:700;">Email change</div>
+      <h1 style="margin:14px 0 14px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:32px;line-height:36px;letter-spacing:-0.9px;font-weight:800;color:#161310;">Confirm your new email.</h1>
+      <p style="margin:0 0 28px 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:15px;line-height:23px;color:#4b423a;">You asked to change the email on your Coffee Snob account from {{ .Email }} to {{ .NewEmail }}. Confirm to make the switch.</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td style="background:#4a1206;border-radius:2px;"><a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:16px 28px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12px;line-height:14px;letter-spacing:1.4px;text-transform:uppercase;font-weight:800;color:#e9e4d0;text-decoration:none;">Confirm new email</a></td></tr></table>
       <p style="margin:28px 0 0 0;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:12.5px;line-height:19px;color:#8c8175;">Button not working? Paste this link into your browser:<br><a href="{{ .ConfirmationURL }}" style="color:#05616d;word-break:break-all;">{{ .ConfirmationURL }}</a></p>
     </td></tr>
     <tr><td style="padding:20px 4px 0 4px;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-size:11px;line-height:17px;color:#8c8175;">
       <span style="letter-spacing:1.2px;text-transform:uppercase;font-weight:700;color:#4b423a;">Find coffee worth the detour</span><br>
-      If you didn't ask for this, ignore this email. Your password stays as it is.
+      If you didn't ask for this, ignore this email and your address stays as it is.
     </td></tr>
   </table>
 </td></tr>

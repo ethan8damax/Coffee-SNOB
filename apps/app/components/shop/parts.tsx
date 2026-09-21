@@ -3,7 +3,8 @@ import { View, Text, Pressable, Linking, Platform } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
-import { Avatar, Body, BodySm, ButtonBu, ButtonLine, D1, D4, IconBack, Label } from "../primitives";
+import { Avatar, Body, BodySm, ButtonLine, ButtonOx, D1, IconBack, Label } from "../primitives";
+import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
 import { openDirections } from "../../lib/directions";
@@ -78,8 +79,9 @@ export function Actions({ shopId }: { shopId: string }) {
 
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <ButtonBu
+      <ButtonOx
         title="Log a visit"
+        icon={<NavIcon name="plus" size={15} color={colors.cream} />}
         style={{ flex: 1 }}
         accessibilityRole="button"
         accessibilityLabel="Log a visit"
@@ -132,15 +134,15 @@ function ReviewRow({ review }: { review: ShopReview }) {
           accessibilityLabel={`${name}'s profile`}
           style={{ minHeight: 44, justifyContent: "center", flexShrink: 1 }}
         >
-          <D4 numberOfLines={1}>{name}</D4>
+          <Label numberOfLines={1} style={{ color: colors.ink }}>{name}</Label>
         </Pressable>
-        {when ? <BodySm style={{ marginLeft: "auto" }}>{when}</BodySm> : null}
+        {when ? <Label style={{ marginLeft: "auto" }}>{when}</Label> : null}
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+      <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, paddingLeft: 37 }}>
         <Detour value={review.rating} />
         {review.drink ? <Chip label={review.drink} /> : null}
       </View>
-      {review.note ? <Body>{review.note}</Body> : null}
+      {review.note ? <Body style={{ paddingLeft: 37 }}>{review.note}</Body> : null}
     </View>
   );
 }

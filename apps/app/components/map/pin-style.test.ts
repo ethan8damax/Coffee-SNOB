@@ -12,7 +12,7 @@ describe("pinStyleForRating", () => {
   });
 
   it("uses an outlined/muted style for 1-3", () => {
-    expect(pinStyleForRating(3)).toEqual({ background: colors.card, foreground: colors.ink2, border: colors.rule });
-    expect(pinStyleForRating(1)).toEqual({ background: colors.card, foreground: colors.ink2, border: colors.rule });
+    expect(pinStyleForRating(3)).toEqual({ background: colors.card, foreground: colors.ink2, border: "rgba(22,19,16,.32)" });
+    expect(pinStyleForRating(1)).toEqual({ background: colors.card, foreground: colors.ink2, border: "rgba(22,19,16,.32)" });
   });
 });

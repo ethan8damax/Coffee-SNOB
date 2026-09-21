@@ -34,13 +34,12 @@ describe("verdictCountLabel", () => {
 
 describe("consensusLine", () => {
   it("null when no logs", () => {
-    expect(consensusLine({ logCount: 0, topVerdict: null, rating: null })).toBeNull();
+    expect(consensusLine({ logCount: 0, topVerdict: null })).toBeNull();
   });
-  it("word + average when logged", () => {
-    expect(consensusLine({ logCount: 3, topVerdict: 4, rating: 3.7 })).toEqual({ word: "Make the trip", average: "3.7" });
-  });
-  it("average null when rating null", () => {
-    expect(consensusLine({ logCount: 1, topVerdict: 2, rating: null })).toEqual({ word: "On your way", average: null });
+  // PRODUCT.md: the scale is the brand — verdict words only, never a numeric average.
+  it("is just the verdict word when logged, with no numeric average", () => {
+    expect(consensusLine({ logCount: 3, topVerdict: 4 })).toEqual({ word: "Make the trip" });
+    expect(consensusLine({ logCount: 1, topVerdict: 2 })).toEqual({ word: "On your way" });
   });
 });
 

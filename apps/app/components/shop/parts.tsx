@@ -40,10 +40,7 @@ export function Consensus({ shop }: { shop: ShopDetail }) {
     <View style={{ gap: 8 }}>
       <Label>{line ? verdictCountLabel(shop.logCount) : "Snob consensus"}</Label>
       {line ? (
-        <View style={{ flexDirection: "row", alignItems: "baseline", flexWrap: "wrap", columnGap: 12 }}>
-          <D1 style={{ color: colors.burnt, fontSize: 30, lineHeight: 32, letterSpacing: -0.96 }}>{line.word}</D1>
-          {line.average ? <Label style={{ color: colors.ink2 }}>{`${line.average} avg`}</Label> : null}
-        </View>
+        <D1 style={{ color: colors.burnt, fontSize: 30, lineHeight: 32, letterSpacing: -0.96 }}>{line.word}</D1>
       ) : (
         <Body style={{ color: colors.ink2 }}>No verdicts yet. Be the first to say if it's worth the trip.</Body>
       )}

@@ -53,7 +53,7 @@ export default function MapScreen() {
   // immediately instead of waiting for the first pan. Runs once: the `!bounds`
   // check stops it from re-seeding after a real pan has set bounds.
   useEffect(() => {
-    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.03));
+    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.04));
   }, [locationLoading, bounds, center]);
 
   // If the map opened on the fallback (no fix in time) and the device's

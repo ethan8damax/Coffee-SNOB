@@ -4,8 +4,8 @@ import { containsBounds, padBounds } from "./bounds";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
-// Fetch a box this much bigger than the viewport on every side (0.5 → 2x wide and tall).
-const FETCH_PADDING = 0.5;
+// Fetch a box this much bigger than the viewport on every side (1 → 3x wide and tall, ~8 mi radius on a phone).
+const FETCH_PADDING = 1;
 
 export async function fetchNearbyOsmShops(bounds: MapBounds, webAppUrl: string): Promise<NearbyShopPin[]> {
   const params = new URLSearchParams({

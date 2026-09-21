@@ -10,7 +10,7 @@ import { brandStyle, type StyleLike } from "./brand-style";
 import { nearbyDotHtml, ratedPinHtml, userDotHtml } from "./pin-markup";
 import type { MapBounds, MapViewProps } from "./types";
 
-const DEFAULT_ZOOM = 14;
+const DEFAULT_ZOOM = 13;
 // ponytail: cap the unrated dots so a dense downtown doesn't put thousands of
 // DOM markers on the page. Ceiling: past this, far-from-center cafés drop off.
 // Upgrade path: marker clustering (leaflet.markercluster) or a canvas layer.

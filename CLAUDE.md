@@ -14,3 +14,8 @@ link, ad, or paid placement anywhere in this repo.
 
 Design/spec history: `docs/superpowers/specs/`. Implementation plans:
 `docs/superpowers/plans/`.
+
+## Launch tracking
+
+The v1 soft-launch plan is tracked in `docs/v1-launch-tracker.md`. Check items
+off and add a dated Status log line as work lands.

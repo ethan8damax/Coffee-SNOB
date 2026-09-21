@@ -29,7 +29,6 @@
       "expo-status-bar",
       "expo-secure-store",
       "expo-font",
-      "@rnmapbox/maps",
       [
         "expo-location",
         {

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
+import { LocateIcon } from "../../components/map/locate-icon";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
 import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
@@ -21,6 +22,20 @@ export default function MapScreen() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
+  const [recenterKey, setRecenterKey] = useState(0);
+
+  // If the map opened on the fallback (no fix within the timeout) and the
+  // device's location then arrives, move there once.
+  const openedOnFallback = useRef(false);
+  useEffect(() => {
+    if (!locationLoading && !userCenter) openedOnFallback.current = true;
+  }, [locationLoading, userCenter]);
+  useEffect(() => {
+    if (userCenter && openedOnFallback.current) {
+      openedOnFallback.current = false;
+      setRecenterKey((k) => k + 1);
+    }
+  }, [userCenter]);
 
   // Seed bounds once location settles, so the first data fetch fires
   // immediately instead of waiting for onBoundsChange (onMoveEnd/onMapIdle
@@ -76,12 +91,38 @@ export default function MapScreen() {
         ratedShops={ratedShops}
         nearbyShops={nearbyShops}
         initialCenter={center}
+        userLocation={userCenter}
+        recenterKey={recenterKey}
         onBoundsChange={setBounds}
         selectedRatedShopId={selectedRatedShopId}
         selectedNearbyExternalId={selectedNearbyExternalId}
         onSelectRatedShop={selectRated}
         onSelectNearbyShop={selectNearby}
       />
+
+      {/* Interim locate-me control — M2 moves it into the design's top bar. */}
+      <Pressable
+        onPress={() => setRecenterKey((k) => k + 1)}
+        disabled={!userCenter}
+        accessibilityRole="button"
+        accessibilityLabel="Use my location"
+        style={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          width: 44,
+          height: 44,
+          alignItems: "center",
+          justifyContent: "center",
+          borderRadius: 2,
+          borderWidth: 1,
+          borderColor: colors.ink,
+          backgroundColor: colors.card,
+          opacity: userCenter ? 1 : 0.4,
+        }}
+      >
+        <LocateIcon color={colors.ink} />
+      </Pressable>
 
       {selectedRatedShop && (
         <View style={{ position: "absolute", left: 16, right: 16, bottom: 16, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 2, padding: 12 }}>

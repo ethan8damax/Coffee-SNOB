@@ -7,5 +7,6 @@ export type PinStyle = { background: string; foreground: string; border: string 
 export function pinStyleForRating(rating: number): PinStyle {
   if (rating >= 5) return { background: colors.oxblood, foreground: colors.cream, border: colors.oxblood };
   if (rating === 4) return { background: colors.burnt, foreground: colors.ink, border: colors.burnt };
-  return { background: colors.card, foreground: colors.ink2, border: colors.rule };
+  // The design's 1-3 outline is a stronger ink hairline (32%) than the generic rule token.
+  return { background: colors.card, foreground: colors.ink2, border: "rgba(22,19,16,.32)" };
 }

@@ -1,90 +1,166 @@
-// apps/app/components/map/MapView.web.tsx
-import { useCallback, useRef } from "react";
-// react-map-gl 8.1.3 has no root "." export (package.json `exports` only
-// lists "./mapbox", "./maplibre", "./mapbox-legacy") — the plan's
-// `from "react-map-gl"` import doesn't resolve. We're on Mapbox (native
-// side uses @rnmapbox/maps), so import from the "/mapbox" subpath, which
-// re-exports @vis.gl/react-mapbox. Map/Marker/MapRef props are otherwise
-// unchanged: mapboxAccessToken, initialViewState, mapStyle, onMoveEnd,
-// and MapRef.getBounds() all still match the plan's snippet.
-import Map, { Marker, type MapRef } from "react-map-gl/mapbox";
-import "mapbox-gl/dist/mapbox-gl.css";
-import { colors } from "@coffeesnob/design-tokens";
-import { pinStyleForRating } from "./pin-style";
-import type { MapViewProps } from "./types";
+import { useEffect, useMemo } from "react";
+import { View } from "react-native";
+import L from "leaflet";
+import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
+import "@maplibre/maplibre-gl-leaflet";
+import "leaflet/dist/leaflet.css";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { BASEMAP } from "./basemap";
+import { brandStyle, type StyleLike } from "./brand-style";
+import { nearbyDotHtml, ratedPinHtml, userDotHtml } from "./pin-markup";
+import type { MapBounds, MapViewProps } from "./types";
+
+const DEFAULT_ZOOM = 14;
+// ponytail: cap the unrated dots so a dense downtown doesn't put thousands of
+// DOM markers on the page. Ceiling: past this, far-from-center cafés drop off.
+// Upgrade path: marker clustering (leaflet.markercluster) or a canvas layer.
+const MAX_DOTS = 400;
+
+const STYLE_ID = "snob-map-styles";
+function ensureMapStyles() {
+  if (typeof document === "undefined" || document.getElementById(STYLE_ID)) return;
+  const el = document.createElement("style");
+  el.id = STYLE_ID;
+  el.textContent = [
+    ".snob-pin{background:none;border:none}",
+    ".leaflet-container{background:#e6dec9;font-family:'Area',sans-serif}",
+    ".leaflet-control-attribution{font-size:9px;background:rgba(240,236,223,.85)!important}",
+  ].join("");
+  document.head.appendChild(el);
+}
+
+// One fetch of the style per page load, recolored to the design palette.
+let styleRequest: Promise<StyleLike> | null = null;
+function loadBrandStyle(): Promise<StyleLike> {
+  styleRequest ??= fetch(BASEMAP.styleUrl)
+    .then((response) => {
+      if (!response.ok) throw new Error(`basemap style request failed: ${response.status}`);
+      return response.json() as Promise<StyleLike>;
+    })
+    .then(brandStyle)
+    .catch((error) => {
+      styleRequest = null;
+      throw error;
+    });
+  return styleRequest;
+}
+
+// Vector basemap drawn by MapLibre inside a Leaflet layer. If the style can't
+// load, the container's land-colored background stays and pins still work.
+function Basemap() {
+  const map = useMap();
+  useEffect(() => {
+    let cancelled = false;
+    let layer: L.MaplibreGL | null = null;
+    loadBrandStyle()
+      .then((style) => {
+        if (cancelled) return;
+        // `attribution` is a standard Leaflet layer option that the plugin's
+        // typings don't list; it is read by Leaflet's attribution control.
+        layer = L.maplibreGL({ style, attribution: BASEMAP.attribution } as never).addTo(map);
+        layer.getMaplibreMap().on("error", (event) => console.warn("basemap:", event.error?.message ?? event));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+      layer?.remove();
+    };
+  }, [map]);
+  return null;
+}
+
+function pinIcon(html: string) {
+  return L.divIcon({ html, className: "snob-pin", iconSize: [0, 0], iconAnchor: [0, 0] });
+}
+
+function ViewportEvents({ onBoundsChange, onClearSelection }: { onBoundsChange: (b: MapBounds) => void; onClearSelection: () => void }) {
+  const map = useMapEvents({
+    moveend: () => {
+      const b = map.getBounds();
+      onBoundsChange({ minLat: b.getSouth(), maxLat: b.getNorth(), minLng: b.getWest(), maxLng: b.getEast() });
+    },
+    click: onClearSelection,
+  });
+  return null;
+}
+
+function Recenter({ target, recenterKey }: { target: { lat: number; lng: number } | null; recenterKey: number }) {
+  const map = useMap();
+  useEffect(() => {
+    if (recenterKey > 0 && target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), DEFAULT_ZOOM));
+    // Only a new recenterKey should trigger a fly — not a fresh location fix.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recenterKey]);
+  return null;
+}
 
 export function MapView({
   ratedShops,
   nearbyShops,
   initialCenter,
+  userLocation,
+  recenterKey,
   onBoundsChange,
   selectedRatedShopId,
   selectedNearbyExternalId,
   onSelectRatedShop,
   onSelectNearbyShop,
 }: MapViewProps) {
-  const mapRef = useRef<MapRef>(null);
+  ensureMapStyles();
 
-  const handleMoveEnd = useCallback(() => {
-    const bounds = mapRef.current?.getBounds();
-    if (!bounds) return;
-    onBoundsChange({
-      minLat: bounds.getSouth(),
-      maxLat: bounds.getNorth(),
-      minLng: bounds.getWest(),
-      maxLng: bounds.getEast(),
-    });
-  }, [onBoundsChange]);
+  const anySelected = selectedRatedShopId !== null || selectedNearbyExternalId !== null;
+  const userIcon = useMemo(() => pinIcon(userDotHtml()), []);
+  const dots = useMemo(() => nearbyShops.slice(0, MAX_DOTS), [nearbyShops]);
 
   return (
-    <Map
-      ref={mapRef}
-      mapboxAccessToken={process.env.EXPO_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""}
-      initialViewState={{ longitude: initialCenter.lng, latitude: initialCenter.lat, zoom: 13 }}
-      style={{ width: "100%", height: "100%" }}
-      mapStyle="mapbox://styles/mapbox/light-v11"
-      onMoveEnd={handleMoveEnd}
-    >
-      {nearbyShops.map((shop) => {
-        const selected = selectedNearbyExternalId === shop.externalId;
-        return (
-          <Marker key={shop.externalId} longitude={shop.lng} latitude={shop.lat} onClick={() => onSelectNearbyShop(shop.externalId)}>
-            <div
-              style={{
-                width: selected ? 11 : 7,
-                height: selected ? 11 : 7,
-                borderRadius: "50%",
-                background: selected ? colors.ink : colors.card,
-                border: `1.4px solid ${selected ? colors.ink : colors.ink3}`,
-                cursor: "pointer",
-              }}
-            />
-          </Marker>
-        );
-      })}
+    <View style={{ flex: 1 }}>
+      <MapContainer
+        center={[initialCenter.lat, initialCenter.lng]}
+        zoom={DEFAULT_ZOOM}
+        zoomControl={false}
+        // isolation keeps Leaflet's internal z-indexes from covering the app's own overlays.
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate" }}
+      >
+        <Basemap />
+        <ViewportEvents
+          onBoundsChange={onBoundsChange}
+          onClearSelection={() => {
+            // Clearing either selection clears both (see map.tsx select handlers).
+            onSelectRatedShop(null);
+          }}
+        />
+        <Recenter target={userLocation} recenterKey={recenterKey} />
 
-      {ratedShops.map((shop) => {
-        const style = pinStyleForRating(shop.rating);
-        const selected = selectedRatedShopId === shop.id;
-        return (
-          <Marker key={shop.id} longitude={shop.lng} latitude={shop.lat} onClick={() => onSelectRatedShop(shop.id)}>
-            <div
-              style={{
-                padding: "5px 7px",
-                borderRadius: 2,
-                background: style.background,
-                border: `${selected ? 2 : 1}px solid ${selected ? colors.ink : style.border}`,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <span style={{ color: style.foreground, fontSize: 11, fontWeight: 700 }}>{shop.rating}</span>
-            </div>
-          </Marker>
-        );
-      })}
-    </Map>
+        {dots.map((shop) => {
+          const selected = selectedNearbyExternalId === shop.externalId;
+          return (
+            <Marker
+              key={shop.externalId}
+              position={[shop.lat, shop.lng]}
+              icon={pinIcon(nearbyDotHtml({ selected }))}
+              title={shop.name}
+              zIndexOffset={selected ? 500 : 0}
+              eventHandlers={{ click: () => onSelectNearbyShop(shop.externalId) }}
+            />
+          );
+        })}
+
+        {ratedShops.map((shop) => {
+          const selected = selectedRatedShopId === shop.id;
+          return (
+            <Marker
+              key={shop.id}
+              position={[shop.lat, shop.lng]}
+              icon={pinIcon(ratedPinHtml({ name: shop.name, rating: shop.rating, selected, dimmed: anySelected && !selected }))}
+              title={shop.name}
+              zIndexOffset={selected ? 2000 : 1000}
+              eventHandlers={{ click: () => onSelectRatedShop(shop.id) }}
+            />
+          );
+        })}
+
+        {userLocation && <Marker position={[userLocation.lat, userLocation.lng]} icon={userIcon} interactive={false} keyboard={false} zIndexOffset={3000} />}
+      </MapContainer>
+    </View>
   );
 }

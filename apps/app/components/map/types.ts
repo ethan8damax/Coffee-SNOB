@@ -32,6 +32,11 @@ export type MapViewProps = {
   ratedShops: RatedShopPin[];
   nearbyShops: NearbyShopPin[];
   initialCenter: { lat: number; lng: number };
+  // The device's real location (null when denied/unavailable) — drawn as the
+  // "you are here" dot, and the target of a recenter.
+  userLocation: { lat: number; lng: number } | null;
+  // Bump this number to fly the map back to userLocation (0 = never).
+  recenterKey: number;
   onBoundsChange: (bounds: MapBounds) => void;
   selectedRatedShopId: string | null;
   selectedNearbyExternalId: string | null;

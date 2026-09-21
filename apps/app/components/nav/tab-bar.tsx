@@ -37,7 +37,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
 
         if (item.isAction) {
           return (
-            <Pressable key={item.route} onPress={onPress} accessibilityRole="button" accessibilityLabel={item.label} style={{ paddingHorizontal: 4 }}>
+            <Pressable key={item.route} onPress={onPress} accessibilityRole="button" accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
               <View style={{ width: 46, height: 46, borderRadius: 2, backgroundColor: colors.burnt, alignItems: "center", justifyContent: "center" }}>
                 <NavIcon name={item.icon} size={20} color={colors.paper} />
               </View>

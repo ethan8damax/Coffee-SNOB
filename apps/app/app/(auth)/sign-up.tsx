@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, TextInput, StyleSheet } from "react-native";
+import { View, TextInput, StyleSheet, Platform } from "react-native";
 import { Link, router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { supabase } from "@/lib/supabase";
@@ -14,7 +14,10 @@ export default function SignUpScreen() {
   async function onSubmit() {
     setError(null);
     setLoading(true);
-    const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+    // The confirm link lands on /verified in this same app (web); Supabase only honors this
+    // if the origin is in the project's Auth redirect allow-list, else it falls back to Site URL.
+    const emailRedirectTo = Platform.OS === "web" ? `${window.location.origin}/verified` : undefined;
+    const { data, error: signUpError } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
     setLoading(false);
     if (signUpError) {
       setError(signUpError.message);

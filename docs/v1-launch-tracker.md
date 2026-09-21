@@ -77,7 +77,7 @@ it short — details live in the spec.
 - [x] Snob status tiers derived from log counts (Beginner 0 · Regular 5 · Connoisseur 15 · Snob 30 · Head Snob 60), verified on a real profile
 - [x] Visit heatmap (last 12 weeks from `visited_at`), verified on a real profile
 - [~] Faves tab (own/their 4–5 verdicts): empty state verified; not yet with a real 4–5 log
-- [~] Saved shops: **migration `0016_shop_saves.sql` written but NOT applied** (the production apply was blocked; needs your OK). Save button on the shop page + Saved tab on your profile are built and show a retry error until it lands.
+- [~] Saved shops: migration `0016_shop_saves.sql` applied 9/21 (RLS on, own-rows policy). Save button + Saved tab built; not yet exercised with a real save.
 - [x] Followers / Following lists + Find people by username (`/people`), verified search against real profiles
 - [ ] Design-parity pass on status block, heatmap, tabs, people screen (couldn't navigate the design canvas in the small test window)
 
@@ -85,6 +85,7 @@ it short — details live in the spec.
 
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs
 - [ ] Keyboard + screen-reader pass (map, sheet, forms)
+- [ ] Supabase Auth → URL Configuration: Site URL `https://app.coffeesnobproject.com` + redirect URL `https://app.coffeesnobproject.com/**` (verify links were going to localhost) — **needs you**
 - [ ] Supabase: enable leaked-password protection
 - [ ] Supabase: review `log_shop_visit` execute grant
 - [ ] Confirm tile provider commercial terms + attribution visible

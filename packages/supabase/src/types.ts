@@ -274,6 +274,7 @@ export type Database = {
       logs: {
         Row: {
           created_at: string
+          drink: string | null
           id: string
           note: string | null
           rating: number
@@ -283,6 +284,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          drink?: string | null
           id?: string
           note?: string | null
           rating: number
@@ -292,6 +294,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          drink?: string | null
           id?: string
           note?: string | null
           rating?: number
@@ -312,6 +315,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          bio: string | null
           created_at: string
           display_name: string | null
           id: string
@@ -321,6 +325,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id: string
@@ -330,6 +335,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
           display_name?: string | null
           id?: string
@@ -341,37 +347,49 @@ export type Database = {
       }
       shops: {
         Row: {
+          address: string | null
           city_id: string | null
           created_at: string
           external_id: string | null
+          hours: string | null
           id: string
           lat: number | null
           lng: number | null
           name: string
           neighborhood: string | null
+          phone: string | null
           promotion_status: string
+          website: string | null
         }
         Insert: {
+          address?: string | null
           city_id?: string | null
           created_at?: string
           external_id?: string | null
+          hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           name: string
           neighborhood?: string | null
+          phone?: string | null
           promotion_status?: string
+          website?: string | null
         }
         Update: {
+          address?: string | null
           city_id?: string | null
           created_at?: string
           external_id?: string | null
+          hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
           name?: string
           neighborhood?: string | null
+          phone?: string | null
           promotion_status?: string
+          website?: string | null
         }
         Relationships: [
           {
@@ -450,8 +468,13 @@ export type Database = {
           p_rating: number
           p_note?: string
           p_visited_at?: string
+          p_drink?: string
+          p_address?: string
+          p_website?: string
+          p_phone?: string
+          p_hours?: string
         }
-        Returns: Tables<"logs">
+        Returns: { shop_id: string; log_id: string }[]
       }
     }
     Enums: {

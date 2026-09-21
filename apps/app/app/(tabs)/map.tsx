@@ -1,31 +1,63 @@
-import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { View, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
-import { LocateIcon } from "../../components/map/locate-icon";
+import { FilterChips, LocateButton, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { PreviewCard } from "../../components/map/preview-card";
+import { ShopListView } from "../../components/map/shop-list-view";
+import { rowKey } from "../../components/map/shop-row";
+import { D4, Label } from "../../components/primitives";
+import type { MapBounds, MapViewProps } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
+import { useOnline } from "../../lib/map/use-online";
 import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
+import { applyFilter, buildRows, type ListRow, type MapFilter } from "../../lib/map/shop-list";
 import { openDirections } from "../../lib/directions";
-import type { MapBounds } from "../../components/map/types";
+import { isDesktopWidth } from "@/lib/nav";
 
 const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
-// Used only when the visitor's real location can't be resolved (denied,
-// unavailable, or timed out) — see useUserLocation.
-const LISBON_FALLBACK = { lat: 38.71, lng: -9.14 };
+// Where the map opens when the visitor's real location isn't available.
+const FALLBACK = { name: "Atlanta", lat: 33.749, lng: -84.388 };
+const PANEL_WIDTH = 380;
+const TAB_BAR_HEIGHT = 78;
+
+type CameraTarget = NonNullable<MapViewProps["cameraTarget"]>;
+type ZoomRequest = NonNullable<MapViewProps["zoomRequest"]>;
+
+function boundsCenter(b: MapBounds) {
+  return { lat: (b.minLat + b.maxLat) / 2, lng: (b.minLng + b.maxLng) / 2 };
+}
 
 export default function MapScreen() {
+  const { width, height } = useWindowDimensions();
+  const desktop = isDesktopWidth(width);
   const { center: userCenter, loading: locationLoading } = useUserLocation();
-  const center = userCenter ?? LISBON_FALLBACK;
+  const online = useOnline();
+  const center = userCenter ?? FALLBACK;
+
   const [bounds, setBounds] = useState<MapBounds | null>(null);
+  const [filter, setFilter] = useState<MapFilter>("all");
+  const [mode, setMode] = useState<"Map" | "List">("Map");
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
-  const [recenterKey, setRecenterKey] = useState(0);
+  const [camera, setCamera] = useState<CameraTarget | null>(null);
+  const [zoomRequest, setZoomRequest] = useState<ZoomRequest | null>(null);
+  const nonce = useRef(0);
 
-  // If the map opened on the fallback (no fix within the timeout) and the
-  // device's location then arrives, move there once.
+  const flyTo = (lat: number, lng: number, zoom?: number) => setCamera({ lat, lng, zoom, nonce: ++nonce.current });
+
+  // Seed bounds once location settles, so the first data fetch fires
+  // immediately instead of waiting for the first pan. Runs once: the `!bounds`
+  // check stops it from re-seeding after a real pan has set bounds.
+  useEffect(() => {
+    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.03));
+  }, [locationLoading, bounds, center]);
+
+  // If the map opened on the fallback (no fix in time) and the device's
+  // location then arrives, move there once.
   const openedOnFallback = useRef(false);
   useEffect(() => {
     if (!locationLoading && !userCenter) openedOnFallback.current = true;
@@ -33,23 +65,18 @@ export default function MapScreen() {
   useEffect(() => {
     if (userCenter && openedOnFallback.current) {
       openedOnFallback.current = false;
-      setRecenterKey((k) => k + 1);
+      flyTo(userCenter.lat, userCenter.lng);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userCenter]);
 
-  // Seed bounds once location settles, so the first data fetch fires
-  // immediately instead of waiting for onBoundsChange (onMoveEnd/onMapIdle
-  // don't fire for the initial camera settle — see map-screen bugfix
-  // notes). Runs once: the `!bounds` check stops it from re-seeding after
-  // a real pan has already set bounds to something else.
-  useEffect(() => {
-    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.03));
-  }, [locationLoading, bounds, center]);
+  const { ratedShops, nearbyShops, status, reload } = useNearbyMapData(bounds, WEB_APP_URL);
+  const visible = useMemo(() => applyFilter(filter, ratedShops, nearbyShops), [filter, ratedShops, nearbyShops]);
+  const origin = userCenter ?? (bounds ? boundsCenter(bounds) : null);
+  const rows = useMemo(() => buildRows(visible.rated, visible.nearby, origin), [visible, origin]);
 
-  const { ratedShops, nearbyShops } = useNearbyMapData(bounds, WEB_APP_URL);
-
-  const selectedRatedShop = ratedShops.find((s) => s.id === selectedRatedShopId) ?? null;
-  const selectedNearbyShop = nearbyShops.find((s) => s.externalId === selectedNearbyExternalId) ?? null;
+  const activeKey = selectedRatedShopId ? `r:${selectedRatedShopId}` : selectedNearbyExternalId ? `n:${selectedNearbyExternalId}` : null;
+  const selectedRow = activeKey ? (rows.find((r) => rowKey(r) === activeKey) ?? null) : null;
 
   const selectRated = (id: string | null) => {
     setSelectedRatedShopId(id);
@@ -60,22 +87,40 @@ export default function MapScreen() {
     setSelectedRatedShopId(null);
   };
 
-  const logRatedVisit = () => {
-    if (!selectedRatedShop) return;
-    router.push({ pathname: "/(tabs)/log", params: { shopId: selectedRatedShop.id, name: selectedRatedShop.name } });
+  const openShop = (row: ListRow) => {
+    if (row.kind === "rated") router.push(`/shop/${row.shop.id}`);
   };
-  const logNearbyVisit = () => {
-    if (!selectedNearbyShop) return;
-    router.push({
-      pathname: "/(tabs)/log",
-      params: {
-        externalId: selectedNearbyShop.externalId,
-        name: selectedNearbyShop.name,
-        lat: String(selectedNearbyShop.lat),
-        lng: String(selectedNearbyShop.lng),
-      },
-    });
+
+  const logVisit = (row: ListRow) => {
+    if (row.kind === "rated") {
+      router.push({ pathname: "/log", params: { shopId: row.shop.id } });
+      return;
+    }
+    const { externalId, name, lat, lng, address, website, phone, hours } = row.shop;
+    const params: Record<string, string> = { externalId, name, lat: String(lat), lng: String(lng) };
+    if (address) params.address = address;
+    if (website) params.website = website;
+    if (phone) params.phone = phone;
+    if (hours) params.hours = hours;
+    router.push({ pathname: "/log", params });
   };
+
+  const onPressRow = (row: ListRow) => {
+    if (row.kind === "rated") {
+      if (!desktop) {
+        openShop(row);
+        return;
+      }
+      selectRated(row.shop.id);
+    } else {
+      selectNearby(row.shop.externalId);
+    }
+    setMode("Map");
+    flyTo(row.shop.lat, row.shop.lng, 16);
+  };
+
+  const locate = () => userCenter && flyTo(userCenter.lat, userCenter.lng);
+  const zoom = (delta: 1 | -1) => setZoomRequest({ delta, nonce: ++nonce.current });
 
   if (locationLoading) {
     return (
@@ -85,118 +130,97 @@ export default function MapScreen() {
     );
   }
 
-  return (
-    <View style={{ flex: 1 }}>
-      <MapView
-        ratedShops={ratedShops}
-        nearbyShops={nearbyShops}
-        initialCenter={center}
-        userLocation={userCenter}
-        recenterKey={recenterKey}
-        onBoundsChange={setBounds}
-        selectedRatedShopId={selectedRatedShopId}
-        selectedNearbyExternalId={selectedNearbyExternalId}
-        onSelectRatedShop={selectRated}
-        onSelectNearbyShop={selectNearby}
-      />
+  const map = (
+    <MapView
+      ratedShops={visible.rated}
+      nearbyShops={visible.nearby}
+      initialCenter={center}
+      userLocation={userCenter}
+      cameraTarget={camera}
+      zoomRequest={zoomRequest}
+      onBoundsChange={setBounds}
+      selectedRatedShopId={selectedRatedShopId}
+      selectedNearbyExternalId={selectedNearbyExternalId}
+      onSelectRatedShop={selectRated}
+      onSelectNearbyShop={selectNearby}
+    />
+  );
 
-      {/* Interim locate-me control — M2 moves it into the design's top bar. */}
-      <Pressable
-        onPress={() => setRecenterKey((k) => k + 1)}
-        disabled={!userCenter}
-        accessibilityRole="button"
-        accessibilityLabel="Use my location"
-        style={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          width: 44,
-          height: 44,
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: 2,
-          borderWidth: 1,
-          borderColor: colors.ink,
-          backgroundColor: colors.card,
-          opacity: userCenter ? 1 : 0.4,
-        }}
-      >
-        <LocateIcon color={colors.ink} />
-      </Pressable>
+  const preview = selectedRow ? (
+    <PreviewCard
+      row={selectedRow}
+      onOpen={() => openShop(selectedRow)}
+      onLog={() => logVisit(selectedRow)}
+      onDirections={() => openDirections(selectedRow.shop.lat, selectedRow.shop.lng)}
+      onDismiss={() => selectRated(null)}
+    />
+  ) : null;
 
-      {selectedRatedShop && (
-        <View style={{ position: "absolute", left: 16, right: 16, bottom: 16, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 2, padding: 12 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <Text style={{ fontWeight: "700", color: colors.ink }}>{selectedRatedShop.name}</Text>
-            <Pressable
-              onPress={() => selectRated(null)}
-              hitSlop={10}
-              style={{ padding: 10 }}
-              accessibilityRole="button"
-              accessibilityLabel="Dismiss"
-            >
-              <Text style={{ color: colors.ink2, fontWeight: "700" }}>×</Text>
-            </Pressable>
+  const list = (wide: boolean) => (
+    <ShopListView
+      rows={rows}
+      activeKey={activeKey}
+      wide={wide}
+      status={status}
+      offline={!online}
+      fallbackLabel={userCenter ? null : FALLBACK.name}
+      onPressRow={onPressRow}
+      onRetry={reload}
+    />
+  );
+
+  const countLabel = `${rows.length} ${rows.length === 1 ? "shop" : "shops"} nearby`;
+
+  if (desktop) {
+    return (
+      <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
+        <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
+          <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+            <D4 accessibilityRole="header" style={{ paddingHorizontal: 20, fontSize: 22, lineHeight: 22, letterSpacing: -0.62 }}>
+              {countLabel}
+            </D4>
+            <FilterChips value={filter} onChange={setFilter} />
           </View>
-          <Text style={{ color: colors.ink2, marginTop: 4 }}>{selectedRatedShop.neighborhood} · {selectedRatedShop.tag}</Text>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-            <Pressable
-              onPress={logRatedVisit}
-              style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}
-              accessibilityRole="button"
-              accessibilityLabel={`Log a visit to ${selectedRatedShop.name}`}
-            >
-              <Text style={{ color: colors.cream, fontWeight: "700" }}>Log a visit</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => openDirections(selectedRatedShop.lat, selectedRatedShop.lng)}
-              style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Directions to ${selectedRatedShop.name}`}
-            >
-              <Text style={{ color: colors.ink }}>Directions</Text>
-            </Pressable>
-          </View>
+          <View style={{ flex: 1 }}>{list(true)}</View>
         </View>
-      )}
-
-      {selectedNearbyShop && (
-        <View style={{ position: "absolute", left: 16, right: 16, bottom: 16, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rule, borderRadius: 2, padding: 12 }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-            <Text style={{ fontWeight: "700", color: colors.ink }}>{selectedNearbyShop.name}</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
-              <Text style={{ color: colors.ink2 }}>Not yet rated</Text>
-              <Pressable
-                onPress={() => selectNearby(null)}
-                hitSlop={10}
-                style={{ padding: 10 }}
-                accessibilityRole="button"
-                accessibilityLabel="Dismiss"
-              >
-                <Text style={{ color: colors.ink2, fontWeight: "700" }}>×</Text>
-              </Pressable>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          {map}
+          <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+            <View style={{ position: "absolute", top: 16, right: 16 }}>
+              <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} />
             </View>
-          </View>
-          <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
-            <Pressable
-              onPress={logNearbyVisit}
-              style={{ flex: 1, backgroundColor: colors.oxblood, padding: 10, borderRadius: 2, alignItems: "center" }}
-              accessibilityRole="button"
-              accessibilityLabel={`Log a visit to ${selectedNearbyShop.name}`}
-            >
-              <Text style={{ color: colors.cream, fontWeight: "700" }}>Log a visit</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => openDirections(selectedNearbyShop.lat, selectedNearbyShop.lng)}
-              style={{ padding: 10, borderWidth: 1, borderColor: colors.ink3, borderRadius: 2 }}
-              accessibilityRole="button"
-              accessibilityLabel={`Directions to ${selectedNearbyShop.name}`}
-            >
-              <Text style={{ color: colors.ink }}>Directions</Text>
-            </Pressable>
+            {preview ? <View style={{ position: "absolute", left: 16, bottom: 16, width: 360, maxWidth: "90%" }}>{preview}</View> : null}
           </View>
         </View>
-      )}
+      </View>
+    );
+  }
+
+  const areaHeight = height - TAB_BAR_HEIGHT;
+  const sheetHeight = mode === "List" ? Math.round(areaHeight * 0.62) : Math.min(316, Math.round(areaHeight * 0.42));
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+      {map}
+      <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
+        <View pointerEvents="box-none">
+          <MapTopBar areaLabel={userCenter ? "Near you" : FALLBACK.name} count={rows.length} onLocate={locate} locateDisabled={!userCenter} />
+          <FilterChips value={filter} onChange={setFilter} />
+        </View>
+        <View pointerEvents="box-none">
+          {preview && mode === "Map" ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}
+          <View style={{ height: sheetHeight, backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink }}>
+            <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 }}>
+              <View style={{ width: 34, height: 2, backgroundColor: colors.rule, alignSelf: "center", marginBottom: 10 }} />
+              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                <Label style={{ color: colors.ink }}>{countLabel}</Label>
+                <ViewToggle value={mode} onChange={setMode} />
+              </View>
+            </View>
+            <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: colors.rule }}>{list(false)}</View>
+          </View>
+        </View>
+      </View>
     </View>
   );
 }

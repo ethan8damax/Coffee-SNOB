@@ -51,9 +51,15 @@ export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
 // `supabase` is required lazily (mirrors lib/directions.ts) so importing
 // this module never pulls in react-native — that's what let the tests
 // above run under vitest with no RN transform.
+export type NearbyStatus = "loading" | "ready" | "error";
+
 export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   const [ratedShops, setRatedShops] = useState<RatedShopPin[]>([]);
   const [nearbyShops, setNearbyShops] = useState<NearbyShopPin[]>([]);
+  // Status of the OpenStreetMap ("any shop nearby") request — the slow, flaky
+  // one. Previously-loaded dots stay on screen while a new request is in flight.
+  const [status, setStatus] = useState<NearbyStatus>("loading");
+  const [reloadKey, setReloadKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // ponytail: incrementing counter is enough to discard stale in-flight
   // fetches — no AbortController/cache needed for a debounce-and-discard.
@@ -61,6 +67,7 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
 
   useEffect(() => {
     if (!bounds) return;
+    setStatus("loading");
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       const requestId = ++requestIdRef.current;
@@ -77,16 +84,20 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
         });
       fetchNearbyOsmShops(bounds, webAppUrl)
         .then((shops) => {
-          if (requestIdRef.current === requestId) setNearbyShops(shops);
+          if (requestIdRef.current !== requestId) return;
+          setNearbyShops(shops);
+          setStatus("ready");
         })
         .catch(() => {
-          if (requestIdRef.current === requestId) setNearbyShops([]);
+          if (requestIdRef.current !== requestId) return;
+          setNearbyShops([]);
+          setStatus("error");
         });
     }, DEBOUNCE_MS);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [bounds, webAppUrl]);
+  }, [bounds, webAppUrl, reloadKey]);
 
-  return { ratedShops, nearbyShops };
+  return { ratedShops, nearbyShops, status, reload: () => setReloadKey((k) => k + 1) };
 }

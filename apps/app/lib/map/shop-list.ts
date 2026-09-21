@@ -1,0 +1,60 @@
+import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
+
+type Point = { lat: number; lng: number };
+
+// Chip labels follow the design ("Make the trip +" = verdicts 4 and 5). The
+// design's "Open now" and "Quiet" chips are out of v1 (no hours parsing, no tags).
+export type MapFilter = "all" | "rated" | "top";
+export const MAP_FILTERS: { id: MapFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "rated", label: "Rated" },
+  { id: "top", label: "Make the trip +" },
+];
+
+export type ListRow =
+  | { kind: "rated"; shop: RatedShopPin; distanceKm: number | null }
+  | { kind: "nearby"; shop: NearbyShopPin; distanceKm: number | null };
+
+export function distanceKm(a: Point, b: Point): number {
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const dLat = toRad(b.lat - a.lat);
+  const dLng = toRad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371.0088 * Math.asin(Math.sqrt(h));
+}
+
+// US-first: miles, like the design's "2.1 mi".
+export function formatDistance(km: number): string {
+  const miles = km * 0.621371;
+  if (miles < 0.1) return "<0.1 mi";
+  if (miles < 10) return `${miles.toFixed(1)} mi`;
+  return `${Math.round(miles)} mi`;
+}
+
+// The filter applies to the map's pins and to the list alike.
+export function applyFilter(filter: MapFilter, rated: RatedShopPin[], nearby: NearbyShopPin[]) {
+  if (filter === "all") return { rated, nearby };
+  if (filter === "rated") return { rated, nearby: [] as NearbyShopPin[] };
+  return { rated: rated.filter((s) => s.rating >= 4), nearby: [] as NearbyShopPin[] };
+}
+
+// Rated shops first (best verdict, then nearest), then unrated by distance.
+// Without an origin (no location, no map yet) distance is null and unrated
+// shops fall back to alphabetical.
+export function buildRows(rated: RatedShopPin[], nearby: NearbyShopPin[], origin: Point | null): ListRow[] {
+  const dist = (s: Point) => (origin ? distanceKm(origin, s) : null);
+  const ratedRows: ListRow[] = rated
+    .map((shop) => ({ kind: "rated" as const, shop, distanceKm: dist(shop) }))
+    .sort((a, b) => b.shop.rating - a.shop.rating || (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+  const nearbyRows: ListRow[] = nearby
+    .map((shop) => ({ kind: "nearby" as const, shop, distanceKm: dist(shop) }))
+    .sort((a, b) => (a.distanceKm !== null && b.distanceKm !== null ? a.distanceKm - b.distanceKm : a.shop.name.localeCompare(b.shop.name)));
+  return [...ratedRows, ...nearbyRows];
+}
+
+export function rowSubtitle(row: ListRow): string {
+  if (row.kind === "rated") {
+    return [row.shop.neighborhood, row.shop.tag].filter(Boolean).join(" · ") || "Logged by the community";
+  }
+  return row.shop.address || "Not yet rated";
+}

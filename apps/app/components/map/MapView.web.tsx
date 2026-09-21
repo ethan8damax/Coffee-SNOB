@@ -84,13 +84,19 @@ function ViewportEvents({ onBoundsChange, onClearSelection }: { onBoundsChange: 
   return null;
 }
 
-function Recenter({ target, recenterKey }: { target: { lat: number; lng: number } | null; recenterKey: number }) {
+function CameraController({ target, zoom }: { target: MapViewProps["cameraTarget"]; zoom: MapViewProps["zoomRequest"] }) {
   const map = useMap();
   useEffect(() => {
-    if (recenterKey > 0 && target) map.flyTo([target.lat, target.lng], Math.max(map.getZoom(), DEFAULT_ZOOM));
-    // Only a new recenterKey should trigger a fly — not a fresh location fix.
+    if (target) map.flyTo([target.lat, target.lng], target.zoom ?? Math.max(map.getZoom(), DEFAULT_ZOOM));
+    // Only a new nonce should move the camera.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recenterKey]);
+  }, [target?.nonce]);
+  useEffect(() => {
+    if (!zoom) return;
+    if (zoom.delta > 0) map.zoomIn();
+    else map.zoomOut();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoom?.nonce]);
   return null;
 }
 
@@ -99,7 +105,8 @@ export function MapView({
   nearbyShops,
   initialCenter,
   userLocation,
-  recenterKey,
+  cameraTarget,
+  zoomRequest,
   onBoundsChange,
   selectedRatedShopId,
   selectedNearbyExternalId,
@@ -129,7 +136,7 @@ export function MapView({
             onSelectRatedShop(null);
           }}
         />
-        <Recenter target={userLocation} recenterKey={recenterKey} />
+        <CameraController target={cameraTarget} zoom={zoomRequest} />
 
         {dots.map((shop) => {
           const selected = selectedNearbyExternalId === shop.externalId;

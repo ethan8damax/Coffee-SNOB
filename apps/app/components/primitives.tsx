@@ -105,11 +105,13 @@ export function Label(props: TextProps) {
 
 export function ButtonOx({
   title,
+  icon,
   style,
   ...rest
-}: { title: string; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
+}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
   return (
     <Pressable {...rest} style={[styles.btn, styles.btnOx, style]}>
+      {icon}
       <Text style={styles.btnOxText}>{title}</Text>
     </Pressable>
   );
@@ -158,7 +160,7 @@ const styles = StyleSheet.create({
     color: colors.ink3,
   },
   btn: { height: 46, borderRadius: 2, alignItems: "center", justifyContent: "center", paddingHorizontal: 18 },
-  btnOx: { backgroundColor: colors.oxblood },
+  btnOx: { backgroundColor: colors.oxblood, flexDirection: "row", gap: 7 },
   btnOxText: {
     fontFamily: "AreaExtended-Black",
     fontSize: 10.5,

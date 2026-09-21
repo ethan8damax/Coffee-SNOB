@@ -159,7 +159,7 @@ export function ProfileHeader({
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
           <Avatar name={name} size={68} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <D2 numberOfLines={2} accessibilityRole="header">
+            <D2 numberOfLines={2} accessibilityRole="header" style={{ lineHeight: 36 }}>
               {name}
             </D2>
           </View>
@@ -192,7 +192,9 @@ export function ProfileHeader({
               </Pressable>
             </View>
           ) : (
-            <FollowButton following={following} onPress={signedIn ? onToggleFollow : () => router.push("/sign-in")} />
+            <View style={{ flexDirection: "row" }}>
+              <FollowButton following={following} onPress={signedIn ? onToggleFollow : () => router.push("/sign-in")} />
+            </View>
           )}
           {followFailed && <Body style={{ color: colors.burnt }}>Couldn't update that. Try again.</Body>}
         </View>

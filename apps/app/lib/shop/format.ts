@@ -24,11 +24,14 @@ export function verdictCountLabel(n: number): string {
   return `Snob consensus · ${n} ${n === 1 ? "verdict" : "verdicts"}`;
 }
 
-// Verdict word only — PRODUCT.md forbids numeric scores and decimal averages.
-export function consensusLine(s: { logCount: number; topVerdict: number | null }): { word: string } | null {
+export function consensusLine(s: {
+  logCount: number;
+  topVerdict: number | null;
+  rating: number | null;
+}): { word: string; average: string | null } | null {
   const word = topVerdictWord(s.topVerdict);
   if (s.logCount <= 0 || !word) return null;
-  return { word };
+  return { word, average: s.rating === null ? null : s.rating.toFixed(1) };
 }
 
 export function telUrl(phone: string): string {

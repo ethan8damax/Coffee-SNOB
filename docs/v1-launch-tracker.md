@@ -26,6 +26,8 @@ it short — details live in the spec.
 - [x] D3 Saved shops in v1, collections after *(confirmed 9/21)*
 - [x] D4 Admin dashboard after launch *(confirmed 9/21)*
 - [x] Leaflet only, Mapbox removed entirely
+- [x] Find friends = username search only for v1 (`/people` "Find" tab, already built). No contacts sync — that needs a native permission (iOS/Android Contacts API); the web app has no reliable equivalent (Safari has none, Chrome Android's Contact Picker is narrow/manual). Revisit once the native app exists. *(confirmed 9/21)*
+- [ ] **Parked — "how you take it" drink categories** *(9/21):* current onboarding taste step (Espresso/Filter/Milk/Cold/"whatever's on bar") needs to be rethought against real coffee-shop order categories, plus a custom free-text option with a character cap. On hold until you've thought it through more; not blocking launch since the step already works end to end with today's options.
 - [x] Basemap: OpenFreeMap vector tiles recolored to the design palette via `brandStyle()`, one swap point (`basemap.ts`). CARTO's free tiles now need an API key ("API KEY REQUIRED" watermark), so they were dropped. maplibre-gl is pinned to v5 (v6 needs module workers Metro can't bundle).
 
 ## Track 1 — Map experience

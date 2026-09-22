@@ -35,11 +35,16 @@ export function TabBar({ state, navigation }: TabBarProps) {
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name, route.params);
         };
 
-        if (item.isAction) {
+        if (item.accent) {
+          // The burnt "square" now wraps the icon and label together (it used to be the
+          // Log-a-visit action button's own footprint; Map inherits the whole shape, not just the color).
           return (
-            <Pressable key={item.route} onPress={onPress} accessibilityRole="button" accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
-              <View style={{ width: 46, height: 46, borderRadius: 2, backgroundColor: colors.burnt, alignItems: "center", justifyContent: "center" }}>
-                <NavIcon name={item.icon} size={20} color={colors.paper} />
+            <Pressable key={item.route} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
+              <View style={{ alignItems: "center", gap: 3, borderRadius: 2, backgroundColor: colors.burnt, paddingVertical: 6, paddingHorizontal: 14 }}>
+                <NavIcon name={item.icon} size={18} color={colors.paper} />
+                <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 7.5, letterSpacing: 0.75, textTransform: "uppercase", color: colors.paper }}>
+                  {item.label}
+                </Text>
               </View>
             </Pressable>
           );

@@ -18,7 +18,8 @@ export default function TabsLayout() {
         <Tabs tabBar={desktop ? () => null : (props) => <TabBar {...props} />} screenOptions={{ headerShown: false }}>
           <Tabs.Screen name="index" options={{ title: "Feed" }} />
           <Tabs.Screen name="map" options={{ title: "Map" }} />
-          <Tabs.Screen name="log" options={{ title: "Log" }} />
+          {/* Log a visit isn't a nav item anymore — reached from the map, a shop page, or a preview card. */}
+          <Tabs.Screen name="log" options={{ href: null }} />
           {/* Collections ship after launch; keep the route, hide it from navigation. */}
           <Tabs.Screen name="lists" options={{ href: null }} />
           <Tabs.Screen name="profile" options={{ title: "You" }} />

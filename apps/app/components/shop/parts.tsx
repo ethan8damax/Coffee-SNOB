@@ -3,7 +3,7 @@ import { View, Text, Pressable, Linking, Platform } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
-import { Avatar, Body, BodySm, ButtonLine, ButtonOx, D1, IconBack, Label } from "../primitives";
+import { Avatar, Body, BodySm, ButtonBu, ButtonLine, D1, IconBack, Label } from "../primitives";
 import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
@@ -83,9 +83,9 @@ export function Actions({ shopId }: { shopId: string }) {
 
   return (
     <View style={{ flexDirection: "row", gap: 10 }}>
-      <ButtonOx
+      <ButtonBu
         title="Log a visit"
-        icon={<NavIcon name="plus" size={15} color={colors.cream} />}
+        icon={<NavIcon name="plus" size={15} color={colors.ink} />}
         style={{ flex: 1 }}
         accessibilityRole="button"
         accessibilityLabel="Log a visit"

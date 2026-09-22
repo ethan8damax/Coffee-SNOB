@@ -1,7 +1,7 @@
 import Svg, { Circle, Path } from "react-native-svg";
-import type { NavItem } from "@/lib/nav";
+export type IconName = "home" | "map" | "user" | "plus";
 
-export function NavIcon({ name, size = 20, color }: { name: NavItem["icon"]; size?: number; color: string }) {
+export function NavIcon({ name, size = 20, color }: { name: IconName; size?: number; color: string }) {
   const common = { width: size, height: size, viewBox: "0 0 24 24", fill: "none", stroke: color, strokeLinecap: "square" as const };
   switch (name) {
     case "home":

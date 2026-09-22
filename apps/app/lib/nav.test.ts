@@ -2,9 +2,9 @@ import { describe, it, expect } from "vitest";
 import { NAV_ITEMS, DESKTOP_MIN_WIDTH, isDesktopWidth, isNavRoute, routeForPath } from "./nav";
 
 describe("nav", () => {
-  it("lists the v1 destinations in design order, with Log as the action", () => {
-    expect(NAV_ITEMS.map((i) => i.route)).toEqual(["index", "map", "log", "profile"]);
-    expect(NAV_ITEMS.filter((i) => i.isAction).map((i) => i.route)).toEqual(["log"]);
+  it("lists the v1 destinations in design order, with Map accented", () => {
+    expect(NAV_ITEMS.map((i) => i.route)).toEqual(["index", "map", "profile"]);
+    expect(NAV_ITEMS.filter((i) => i.accent).map((i) => i.route)).toEqual(["map"]);
   });
 
   it("switches to the desktop shell at exactly 1024px", () => {

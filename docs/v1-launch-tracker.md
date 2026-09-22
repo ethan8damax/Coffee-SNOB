@@ -73,6 +73,8 @@ it short — details live in the spec.
 - [~] Follow / unfollow
 - [~] Edit profile (name, bio), sign out
 
+- [x] Nav redesign 9/21: **Log a visit** dropped from the nav bar entirely (still reached from the map, a shop page, or a preview card); **Map** now carries a full burnt/orange pill (icon + label) on both the phone tab bar and the desktop rail; shop page's **Log a visit** button is now burnt, not oxblood; app icon/favicon swapped from Expo's default to the oxblood SNOB mark; sign-up subhead now reads "It only takes one minute to become a coffee snob."
+
 ### U2 · Status, history, faves (Sun 9/27)
 - [x] Snob status tiers derived from log counts (Beginner 0 · Regular 5 · Connoisseur 15 · Snob 30 · Head Snob 60), verified on a real profile
 - [x] Visit heatmap (last 12 weeks from `visited_at`), verified on a real profile

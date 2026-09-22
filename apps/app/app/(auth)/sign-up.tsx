@@ -32,7 +32,7 @@ export default function SignUpScreen() {
     <View style={styles.screen}>
       <View style={styles.header}>
         <D1 style={styles.headline}>Create an{"\n"}account.</D1>
-        <Body style={styles.subhead}>Onboarding takes about a minute after this.</Body>
+        <Body style={styles.subhead}>It only takes one minute to become a coffee snob.</Body>
       </View>
 
       <View style={styles.form}>

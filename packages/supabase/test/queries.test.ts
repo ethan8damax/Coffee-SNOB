@@ -1029,47 +1029,39 @@ describe("getAdminUserDirectory", () => {
 });
 
 describe("setUserStatus", () => {
-  it("updates the profile and writes an admin_actions row", async () => {
-    const calls: { table: string; op: string; payload?: unknown }[] = [];
+  it("calls the admin_set_user_status RPC", async () => {
+    const rpcCalls: { fn: string; args: unknown }[] = [];
     const client = {
-      from: (table: string) => ({
-        update: (payload: unknown) => {
-          calls.push({ table, op: "update", payload });
-          return { eq: () => Promise.resolve({ error: null }) };
-        },
-        insert: (payload: unknown) => {
-          calls.push({ table, op: "insert", payload });
-          return Promise.resolve({ error: null });
-        },
-      }),
+      rpc: (fn: string, args: unknown) => {
+        rpcCalls.push({ fn, args });
+        return Promise.resolve({ error: null });
+      },
     } as any;
-    await setUserStatus(client, "admin-1", "target-1", "suspended");
-    expect(calls).toEqual([
-      { table: "profiles", op: "update", payload: { status: "suspended" } },
-      { table: "admin_actions", op: "insert", payload: { actor_id: "admin-1", target_user_id: "target-1", action: "suspend" } },
-    ]);
+    await setUserStatus(client, "target-1", "suspended");
+    expect(rpcCalls).toEqual([{ fn: "admin_set_user_status", args: { p_target_user_id: "target-1", p_status: "suspended" } }]);
+  });
+
+  it("throws when the RPC returns an error", async () => {
+    const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
+    await expect(setUserStatus(client, "target-1", "suspended")).rejects.toThrow("boom");
   });
 });
 
 describe("setUserAdmin", () => {
-  it("updates the profile and writes an admin_actions row", async () => {
-    const calls: { table: string; op: string; payload?: unknown }[] = [];
+  it("calls the admin_set_user_admin RPC", async () => {
+    const rpcCalls: { fn: string; args: unknown }[] = [];
     const client = {
-      from: (table: string) => ({
-        update: (payload: unknown) => {
-          calls.push({ table, op: "update", payload });
-          return { eq: () => Promise.resolve({ error: null }) };
-        },
-        insert: (payload: unknown) => {
-          calls.push({ table, op: "insert", payload });
-          return Promise.resolve({ error: null });
-        },
-      }),
+      rpc: (fn: string, args: unknown) => {
+        rpcCalls.push({ fn, args });
+        return Promise.resolve({ error: null });
+      },
     } as any;
-    await setUserAdmin(client, "admin-1", "target-1", true);
-    expect(calls).toEqual([
-      { table: "profiles", op: "update", payload: { is_admin: true } },
-      { table: "admin_actions", op: "insert", payload: { actor_id: "admin-1", target_user_id: "target-1", action: "grant_admin" } },
-    ]);
+    await setUserAdmin(client, "target-1", true);
+    expect(rpcCalls).toEqual([{ fn: "admin_set_user_admin", args: { p_target_user_id: "target-1", p_is_admin: true } }]);
+  });
+
+  it("throws when the RPC returns an error", async () => {
+    const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
+    await expect(setUserAdmin(client, "target-1", true)).rejects.toThrow("boom");
   });
 });

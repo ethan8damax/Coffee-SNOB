@@ -721,28 +721,12 @@ export async function getAdminUserDirectory(
   }));
 }
 
-// actorId is the signed-in admin performing the action (from auth.getUser() at the call
-// site) — never trust a client-supplied actor id, but this function itself is transport-
-// agnostic, so it just takes the value the caller already verified.
-export async function setUserStatus(
-  client: Client,
-  actorId: string,
-  targetUserId: string,
-  status: "active" | "suspended"
-): Promise<void> {
-  const { error } = await client.from("profiles").update({ status }).eq("id", targetUserId);
+export async function setUserStatus(client: Client, targetUserId: string, status: "active" | "suspended"): Promise<void> {
+  const { error } = await client.rpc("admin_set_user_status", { p_target_user_id: targetUserId, p_status: status });
   if (error) throw error;
-  const { error: actionError } = await client
-    .from("admin_actions")
-    .insert({ actor_id: actorId, target_user_id: targetUserId, action: status === "suspended" ? "suspend" : "reactivate" });
-  if (actionError) throw actionError;
 }
 
-export async function setUserAdmin(client: Client, actorId: string, targetUserId: string, isAdmin: boolean): Promise<void> {
-  const { error } = await client.from("profiles").update({ is_admin: isAdmin }).eq("id", targetUserId);
+export async function setUserAdmin(client: Client, targetUserId: string, isAdmin: boolean): Promise<void> {
+  const { error } = await client.rpc("admin_set_user_admin", { p_target_user_id: targetUserId, p_is_admin: isAdmin });
   if (error) throw error;
-  const { error: actionError } = await client
-    .from("admin_actions")
-    .insert({ actor_id: actorId, target_user_id: targetUserId, action: isAdmin ? "grant_admin" : "revoke_admin" });
-  if (actionError) throw actionError;
 }

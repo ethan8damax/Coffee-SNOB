@@ -546,6 +546,20 @@ export type Database = {
         }
         Returns: { shop_id: string; log_id: string }[]
       }
+      admin_set_user_status: {
+        Args: {
+          p_target_user_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_admin: {
+        Args: {
+          p_target_user_id: string
+          p_is_admin: boolean
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

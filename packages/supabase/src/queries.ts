@@ -851,11 +851,7 @@ export async function createCityGuide(client: Client, fields: CityGuideFields) {
   return data;
 }
 
-export async function updateCityGuide(
-  client: Client,
-  id: string,
-  fields: Partial<Omit<CityGuideFields, "cityId">> & { cityId?: string }
-): Promise<void> {
+export async function updateCityGuide(client: Client, id: string, fields: Partial<CityGuideFields>): Promise<void> {
   const update: Database["public"]["Tables"]["lists"]["Update"] = {};
   if (fields.slug !== undefined) update.slug = fields.slug;
   if (fields.title !== undefined) update.title = fields.title;
@@ -889,9 +885,13 @@ export async function getCityGuideItems(client: Client, listId: string): Promise
 // full ordered shop list, and a city guide has at most a handful of shops (the curation
 // standard is 5-10 per city) — a delete+reinsert is simpler than computing a diff and
 // costs nothing at this scale. Not wrapped in a transaction/RPC (unlike the user-
-// management audit writes): a partial failure here just leaves a content page
-// temporarily short some shops, recoverable by re-saving — not a security or audit
-// concern, so the extra atomicity isn't worth a new RPC for this.
+// management audit writes): the real failure mode if the insert fails after the delete
+// already committed is the guide ending up COMPLETELY EMPTY, not "short some shops" —
+// this is a content page, not a security/audit surface, so that's an acceptable risk,
+// but only if the caller actually surfaces the thrown error to the admin (don't reuse
+// the bare <form action> pattern from admin/users for this call without a try/catch —
+// a silently-swallowed failure here means a public guide goes empty with no one told).
+
 export async function setCityGuideItems(client: Client, listId: string, shopIds: string[]): Promise<void> {
   const { error: deleteError } = await client.from("list_items").delete().eq("list_id", listId);
   if (deleteError) throw deleteError;

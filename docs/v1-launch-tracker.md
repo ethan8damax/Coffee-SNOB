@@ -87,6 +87,8 @@ it short — details live in the spec.
 
 - [ ] **QA pass 9/21, harsh 5-persona review done — findings below in "Known issues," not yet fixed except the contrast bug.** Top severity: sign-up/sign-in loses the destination (shop/profile someone was trying to reach), dropping the whole app back to the bare Feed after auth; sign-up screen has no logo/wordmark (sign-in does); the app's root URL is a dead end for a signed-out visitor (no link to just browse the map); desktop (1440px) sign-up/sign-in don't use the responsive shell at all — the form pins to the left in a phone-width column with the rest of the screen blank; a signed-in session in the test browser silently logged itself out mid-session with zero messaging. Fixed already: the new Map nav pill had a contrast bug (`paper` text on burnt = 3.3:1, below AA; changed to `ink` = 4.8:1, matching ButtonBu's own established pattern).
 
+- [x] Map/list brainstorm fixes 9/21: root-caused and fixed the pin-disappearing/list-not-shrinking bug (viewport re-filter on every render, not just at fetch time); list capped at 50 rows when zoomed way out, rated-first so top verdicts always survive the cap; manual refresh button added (phone top bar + desktop zoom stack) alongside the existing auto-refetch; mobile List view now fills the page instead of a 62% sheet; desktop list panel is collapsible; emoji icons (♥ 💬 🔖) in the feed replaced with SVG icons matching the app style. **Not done:** map city/shop search (needs a decision — see chat); feed's Save icon is still unwired (no shopId on LogFeedCard yet).
+
 ## Q · QA + launch prep (Mon 9/28)
 
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs

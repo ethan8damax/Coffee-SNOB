@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
@@ -11,6 +11,10 @@
       html,
       body {
         height: 100%;
+        /* colors.paper — so an iOS rubber-band overscroll bounce (or any
+           other momentary gap) shows the app's own background, not a stark
+           white flash/line. */
+        background: #f0ecdf;
       }
       /* These styles disable body scrolling if you are using <ScrollView> */
       body {

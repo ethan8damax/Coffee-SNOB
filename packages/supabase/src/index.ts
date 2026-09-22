@@ -42,6 +42,7 @@ export {
   getFollowList,
   searchProfiles,
 } from "./queries";
+export { TIERS, snobStatus } from "./profile-status";
 export type {
   ShopDetail,
   ShopReview,

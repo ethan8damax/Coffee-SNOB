@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -1063,5 +1063,46 @@ describe("setUserAdmin", () => {
   it("throws when the RPC returns an error", async () => {
     const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
     await expect(setUserAdmin(client, "target-1", true)).rejects.toThrow("boom");
+  });
+});
+
+describe("createCity", () => {
+  it("inserts a city and returns it", async () => {
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: { id: "c1", ...(payload as object) }, error: null }),
+          }),
+        }),
+      }),
+    } as any;
+    const city = await createCity(client, { slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe" });
+    expect(city).toEqual({ id: "c1", slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe" });
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = {
+      from: () => ({
+        insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("boom") }) }) }),
+      }),
+    } as any;
+    await expect(createCity(client, { slug: "x", name: "X", country: "X", region: "X" })).rejects.toThrow("boom");
+  });
+});
+
+describe("updateCity", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCity(client, "c1", { status: "live" });
+    expect(calls).toEqual([{ status: "live" }]);
   });
 });

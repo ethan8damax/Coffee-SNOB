@@ -1,6 +1,8 @@
 export { createSupabaseClient } from "./client";
 export {
   getCities,
+  createCity,
+  updateCity,
   getCitiesWithShopCounts,
   getCityGuide,
   getProfile,
@@ -55,6 +57,7 @@ export type {
   ProfileEntry,
   SavedShop,
   PersonRow,
+  CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
 export type { Database } from "./types";

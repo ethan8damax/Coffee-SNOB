@@ -12,6 +12,19 @@ export async function getCities(client: Client) {
   return data;
 }
 
+export type CityFields = { slug: string; name: string; country: string; region: string; status?: "live" | "coming_soon" | "demo" };
+
+export async function createCity(client: Client, fields: CityFields) {
+  const { data, error } = await client.from("cities").insert(fields).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCity(client: Client, id: string, fields: Partial<CityFields>): Promise<void> {
+  const { error } = await client.from("cities").update(fields).eq("id", id);
+  if (error) throw error;
+}
+
 export async function getCitiesWithShopCounts(client: Client) {
   const cities = await getCities(client);
 

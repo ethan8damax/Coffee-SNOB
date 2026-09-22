@@ -41,8 +41,9 @@ export function TabBar({ state, navigation }: TabBarProps) {
           return (
             <Pressable key={item.route} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
               <View style={{ alignItems: "center", gap: 3, borderRadius: 2, backgroundColor: colors.burnt, paddingVertical: 6, paddingHorizontal: 14 }}>
-                <NavIcon name={item.icon} size={18} color={colors.paper} />
-                <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 7.5, letterSpacing: 0.75, textTransform: "uppercase", color: colors.paper }}>
+                {/* ink, not paper/cream: matches ButtonBu's own burnt-background text color — 4.8:1 contrast vs 3.3:1, needed for AA at this text size. */}
+                <NavIcon name={item.icon} size={18} color={colors.ink} />
+                <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 7.5, letterSpacing: 0.75, textTransform: "uppercase", color: colors.ink }}>
                   {item.label}
                 </Text>
               </View>

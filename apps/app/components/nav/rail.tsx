@@ -37,14 +37,14 @@ export function Rail() {
                   : { borderLeftWidth: 2, borderLeftColor: on ? colors.burnt : "transparent", backgroundColor: on ? "rgba(22,19,16,.18)" : "transparent", opacity: on ? 1 : 0.62 },
               ]}
             >
-              <NavIcon name={item.icon} size={19} color={item.accent ? colors.paper : colors.cream} />
+              <NavIcon name={item.icon} size={19} color={item.accent ? colors.ink : colors.cream} />
               <Text
                 style={{
                   fontFamily: "AreaExtended-Black",
                   fontSize: 10,
                   letterSpacing: 1,
                   textTransform: "uppercase",
-                  color: item.accent ? colors.paper : colors.cream,
+                  color: item.accent ? colors.ink : colors.cream,
                 }}
               >
                 {item.label}

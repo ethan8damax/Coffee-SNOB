@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { boundsAround, containsBounds, padBounds } from "./bounds";
+import { boundsAround, containsBounds, padBounds, withinBounds } from "./bounds";
 
 describe("boundsAround", () => {
   it("builds a symmetric box around the center point", () => {
@@ -30,5 +30,20 @@ describe("padBounds / containsBounds", () => {
     const padded = padBounds(box, 0.5);
     expect(containsBounds(padded, box)).toBe(true);
     expect(containsBounds(padded, { ...box, maxLng: 27 })).toBe(false);
+  });
+});
+
+describe("withinBounds", () => {
+  const box = { minLat: 10, maxLat: 12, minLng: 20, maxLng: 24 };
+  it("is true for a point inside, including on the edge", () => {
+    expect(withinBounds(box, 11, 22)).toBe(true);
+    expect(withinBounds(box, 10, 20)).toBe(true);
+    expect(withinBounds(box, 12, 24)).toBe(true);
+  });
+  it("is false for a point outside on any side", () => {
+    expect(withinBounds(box, 9, 22)).toBe(false);
+    expect(withinBounds(box, 13, 22)).toBe(false);
+    expect(withinBounds(box, 11, 19)).toBe(false);
+    expect(withinBounds(box, 11, 25)).toBe(false);
   });
 });

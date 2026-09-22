@@ -3,7 +3,7 @@ import { colors } from "@coffeesnob/design-tokens";
 import { MAP_FILTERS, type MapFilter } from "../../lib/map/shop-list";
 import { Chip } from "../chip";
 import { LocateIcon } from "./locate-icon";
-import { MinusIcon, PinIcon, PlusIcon } from "./map-icons";
+import { MinusIcon, PinIcon, PlusIcon, RefreshIcon } from "./map-icons";
 
 // Chips sit on the map, so an inactive chip needs a solid ground to stay legible.
 export function FilterChips({ value, onChange, padding = 20 }: { value: MapFilter; onChange: (f: MapFilter) => void; padding?: number }) {
@@ -69,7 +69,17 @@ export function LocateButton({ onPress, disabled, size = 44 }: { onPress: () => 
 }
 
 // Desktop map controls (design: wide.jsx MapCanvas top-right stack).
-export function ZoomControls({ onZoom, onLocate, locateDisabled }: { onZoom: (delta: 1 | -1) => void; onLocate: () => void; locateDisabled: boolean }) {
+export function ZoomControls({
+  onZoom,
+  onLocate,
+  locateDisabled,
+  onRefresh,
+}: {
+  onZoom: (delta: 1 | -1) => void;
+  onLocate: () => void;
+  locateDisabled: boolean;
+  onRefresh?: () => void;
+}) {
   const box = { width: 40, height: 40, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.rule };
   return (
     <View style={{ gap: 1 }}>
@@ -80,13 +90,55 @@ export function ZoomControls({ onZoom, onLocate, locateDisabled }: { onZoom: (de
         <MinusIcon color={colors.ink} />
       </Pressable>
       <LocateButton onPress={onLocate} disabled={locateDisabled} size={40} />
+      {onRefresh && (
+        <Pressable onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
+          <RefreshIcon color={colors.ink} />
+        </Pressable>
+      )}
     </View>
+  );
+}
+
+// A manual "search this area again" affordance next to Locate — bounds changes already
+// refetch on their own once you pan past the cached area, but this gives an explicit,
+// always-available way to force a fresh look without waiting on that.
+export function RefreshButton({ onPress, size = 44 }: { onPress: () => void; size?: number }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Search this area again"
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 2,
+        borderWidth: 1,
+        borderColor: colors.ink,
+        backgroundColor: colors.card,
+      }}
+    >
+      <RefreshIcon color={colors.ink} />
+    </Pressable>
   );
 }
 
 // Phone top bar: where you are + how many shops are in view, and locate-me.
 // (The design's city pill becomes an area pill — v1 has no cities.)
-export function MapTopBar({ areaLabel, count, onLocate, locateDisabled }: { areaLabel: string; count: number; onLocate: () => void; locateDisabled: boolean }) {
+export function MapTopBar({
+  areaLabel,
+  count,
+  onLocate,
+  locateDisabled,
+  onRefresh,
+}: {
+  areaLabel: string;
+  count: number;
+  onLocate: () => void;
+  locateDisabled: boolean;
+  onRefresh: () => void;
+}) {
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 }}>
       <View
@@ -110,6 +162,7 @@ export function MapTopBar({ areaLabel, count, onLocate, locateDisabled }: { area
         </Text>
         <Text style={{ marginLeft: "auto", fontFamily: "AreaExtended-Black", fontSize: 9, color: colors.ink3 }}>{count}</Text>
       </View>
+      <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>
   );

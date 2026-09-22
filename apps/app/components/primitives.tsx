@@ -50,6 +50,31 @@ export function IconCheck({ size = 17, color = colors.ink }: { size?: number; co
   );
 }
 
+export function IconHeart({ size = 16, color = colors.ink, filled = false }: { size?: number; color?: string; filled?: boolean }) {
+  const d = "M12 20.5s-8-4.9-8-11.2A4.7 4.7 0 0 1 12 6.4a4.7 4.7 0 0 1 8 2.9c0 6.3-8 11.2-8 11.2z";
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"} stroke={color} strokeWidth={1.8} strokeLinecap="square">
+      <Path d={d} />
+    </Svg>
+  );
+}
+
+export function IconComment({ size = 16, color = colors.ink }: { size?: number; color?: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8} strokeLinecap="square">
+      <Path d="M4 5.5h16v11H9L4.5 20V16.5H4z" />
+    </Svg>
+  );
+}
+
+export function IconBookmark({ size = 16, color = colors.ink, filled = false }: { size?: number; color?: string; filled?: boolean }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"} stroke={color} strokeWidth={1.8} strokeLinecap="square">
+      <Path d="M6 4h12v16l-6-4-6 4z" />
+    </Svg>
+  );
+}
+
 export function Avatar({
   name = "AB",
   size = 28,

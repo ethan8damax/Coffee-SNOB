@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { setLogLike } from "@coffeesnob/supabase";
-import { Avatar, Body, Label, D2 } from "../primitives";
+import { Avatar, Body, Label, D2, IconBookmark, IconComment, IconHeart } from "../primitives";
 import { Detour } from "../detour";
 import { CommentThread } from "./comment-thread";
 import type { LogFeedCard } from "../../lib/feed/types";
@@ -42,15 +42,30 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
       {item.note && <Body style={{ marginTop: 10 }}>{item.note}</Body>}
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 14 }}>
-        <Pressable onPress={toggleLike} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Text style={{ color: liked ? colors.burnt : colors.ink2 }}>♥</Text>
+        <Pressable
+          onPress={toggleLike}
+          accessibilityRole="button"
+          accessibilityLabel={liked ? "Unlike" : "Like"}
+          style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+        >
+          <IconHeart size={15} color={liked ? colors.burnt : colors.ink2} filled={liked} />
           <Label style={{ color: colors.ink2 }}>{String(likeCount)}</Label>
         </Pressable>
-        <Pressable onPress={() => setCommentsOpen((o) => !o)} style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
-          <Text style={{ color: commentsOpen ? colors.ink : colors.ink2 }}>💬</Text>
+        <Pressable
+          onPress={() => setCommentsOpen((o) => !o)}
+          accessibilityRole="button"
+          accessibilityLabel={commentsOpen ? "Hide comments" : "Show comments"}
+          style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
+        >
+          <IconComment size={15} color={commentsOpen ? colors.ink : colors.ink2} />
           <Label style={{ color: colors.ink2 }}>{String(commentCount)}</Label>
         </Pressable>
-        <Text style={{ color: colors.ink3 }}>🔖 Save</Text>
+        {/* ponytail: not wired yet — LogFeedCard has no shopId to save against. Matches the
+            shop page's real Save (shop_saves) once the feed query carries one. */}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 5, opacity: 0.5 }}>
+          <IconBookmark size={15} color={colors.ink3} />
+          <Label style={{ color: colors.ink3 }}>Save</Label>
+        </View>
       </View>
 
       {commentsOpen && <CommentThread logId={item.id} userId={userId} onCountChange={setCommentCount} />}

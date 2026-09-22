@@ -47,3 +47,21 @@ export function CloseIcon({ size = 14, color }: IconProps) {
     </Svg>
   );
 }
+
+export function RefreshIcon({ size = 15, color }: IconProps) {
+  return (
+    <Svg {...base(size, color, 1.9)}>
+      <Path d="M19 5v5h-5M5 19v-5h5" />
+      <Path d="M6.35 8.35A7 7 0 0 1 19 10M17.65 15.65A7 7 0 0 1 5 14" />
+    </Svg>
+  );
+}
+
+export function ChevronIcon({ size = 12, color, direction = "left" }: IconProps & { direction?: "left" | "right" }) {
+  const d = direction === "left" ? "M15 5 9 12l6 7" : "M9 5l6 7-6 7";
+  return (
+    <Svg {...base(size, color, 2.1)}>
+      <Path d={d} />
+    </Svg>
+  );
+}

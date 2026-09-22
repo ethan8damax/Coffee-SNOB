@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter, buildRows, distanceKm, formatDistance, MAP_FILTERS, rowSubtitle } from "./shop-list";
+import { applyFilter, buildRows, distanceKm, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle } from "./shop-list";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
@@ -64,6 +64,18 @@ describe("buildRows", () => {
   it("orders unrated shops by name when there is no origin", () => {
     const rows = buildRows([], [nearby("2", 0, 0, { name: "Zed" }), nearby("1", 0, 0, { name: "Alpha" })], null);
     expect(rows.map((r) => r.shop.name)).toEqual(["Alpha", "Zed"]);
+  });
+  it("caps the list at MAX_ROWS, zoomed way out over a whole region", () => {
+    const manyNearby = Array.from({ length: 300 }, (_, i) => nearby(String(i), 0, i * 0.001));
+    const rows = buildRows([], manyNearby, origin);
+    expect(rows).toHaveLength(MAX_ROWS);
+  });
+  it("keeps the top-rated shops when the cap would otherwise cut them, even outnumbered by unrated dots", () => {
+    const manyRated = Array.from({ length: 5 }, (_, i) => rated(`r${i}`, 5, 0, i * 0.001));
+    const manyNearby = Array.from({ length: 300 }, (_, i) => nearby(String(i), 0, i * 0.001));
+    const rows = buildRows(manyRated, manyNearby, origin);
+    expect(rows.slice(0, 5).every((r) => r.kind === "rated")).toBe(true);
+    expect(rows).toHaveLength(MAX_ROWS);
   });
 });
 

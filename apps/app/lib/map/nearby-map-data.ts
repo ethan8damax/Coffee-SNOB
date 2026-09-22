@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
-import { containsBounds, padBounds } from "./bounds";
+import { containsBounds, padBounds, withinBounds } from "./bounds";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
@@ -57,8 +57,9 @@ export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
 export type NearbyStatus = "loading" | "ready" | "error";
 
 export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
-  const [ratedShops, setRatedShops] = useState<RatedShopPin[]>([]);
-  const [nearbyShops, setNearbyShops] = useState<NearbyShopPin[]>([]);
+  // Full padded-box fetch, kept as-is to avoid re-hitting the network on every small pan.
+  const [fetchedRated, setFetchedRated] = useState<RatedShopPin[]>([]);
+  const [fetchedNearby, setFetchedNearby] = useState<NearbyShopPin[]>([]);
   // Status of the OpenStreetMap ("any shop nearby") request — the slow, flaky
   // one. Previously-loaded dots stay on screen while a new request is in flight.
   const [status, setStatus] = useState<NearbyStatus>("loading");
@@ -85,21 +86,21 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
           // A Snob-Approved shop with no editorial_rating set yet and no
           // community logs has rating = null in the view — can't render
           // as a tiered pin, so drop it rather than show a broken value.
-          if (requestIdRef.current === requestId) setRatedShops(rows.filter((r) => r.rating != null).map(toRatedShopPin));
+          if (requestIdRef.current === requestId) setFetchedRated(rows.filter((r) => r.rating != null).map(toRatedShopPin));
         })
         .catch(() => {
-          if (requestIdRef.current === requestId) setRatedShops([]);
+          if (requestIdRef.current === requestId) setFetchedRated([]);
         });
       fetchNearbyOsmShops(box, webAppUrl)
         .then((shops) => {
           if (requestIdRef.current !== requestId) return;
           fetchedRef.current = box;
-          setNearbyShops(shops);
+          setFetchedNearby(shops);
           setStatus("ready");
         })
         .catch(() => {
           if (requestIdRef.current !== requestId) return;
-          setNearbyShops([]);
+          setFetchedNearby([]);
           setStatus("error");
         });
     }, DEBOUNCE_MS);
@@ -107,6 +108,20 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [bounds, webAppUrl, reloadKey]);
+
+  // Narrowed to the CURRENT viewport, not the wider padded fetch — so zooming/panning
+  // back in shrinks the list and pins right away (no network wait), instead of keeping
+  // every shop ever fetched on screen. Fixes both "zooming in doesn't shrink the list"
+  // and a pin near the viewport silently losing out to MAX_DOTS because the fetched
+  // superset (from a wider prior view) was larger than what's actually visible.
+  const ratedShops = useMemo(
+    () => (bounds ? fetchedRated.filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
+    [fetchedRated, bounds]
+  );
+  const nearbyShops = useMemo(
+    () => (bounds ? fetchedNearby.filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
+    [fetchedNearby, bounds]
+  );
 
   return { ratedShops, nearbyShops, status, reload: () => {
       fetchedRef.current = null;

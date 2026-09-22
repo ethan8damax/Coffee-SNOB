@@ -38,6 +38,11 @@ export function applyFilter(filter: MapFilter, rated: RatedShopPin[], nearby: Ne
   return { rated: rated.filter((s) => s.rating >= 4), nearby: [] as NearbyShopPin[] };
 }
 
+// Zoomed way out over a whole region, "nearby" can mean thousands of shops — the list
+// stays useful (and fast) capped at this many rows. Rated-first ordering below means a
+// cap never hides a top verdict in favor of an unrated dot.
+export const MAX_ROWS = 50;
+
 // Rated shops first (best verdict, then nearest), then unrated by distance.
 // Without an origin (no location, no map yet) distance is null and unrated
 // shops fall back to alphabetical.
@@ -49,7 +54,7 @@ export function buildRows(rated: RatedShopPin[], nearby: NearbyShopPin[], origin
   const nearbyRows: ListRow[] = nearby
     .map((shop) => ({ kind: "nearby" as const, shop, distanceKm: dist(shop) }))
     .sort((a, b) => (a.distanceKm !== null && b.distanceKm !== null ? a.distanceKm - b.distanceKm : a.shop.name.localeCompare(b.shop.name)));
-  return [...ratedRows, ...nearbyRows];
+  return [...ratedRows, ...nearbyRows].slice(0, MAX_ROWS);
 }
 
 export function rowSubtitle(row: ListRow): string {

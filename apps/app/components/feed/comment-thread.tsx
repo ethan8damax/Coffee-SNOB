@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { getComments, getCommentLikes, getProfilesByIds, postComment, setCommentLike } from "@coffeesnob/supabase";
-import { Avatar, BodySm, Label } from "../primitives";
+import { Avatar, BodySm, IconHeart, Label } from "../primitives";
 import { buildCommentTree, type CommentWithMeta } from "../../lib/feed/comment-tree";
 
 export function CommentThread({ logId, userId, onCountChange }: { logId: string; userId: string; onCountChange?: (count: number) => void }) {
@@ -119,8 +119,13 @@ function CommentRow({ comment, indent, onLike, onReply }: { comment: CommentWith
         </View>
         <BodySm style={{ marginTop: 4 }}>{comment.body}</BodySm>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 7 }}>
-          <Pressable onPress={onLike} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-            <Text style={{ color: comment.likedByMe ? colors.burnt : colors.ink3, fontSize: 12 }}>♥</Text>
+          <Pressable
+            onPress={onLike}
+            accessibilityRole="button"
+            accessibilityLabel={comment.likedByMe ? "Unlike" : "Like"}
+            style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+          >
+            <IconHeart size={12} color={comment.likedByMe ? colors.burnt : colors.ink3} filled={comment.likedByMe} />
             <Label style={{ color: comment.likedByMe ? colors.burnt : colors.ink3 }}>{String(comment.likeCount)}</Label>
           </Pressable>
           {onReply && (

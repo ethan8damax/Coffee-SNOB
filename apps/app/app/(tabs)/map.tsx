@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, StyleSheet, useWindowDimensions } from "react-native";
+import { View, ActivityIndicator, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
-import { FilterChips, LocateButton, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { FilterChips, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { ChevronIcon } from "../../components/map/map-icons";
 import { PreviewCard } from "../../components/map/preview-card";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { rowKey } from "../../components/map/shop-row";
@@ -41,6 +42,7 @@ export default function MapScreen() {
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [filter, setFilter] = useState<MapFilter>("all");
   const [mode, setMode] = useState<"Map" | "List">("Map");
+  const [listCollapsed, setListCollapsed] = useState(false);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
   const [camera, setCamera] = useState<CameraTarget | null>(null);
@@ -174,20 +176,43 @@ export default function MapScreen() {
   if (desktop) {
     return (
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
-        <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
-          <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
-            <D4 accessibilityRole="header" style={{ paddingHorizontal: 20, fontSize: 22, lineHeight: 22, letterSpacing: -0.62 }}>
-              {countLabel}
-            </D4>
-            <FilterChips value={filter} onChange={setFilter} />
+        {!listCollapsed && (
+          <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
+            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+              <D4 accessibilityRole="header" style={{ paddingHorizontal: 20, fontSize: 22, lineHeight: 22, letterSpacing: -0.62 }}>
+                {countLabel}
+              </D4>
+              <FilterChips value={filter} onChange={setFilter} />
+            </View>
+            <View style={{ flex: 1 }}>{list(true)}</View>
           </View>
-          <View style={{ flex: 1 }}>{list(true)}</View>
-        </View>
+        )}
         <View style={{ flex: 1, minWidth: 0 }}>
           {map}
           <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
+            {/* Straddles the panel/map seam either way, so it's always reachable. */}
+            <Pressable
+              onPress={() => setListCollapsed((c) => !c)}
+              accessibilityRole="button"
+              accessibilityLabel={listCollapsed ? "Show the shop list" : "Hide the shop list"}
+              style={{
+                position: "absolute",
+                left: 0,
+                top: 16,
+                width: 22,
+                height: 40,
+                alignItems: "center",
+                justifyContent: "center",
+                backgroundColor: colors.card,
+                borderWidth: 1,
+                borderColor: colors.rule,
+                borderLeftWidth: 0,
+              }}
+            >
+              <ChevronIcon direction={listCollapsed ? "right" : "left"} color={colors.ink} size={11} />
+            </Pressable>
             <View style={{ position: "absolute", top: 16, right: 16 }}>
-              <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} />
+              <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
             </View>
             {preview ? <View style={{ position: "absolute", left: 16, bottom: 16, width: 360, maxWidth: "90%" }}>{preview}</View> : null}
           </View>
@@ -197,14 +222,16 @@ export default function MapScreen() {
   }
 
   const areaHeight = height - TAB_BAR_HEIGHT;
-  const sheetHeight = mode === "List" ? Math.round(areaHeight * 0.62) : Math.min(316, Math.round(areaHeight * 0.42));
+  // List mode takes the whole page — nothing useful shows through the sliver of map
+  // behind a partial sheet once you've chosen to browse the list instead of the pins.
+  const sheetHeight = mode === "List" ? areaHeight : Math.min(316, Math.round(areaHeight * 0.42));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {map}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
         <View pointerEvents="box-none">
-          <MapTopBar areaLabel={userCenter ? "Near you" : FALLBACK.name} count={rows.length} onLocate={locate} locateDisabled={!userCenter} />
+          <MapTopBar areaLabel={userCenter ? "Near you" : FALLBACK.name} count={rows.length} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
           <FilterChips value={filter} onChange={setFilter} />
         </View>
         <View pointerEvents="box-none">

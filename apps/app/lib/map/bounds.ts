@@ -26,3 +26,7 @@ export function padBounds(b: MapBounds, fraction: number): MapBounds {
 export function containsBounds(outer: MapBounds, inner: MapBounds): boolean {
   return outer.minLat <= inner.minLat && outer.maxLat >= inner.maxLat && outer.minLng <= inner.minLng && outer.maxLng >= inner.maxLng;
 }
+
+export function withinBounds(b: MapBounds, lat: number, lng: number): boolean {
+  return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
+}

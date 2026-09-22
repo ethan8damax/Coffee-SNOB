@@ -5,12 +5,11 @@ import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
 import { geocodePlaces, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
+import { sortByDistance, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
 import type { RatedShopPin } from "./types";
 
 const DEBOUNCE_MS = 350;
-
-type SearchResult = { kind: "place"; place: Place } | { kind: "shop"; shop: RatedShopPin };
 
 // The map's area pill doubles as a search box: tap it, type a city or a shop name,
 // pick a result. "Near you" (or the fallback area) is the untouched default — this
@@ -19,12 +18,16 @@ export function MapSearch({
   areaLabel,
   count,
   webAppUrl,
+  origin,
   onSelectPlace,
   onSelectShop,
 }: {
   areaLabel: string;
   count: number;
   webAppUrl: string;
+  // Roughly "where the searcher is" (real location, or the current map center) —
+  // used only to rank results near-first, never sent anywhere.
+  origin: { lat: number; lng: number } | null;
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
 }) {
@@ -43,14 +46,15 @@ export function MapSearch({
     const timer = setTimeout(() => {
       const { supabase } = require("../../lib/supabase");
       Promise.all([geocodePlaces(q, webAppUrl).catch(() => []), searchRatedShops(supabase, q).catch(() => [])]).then(([places, shopRows]) => {
-        setResults([
+        const combined: SearchResult[] = [
           ...places.map((place): SearchResult => ({ kind: "place", place })),
           ...shopRows.map((row): SearchResult => ({ kind: "shop", shop: toRatedShopPin(row) })),
-        ]);
+        ];
+        setResults(sortByDistance(combined, origin));
       });
     }, DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [active, query, webAppUrl]);
+  }, [active, query, webAppUrl, origin]);
 
   function open() {
     setActive(true);
@@ -90,7 +94,7 @@ export function MapSearch({
   }
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, zIndex: 30 }}>
       <View style={pillBase}>
         <PinIcon color={colors.oxblood} />
         <TextInput

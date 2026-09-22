@@ -136,6 +136,7 @@ export function MapTopBar({
   locateDisabled,
   onRefresh,
   webAppUrl,
+  origin,
   onSelectPlace,
   onSelectShop,
 }: {
@@ -145,12 +146,13 @@ export function MapTopBar({
   locateDisabled: boolean;
   onRefresh: () => void;
   webAppUrl: string;
+  origin: { lat: number; lng: number } | null;
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
 }) {
   return (
-    <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 }}>
-      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} />
+    <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10, zIndex: 30 }}>
+      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} />
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

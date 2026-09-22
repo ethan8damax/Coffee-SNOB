@@ -91,6 +91,8 @@ it short — details live in the spec.
 
 - [x] Round 2 of brainstorm fixes 9/21: removed the dead 'Save' from the feed's like/comment row; profile Snob-status block redesigned — a 'Top shops' horizontally-scrolling showcase (Letterboxd-style) now fills the space to the right of the heatmap instead of leaving it blank; Entries/Faves/Saved tabs now spread evenly across the row instead of clustering left. **Map search built:** city/place search via Nominatim (OpenStreetMap's free, open-source geocoder — no API key, same proxy+cache pattern as the existing Overpass route; `apps/web/app/api/geocode`), shop-name search via a new `searchRatedShops` query; both live in one search box the area pill turns into on tap (`MapSearch`, wired into both the phone top bar and the desktop panel header). 'Near you' is back to being the default, not a fixed label — tap the bar to search a city or shop, Locate resets it to 'Near you'. Verified live: city search (flies + relabels), shop search (flies + selects + relabels); Overpass itself was down during testing (ECONNREFUSED, unrelated pre-existing flaky dependency, not a regression) so the nearby-cafés layer couldn't be end-to-end verified in the same pass.
 
+- [x] Map search polish 9/21: results now sort closest-first (real location, else the current map center) so a same-named place across the world can't outrank the local one — `lib/map/search-sort.ts`, unit tested; fixed the results dropdown rendering underneath the All/Rated/Make the trip filter chips (missing z-index on the search row's stacking context, not the dropdown itself).
+
 ## Q · QA + launch prep (Mon 9/28)
 
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs

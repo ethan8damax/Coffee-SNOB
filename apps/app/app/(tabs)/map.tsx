@@ -201,8 +201,8 @@ export default function MapScreen() {
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
             <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
-              <View style={{ paddingHorizontal: 20 }}>
-                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} onSelectPlace={searchPlace} onSelectShop={searchShop} />
+              <View style={{ paddingHorizontal: 20, zIndex: 30 }}>
+                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={origin} onSelectPlace={searchPlace} onSelectShop={searchShop} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -260,6 +260,7 @@ export default function MapScreen() {
             locateDisabled={!userCenter}
             onRefresh={reload}
             webAppUrl={WEB_APP_URL}
+            origin={origin}
             onSelectPlace={searchPlace}
             onSelectShop={searchShop}
           />

@@ -321,6 +321,7 @@ export type Database = {
           id: string
           is_admin: boolean
           onboarded_at: string | null
+          status: string
           taste_picks: string[]
           username: string
         }
@@ -332,6 +333,7 @@ export type Database = {
           id: string
           is_admin?: boolean
           onboarded_at?: string | null
+          status?: string
           taste_picks?: string[]
           username: string
         }
@@ -343,8 +345,33 @@ export type Database = {
           id?: string
           is_admin?: boolean
           onboarded_at?: string | null
+          status?: string
           taste_picks?: string[]
           username?: string
+        }
+        Relationships: []
+      }
+      admin_actions: {
+        Row: {
+          id: string
+          actor_id: string
+          target_user_id: string
+          action: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_id: string
+          target_user_id: string
+          action: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          actor_id?: string
+          target_user_id?: string
+          action?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -483,6 +510,20 @@ export type Database = {
           price_tier: string | null
           rating: number | null
           log_count: number
+        }
+        Relationships: []
+      }
+      admin_user_directory: {
+        Row: {
+          id: string
+          username: string
+          display_name: string | null
+          avatar_url: string | null
+          is_admin: boolean
+          status: string
+          created_at: string
+          log_count: number
+          follower_count: number
         }
         Relationships: []
       }

@@ -749,3 +749,130 @@ export async function setUserAdmin(client: Client, targetUserId: string, isAdmin
   const { error } = await client.rpc("admin_set_user_admin", { p_target_user_id: targetUserId, p_is_admin: isAdmin });
   if (error) throw error;
 }
+
+export type ShopFields = {
+  name: string;
+  cityId: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
+  website?: string;
+  phone?: string;
+  hours?: string;
+};
+
+export async function createShop(client: Client, fields: ShopFields) {
+  const { data, error } = await client
+    .from("shops")
+    .insert({
+      name: fields.name,
+      city_id: fields.cityId,
+      neighborhood: fields.neighborhood ?? null,
+      lat: fields.lat ?? null,
+      lng: fields.lng ?? null,
+      address: fields.address ?? null,
+      website: fields.website ?? null,
+      phone: fields.phone ?? null,
+      hours: fields.hours ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateShop(client: Client, id: string, fields: Partial<ShopFields>): Promise<void> {
+  const update: Database["public"]["Tables"]["shops"]["Update"] = {};
+  if (fields.name !== undefined) update.name = fields.name;
+  if (fields.cityId !== undefined) update.city_id = fields.cityId;
+  if (fields.neighborhood !== undefined) update.neighborhood = fields.neighborhood;
+  if (fields.lat !== undefined) update.lat = fields.lat;
+  if (fields.lng !== undefined) update.lng = fields.lng;
+  if (fields.address !== undefined) update.address = fields.address;
+  if (fields.website !== undefined) update.website = fields.website;
+  if (fields.phone !== undefined) update.phone = fields.phone;
+  if (fields.hours !== undefined) update.hours = fields.hours;
+  const { error } = await client.from("shops").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export type ShopCurationFields = {
+  priceTier: "€" | "€€" | "€€€";
+  tag?: string;
+  editorialRating?: number;
+  writeup?: string;
+  orderNote?: string;
+};
+
+// A shop is "Snob-Approved" exactly when it has a shop_curations row (see shop_ratings
+// view) — this function IS the approval action, not a separate flag flip.
+export async function upsertShopCuration(client: Client, shopId: string, fields: ShopCurationFields): Promise<void> {
+  const { error } = await client.from("shop_curations").upsert({
+    shop_id: shopId,
+    price_tier: fields.priceTier,
+    tag: fields.tag,
+    editorial_rating: fields.editorialRating,
+    writeup: fields.writeup,
+    order_note: fields.orderNote,
+  });
+  if (error) throw error;
+}
+
+export async function rejectShopPromotion(client: Client, shopId: string): Promise<void> {
+  const { error } = await client.from("shops").update({ promotion_status: "rejected" }).eq("id", shopId);
+  if (error) throw error;
+}
+
+export type AdminShopRow = {
+  id: string;
+  name: string;
+  cityId: string | null;
+  neighborhood: string | null;
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  website: string | null;
+  phone: string | null;
+  hours: string | null;
+  promotionStatus: string;
+  curation: { priceTier: string; tag: string | null; editorialRating: number | null; writeup: string | null; orderNote: string | null } | null;
+};
+
+export async function getAdminShops(
+  client: Client,
+  opts?: { search?: string; cityId?: string; filter?: "all" | "flagged" | "approved" }
+): Promise<AdminShopRow[]> {
+  let query = client
+    .from("shops")
+    .select("id, name, city_id, neighborhood, lat, lng, address, website, phone, hours, promotion_status, shop_curations(price_tier, tag, editorial_rating, writeup, order_note)")
+    .order("name");
+  const q = opts?.search?.trim().toLowerCase().replace(/[%_\\]/g, "");
+  if (q) query = query.ilike("name", `%${q}%`);
+  if (opts?.cityId) query = query.eq("city_id", opts.cityId);
+  if (opts?.filter === "flagged") query = query.eq("promotion_status", "flagged");
+  const { data, error } = await query;
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    cityId: r.city_id,
+    neighborhood: r.neighborhood,
+    lat: r.lat,
+    lng: r.lng,
+    address: r.address,
+    website: r.website,
+    phone: r.phone,
+    hours: r.hours,
+    promotionStatus: r.promotion_status,
+    curation: Array.isArray(r.shop_curations) ? (r.shop_curations[0] ?? null) : r.shop_curations
+      ? {
+          priceTier: r.shop_curations.price_tier,
+          tag: r.shop_curations.tag,
+          editorialRating: r.shop_curations.editorial_rating,
+          writeup: r.shop_curations.writeup,
+          orderNote: r.shop_curations.order_note,
+        }
+      : null,
+  }));
+}

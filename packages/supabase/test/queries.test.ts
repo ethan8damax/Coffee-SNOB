@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
+import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -1118,5 +1119,121 @@ describe("updateCity", () => {
     } as any;
     await updateCity(client, "c1", { name: "Lisbon", status: undefined });
     expect(calls).toEqual([{ name: "Lisbon" }]);
+  });
+});
+
+describe("createShop", () => {
+  it("inserts a shop and returns it", async () => {
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => ({
+          select: () => ({ single: () => Promise.resolve({ data: { id: "s1", ...(payload as object) }, error: null }) }),
+        }),
+      }),
+    } as any;
+    const shop = await createShop(client, { name: "Corvo", cityId: "c1", neighborhood: "Alcântara", lat: 38.7, lng: -9.17 });
+    expect(shop).toMatchObject({ id: "s1", name: "Corvo" });
+  });
+});
+
+describe("updateShop", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateShop(client, "s1", { website: "https://corvo.pt" });
+    expect(calls).toEqual([{ website: "https://corvo.pt" }]);
+  });
+});
+
+describe("upsertShopCuration", () => {
+  it("upserts the curation row keyed on shop_id", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: (table: string) => ({
+        upsert: (payload: unknown) => {
+          calls.push({ table, payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await upsertShopCuration(client, "s1", { priceTier: "€€", tag: "Best pour-over", editorialRating: 5, writeup: "..." });
+    expect(calls).toEqual([
+      {
+        table: "shop_curations",
+        payload: { shop_id: "s1", price_tier: "€€", tag: "Best pour-over", editorial_rating: 5, writeup: "...", order_note: undefined },
+      },
+    ]);
+  });
+});
+
+describe("rejectShopPromotion", () => {
+  it("sets promotion_status to rejected", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await rejectShopPromotion(client, "s1");
+    expect(calls).toEqual([{ promotion_status: "rejected" }]);
+  });
+});
+
+describe("getAdminShops", () => {
+  function fakeShopsClient(rows: unknown[]) {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      ilike: () => builder,
+      eq: () => builder,
+      then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
+    };
+    return { from: () => builder } as any;
+  }
+
+  it("maps rows including nested curation", async () => {
+    const client = fakeShopsClient([
+      {
+        id: "s1",
+        name: "Corvo",
+        city_id: "c1",
+        neighborhood: "Alcântara",
+        lat: 38.7,
+        lng: -9.17,
+        address: null,
+        website: null,
+        phone: null,
+        hours: null,
+        promotion_status: "flagged",
+        shop_curations: null,
+      },
+    ]);
+    const shops = await getAdminShops(client);
+    expect(shops).toEqual([
+      {
+        id: "s1",
+        name: "Corvo",
+        cityId: "c1",
+        neighborhood: "Alcântara",
+        lat: 38.7,
+        lng: -9.17,
+        address: null,
+        website: null,
+        phone: null,
+        hours: null,
+        promotionStatus: "flagged",
+        curation: null,
+      },
+    ]);
   });
 });

@@ -46,6 +46,11 @@ export {
   getAdminUserDirectory,
   setUserStatus,
   setUserAdmin,
+  createShop,
+  updateShop,
+  upsertShopCuration,
+  rejectShopPromotion,
+  getAdminShops,
 } from "./queries";
 export { TIERS, snobStatus } from "./profile-status";
 export type {
@@ -60,4 +65,5 @@ export type {
   CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow } from "./queries";
 export type { Database } from "./types";

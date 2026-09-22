@@ -101,10 +101,20 @@ export function useProfile(username: string, viewerId: string | null) {
     }
   }, [state, viewerId]);
 
-  // After a successful edit, reflect the new name/bio without refetching.
-  const applyEdit = useCallback((fields: { displayName: string | null; bio: string | null }) => {
-    setState((s) => (s.status === "ready" ? { ...s, profile: { ...s.profile, ...fields } } : s));
-  }, []);
+  // Silent re-fetch of just the profile row — for regaining focus after Settings'
+  // edit-profile screen, where unlike `retry` a loading spinner would be a
+  // regression (you'd see your own profile blank out for a beat on every visit).
+  // Keeps whatever's already on screen if this fails or the state moved on.
+  const refresh = useCallback(async () => {
+    try {
+      const { supabase } = require("../supabase");
+      const profile = await getPublicProfileByUsername(supabase, username);
+      if (!profile) return;
+      setState((s) => (s.status === "ready" ? { ...s, profile } : s));
+    } catch {
+      // background refresh — leave whatever's already showing
+    }
+  }, [username]);
 
-  return { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, applyEdit };
+  return { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, refresh };
 }

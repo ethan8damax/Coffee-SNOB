@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { Body, ButtonLine, ButtonOx, Label } from "@/components/primitives";
 import { isDesktopWidth } from "@/lib/nav";
@@ -96,10 +96,14 @@ function SavedTab({ userId }: { userId: string }) {
 }
 
 export function ProfileView({ username, viewerId }: { username: string; viewerId: string | null }) {
-  const { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, applyEdit } = useProfile(username, viewerId);
+  const { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, refresh } = useProfile(username, viewerId);
   const { width } = useWindowDimensions();
   const [followFailed, setFollowFailed] = useState(false);
   const [tab, setTab] = useState<Tab>("Entries");
+
+  // Silent (no spinner) — picks up a display name/bio change made on the
+  // Settings screen without a jarring reload every time you switch back here.
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
   if (state.status === "loading") {
     return (
@@ -145,7 +149,6 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
           following={following}
           followFailed={followFailed}
           onToggleFollow={onToggleFollow}
-          onEdited={applyEdit}
         />
 
         <StatusBlock userId={profile.id} entries={total} />

@@ -13,6 +13,7 @@
   "dependencies": {
     "@coffeesnob/design-tokens": "workspace:*",
     "@coffeesnob/supabase": "workspace:*",
+    "@supabase/ssr": "^0.12.7",
     "gray-matter": "^4.0.3",
     "next": "^15.1.3",
     "next-mdx-remote": "^6.0.0",

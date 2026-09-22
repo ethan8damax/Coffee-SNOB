@@ -15,7 +15,15 @@ async function saveAction(formData: FormData) {
     body: String(formData.get("body") || "") || undefined,
   };
   const shopOrder = formData.getAll("shopOrder").map(String);
-  const shopIds = shopOrder.filter((sid) => formData.get(`shop_${sid}`) === "on");
+  const originalCityId = String(formData.get("originalCityId") || "");
+  // The rendered checkboxes always belong to originalCityId's shop list (this page has
+  // no client JS to refetch them when the <select> changes). If the admin picked a
+  // different city, those checkboxes describe the OLD city's shops — writing them as
+  // this guide's items would leave a public guide pointing at city B with shops that
+  // belong to city A. Treat a city change like a brand-new guide: clear the shop list
+  // instead, forcing the same "save once, reopen to pick shops" flow.
+  const cityChanged = originalCityId !== "" && fields.cityId !== originalCityId;
+  const shopIds = cityChanged ? [] : shopOrder.filter((sid) => formData.get(`shop_${sid}`) === "on");
 
   try {
     const supabase = await getSupabaseServer();
@@ -114,6 +122,7 @@ export default async function AdminGuidesPage({
           )}
           <form key={editingGuide.id || "new"} action={saveAction} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
             <input type="hidden" name="id" value={editingGuide.id} />
+            <input type="hidden" name="originalCityId" value={editingCityId ?? ""} />
             <input name="slug" defaultValue={editingGuide.slug} placeholder="Slug" required style={inputStyle} />
             <input name="title" defaultValue={editingGuide.title} placeholder="Title" required style={inputStyle} />
             <select name="cityId" defaultValue={editingCityId ?? ""} required style={inputStyle}>
@@ -133,6 +142,8 @@ export default async function AdminGuidesPage({
               Shops in this guide
             </h3>
             {cityShops.length === 0 && <p className="body-sm">Pick a city and save once, then reopen to choose its shops.</p>}
+            {/* v1: guide order = city shop list order (alphabetical), no custom drag-reorder
+                yet — setCityGuideItems already supports arbitrary order if this UI is added later. */}
             {cityShops.map((s) => (
               <label key={s.id} className="body-sm" style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <input type="hidden" name="shopOrder" value={s.id} />

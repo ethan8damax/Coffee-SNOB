@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
+import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -1251,5 +1252,105 @@ describe("getAdminShops", () => {
         curation: null,
       },
     ]);
+  });
+});
+
+describe("createCityGuide", () => {
+  it("inserts a list with type city_guide", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => {
+          calls.push(payload);
+          return { select: () => ({ single: () => Promise.resolve({ data: { id: "l1" }, error: null }) }) };
+        },
+      }),
+    } as any;
+    await createCityGuide(client, { slug: "lisbon", title: "Lisbon", cityId: "c1" });
+    expect(calls).toEqual([{ type: "city_guide", slug: "lisbon", title: "Lisbon", city_id: "c1", description: undefined, body: undefined, cover_photo_alt: undefined }]);
+  });
+});
+
+describe("updateCityGuide", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCityGuide(client, "l1", { title: "New Title" });
+    expect(calls).toEqual([{ title: "New Title" }]);
+  });
+});
+
+describe("getCityGuideItems", () => {
+  it("returns ordered items with shop names", async () => {
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      order: () => Promise.resolve({
+        data: [{ id: "li1", shop_id: "s1", position: 0, note: null, shops: { name: "Corvo" } }],
+        error: null,
+      }),
+    };
+    const client = { from: () => builder } as any;
+    const items = await getCityGuideItems(client, "l1");
+    expect(items).toEqual([{ id: "li1", shopId: "s1", shopName: "Corvo", position: 0, note: null }]);
+  });
+});
+
+describe("setCityGuideItems", () => {
+  it("replaces all items for the list in position order", async () => {
+    const calls: { table: string; op: string; payload?: unknown }[] = [];
+    const client = {
+      from: (table: string) => ({
+        delete: () => ({
+          eq: () => {
+            calls.push({ table, op: "delete" });
+            return Promise.resolve({ error: null });
+          },
+        }),
+        insert: (payload: unknown) => {
+          calls.push({ table, op: "insert", payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setCityGuideItems(client, "l1", ["s1", "s2"]);
+    expect(calls).toEqual([
+      { table: "list_items", op: "delete" },
+      {
+        table: "list_items",
+        op: "insert",
+        payload: [
+          { list_id: "l1", shop_id: "s1", position: 0 },
+          { list_id: "l1", shop_id: "s2", position: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it("does nothing more after delete when the new list is empty", async () => {
+    const calls: { table: string; op: string }[] = [];
+    const client = {
+      from: (table: string) => ({
+        delete: () => ({
+          eq: () => {
+            calls.push({ table, op: "delete" });
+            return Promise.resolve({ error: null });
+          },
+        }),
+        insert: () => {
+          calls.push({ table, op: "insert" });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setCityGuideItems(client, "l1", []);
+    expect(calls).toEqual([{ table: "list_items", op: "delete" }]);
   });
 });

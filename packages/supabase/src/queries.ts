@@ -831,6 +831,77 @@ export async function rejectShopPromotion(client: Client, shopId: string): Promi
   if (error) throw error;
 }
 
+export type CityGuideFields = { slug: string; title: string; cityId: string; description?: string; body?: string; coverPhotoAlt?: string };
+
+export async function createCityGuide(client: Client, fields: CityGuideFields) {
+  const { data, error } = await client
+    .from("lists")
+    .insert({
+      type: "city_guide",
+      slug: fields.slug,
+      title: fields.title,
+      city_id: fields.cityId,
+      description: fields.description,
+      body: fields.body,
+      cover_photo_alt: fields.coverPhotoAlt,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCityGuide(
+  client: Client,
+  id: string,
+  fields: Partial<Omit<CityGuideFields, "cityId">> & { cityId?: string }
+): Promise<void> {
+  const update: Database["public"]["Tables"]["lists"]["Update"] = {};
+  if (fields.slug !== undefined) update.slug = fields.slug;
+  if (fields.title !== undefined) update.title = fields.title;
+  if (fields.cityId !== undefined) update.city_id = fields.cityId;
+  if (fields.description !== undefined) update.description = fields.description;
+  if (fields.body !== undefined) update.body = fields.body;
+  if (fields.coverPhotoAlt !== undefined) update.cover_photo_alt = fields.coverPhotoAlt;
+  const { error } = await client.from("lists").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export type CityGuideItem = { id: string; shopId: string; shopName: string; position: number; note: string | null };
+
+export async function getCityGuideItems(client: Client, listId: string): Promise<CityGuideItem[]> {
+  const { data, error } = await client
+    .from("list_items")
+    .select("id, shop_id, position, note, shops(name)")
+    .eq("list_id", listId)
+    .order("position");
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    shopId: r.shop_id,
+    shopName: r.shops.name,
+    position: r.position,
+    note: r.note,
+  }));
+}
+
+// Replace-all rather than diff/patch: an admin's guide-editor form always submits the
+// full ordered shop list, and a city guide has at most a handful of shops (the curation
+// standard is 5-10 per city) — a delete+reinsert is simpler than computing a diff and
+// costs nothing at this scale. Not wrapped in a transaction/RPC (unlike the user-
+// management audit writes): a partial failure here just leaves a content page
+// temporarily short some shops, recoverable by re-saving — not a security or audit
+// concern, so the extra atomicity isn't worth a new RPC for this.
+export async function setCityGuideItems(client: Client, listId: string, shopIds: string[]): Promise<void> {
+  const { error: deleteError } = await client.from("list_items").delete().eq("list_id", listId);
+  if (deleteError) throw deleteError;
+  if (shopIds.length === 0) return;
+  const { error: insertError } = await client.from("list_items").insert(
+    shopIds.map((shopId, position) => ({ list_id: listId, shop_id: shopId, position }))
+  );
+  if (insertError) throw insertError;
+}
+
 export type AdminShopRow = {
   id: string;
   name: string;

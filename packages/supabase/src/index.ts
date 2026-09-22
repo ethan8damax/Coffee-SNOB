@@ -51,6 +51,10 @@ export {
   upsertShopCuration,
   rejectShopPromotion,
   getAdminShops,
+  createCityGuide,
+  updateCityGuide,
+  getCityGuideItems,
+  setCityGuideItems,
 } from "./queries";
 export { TIERS, snobStatus } from "./profile-status";
 export type {
@@ -66,4 +70,5 @@ export type {
 } from "./queries";
 export type { AdminUserRow } from "./queries";
 export type { ShopFields, ShopCurationFields, AdminShopRow } from "./queries";
+export type { CityGuideFields, CityGuideItem } from "./queries";
 export type { Database } from "./types";

@@ -807,6 +807,15 @@ export type ShopCurationFields = {
 
 // A shop is "Snob-Approved" exactly when it has a shop_curations row (see shop_ratings
 // view) — this function IS the approval action, not a separate flag flip.
+//
+// ponytail: the upsert and the promotion_status reset below are two separate writes, not
+// one transaction — if the upsert succeeds but the reset throws (rare: network blip, not
+// reachable via normal admin input since the UI already constrains price_tier/rating),
+// the shop is left "Snob-Approved" while promotion_status is still 'flagged'/'rejected',
+// exactly the contradictory state this function exists to prevent. Lower stakes than the
+// admin_set_user_status/admin_set_user_admin RPCs (this is content moderation, not access
+// control), so left as two calls rather than a new RPC for now — upgrade to one if this
+// path sees enough traffic that the rare-failure window starts mattering in practice.
 export async function upsertShopCuration(client: Client, shopId: string, fields: ShopCurationFields): Promise<void> {
   const { error } = await client.from("shop_curations").upsert({
     shop_id: shopId,

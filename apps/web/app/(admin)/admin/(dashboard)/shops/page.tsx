@@ -59,6 +59,17 @@ export default async function AdminShopsPage({
   const [shops, cities] = await Promise.all([getAdminShops(supabase, { search, filter }), getCities(supabase)]);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
 
+  // Preserves the current search/filter across in-page navigation (Edit, filter chips,
+  // Close) — matches /admin/users' hrefWith; without this, every click after searching
+  // silently drops the search text (a real bug found and fixed on that page first).
+  const hrefWith = (overrides: { filter?: Filter; edit?: string }) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("filter", overrides.filter ?? filter);
+    if (overrides.edit) params.set("edit", overrides.edit);
+    return `/admin/shops?${params.toString()}`;
+  };
+
   return (
     <div>
       <h1 className="d2">Shops</h1>
@@ -70,11 +81,11 @@ export default async function AdminShopsPage({
           Search
         </button>
         {(["all", "flagged"] as const).map((f) => (
-          <Link key={f} href={`/admin/shops?filter=${f}${search ? `&search=${encodeURIComponent(search)}` : ""}`} className={`chip ${filter === f ? "on" : ""}`}>
+          <Link key={f} href={hrefWith({ filter: f })} className={`chip ${filter === f ? "on" : ""}`}>
             {f}
           </Link>
         ))}
-        <Link href="/admin/shops?edit=new" className="btn btn-line">
+        <Link href={hrefWith({ edit: "new" })} className="btn btn-line">
           + Add shop
         </Link>
       </form>
@@ -97,7 +108,7 @@ export default async function AdminShopsPage({
               <td>{s.curation ? "Yes" : "No"}</td>
               <td>{s.promotionStatus}</td>
               <td>
-                <Link href={`/admin/shops?filter=${filter}&edit=${s.id}`} className="label">
+                <Link href={hrefWith({ edit: s.id })} className="label">
                   Edit
                 </Link>
               </td>
@@ -108,7 +119,7 @@ export default async function AdminShopsPage({
 
       {editing && (
         <aside key={editing.id || "new"} style={peekStyle}>
-          <Link href={`/admin/shops?filter=${filter}`} className="label">
+          <Link href={hrefWith({})} className="label">
             Close
           </Link>
           <h2 className="d3" style={{ marginTop: 16 }}>

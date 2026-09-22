@@ -84,6 +84,25 @@ function ViewportEvents({ onBoundsChange, onClearSelection }: { onBoundsChange: 
   return null;
 }
 
+// Leaflet measures its container once at mount and never re-checks on its
+// own — if that container's real size changes afterward (the safe-area
+// inset resolving a beat after first paint, the address bar collapsing,
+// a phone rotating), the map's own rendered/tiled area stays locked to
+// the old, usually-smaller size: a hard flat edge with dead space beyond
+// it, not a gradual redraw. A ResizeObserver + invalidateSize() is the
+// standard fix — it keeps the map's actual draw area in sync with
+// whatever its container really is, whenever that changes.
+function ResizeHandler() {
+  const map = useMap();
+  useEffect(() => {
+    const container = map.getContainer();
+    const observer = new ResizeObserver(() => map.invalidateSize());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [map]);
+  return null;
+}
+
 function CameraController({ target, zoom }: { target: MapViewProps["cameraTarget"]; zoom: MapViewProps["zoomRequest"] }) {
   const map = useMap();
   useEffect(() => {
@@ -129,6 +148,7 @@ export function MapView({
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate" }}
       >
         <Basemap />
+        <ResizeHandler />
         <ViewportEvents
           onBoundsChange={onBoundsChange}
           onClearSelection={() => {

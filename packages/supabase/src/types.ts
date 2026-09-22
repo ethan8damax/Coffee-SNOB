@@ -319,6 +319,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_admin: boolean
           onboarded_at: string | null
           taste_picks: string[]
           username: string
@@ -329,6 +330,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          is_admin?: boolean
           onboarded_at?: string | null
           taste_picks?: string[]
           username: string
@@ -339,6 +341,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_admin?: boolean
           onboarded_at?: string | null
           taste_picks?: string[]
           username?: string

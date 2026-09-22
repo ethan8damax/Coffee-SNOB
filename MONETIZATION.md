@@ -42,11 +42,14 @@ These need different architectures — don't conflate them.
 - **Merch (stickers, shirts, hats, sweatshirts) — our own product.** Full
   on-site storefront, real cart/checkout on coffeesnobproject.com, nobody
   redirected out. Fulfillment is print-on-demand (Printful/Printify —
-  produced and shipped per order, nothing held in inventory). Platform:
-  Shopify via Vercel Marketplace's `commerce` integration when this gets
-  built (catalog + cart + checkout in one, integrates with print-on-demand
-  fulfillment) — provision it properly at build time, don't hand-roll a
-  cart.
+  produced and shipped per order, nothing held in inventory). **Platform
+  (revised 2026-09-22): custom-built**, not Shopify — reversed from the
+  original 2026-08-27 decision below. Catalog-only admin shell spec'd in
+  `docs/superpowers/specs/2026-09-22-admin-merch-shell-design.md`;
+  cart/checkout/payment architecture is a separate decision, not made yet.
+  Payment handling is not a place to under-build — pick that architecture
+  deliberately when checkout is actually scoped, don't default to hand-rolling
+  it just because Shopify was ruled out.
 - **Gear (grinders, Chemex, Aeropress, other brands' hardware) — not our
   product, status: paused.** Considered and explicitly rejected becoming a
   reseller/dropshipper of third-party gear for now: premium brands (Fellow,

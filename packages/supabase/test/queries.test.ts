@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -971,5 +971,97 @@ describe("updateProfile", () => {
   it("throws on error", async () => {
     const { client } = updateClient(new Error("boom"));
     await expect(updateProfile(client, "u1", { bio: "x" })).rejects.toThrow("boom");
+  });
+});
+
+describe("getAdminUserDirectory", () => {
+  function fakeDirectoryClient(rows: unknown[]) {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      ilike: () => builder,
+      eq: () => builder,
+      then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
+    };
+    return { from: () => builder } as any;
+  }
+
+  it("maps view rows to AdminUserRow", async () => {
+    const client = fakeDirectoryClient([
+      {
+        id: "u1",
+        username: "mara",
+        display_name: "Mara K.",
+        avatar_url: null,
+        is_admin: false,
+        status: "active",
+        created_at: "2026-01-01T00:00:00Z",
+        log_count: 12,
+        follower_count: 3,
+      },
+    ]);
+    const rows = await getAdminUserDirectory(client);
+    expect(rows).toEqual([
+      {
+        id: "u1",
+        username: "mara",
+        displayName: "Mara K.",
+        avatarUrl: null,
+        isAdmin: false,
+        status: "active",
+        createdAt: "2026-01-01T00:00:00Z",
+        logCount: 12,
+        followerCount: 3,
+      },
+    ]);
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = {
+      from: () => ({
+        select: () => ({
+          order: () => ({ then: (resolve: any) => resolve({ data: null, error: new Error("boom") }) }),
+        }),
+      }),
+    } as any;
+    await expect(getAdminUserDirectory(client)).rejects.toThrow("boom");
+  });
+});
+
+describe("setUserStatus", () => {
+  it("calls the admin_set_user_status RPC", async () => {
+    const rpcCalls: { fn: string; args: unknown }[] = [];
+    const client = {
+      rpc: (fn: string, args: unknown) => {
+        rpcCalls.push({ fn, args });
+        return Promise.resolve({ error: null });
+      },
+    } as any;
+    await setUserStatus(client, "target-1", "suspended");
+    expect(rpcCalls).toEqual([{ fn: "admin_set_user_status", args: { p_target_user_id: "target-1", p_status: "suspended" } }]);
+  });
+
+  it("throws when the RPC returns an error", async () => {
+    const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
+    await expect(setUserStatus(client, "target-1", "suspended")).rejects.toThrow("boom");
+  });
+});
+
+describe("setUserAdmin", () => {
+  it("calls the admin_set_user_admin RPC", async () => {
+    const rpcCalls: { fn: string; args: unknown }[] = [];
+    const client = {
+      rpc: (fn: string, args: unknown) => {
+        rpcCalls.push({ fn, args });
+        return Promise.resolve({ error: null });
+      },
+    } as any;
+    await setUserAdmin(client, "target-1", true);
+    expect(rpcCalls).toEqual([{ fn: "admin_set_user_admin", args: { p_target_user_id: "target-1", p_is_admin: true } }]);
+  });
+
+  it("throws when the RPC returns an error", async () => {
+    const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
+    await expect(setUserAdmin(client, "target-1", true)).rejects.toThrow("boom");
   });
 });

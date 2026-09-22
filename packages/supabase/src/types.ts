@@ -319,7 +319,9 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_admin: boolean
           onboarded_at: string | null
+          status: string
           taste_picks: string[]
           username: string
         }
@@ -329,7 +331,9 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          is_admin?: boolean
           onboarded_at?: string | null
+          status?: string
           taste_picks?: string[]
           username: string
         }
@@ -339,9 +343,35 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_admin?: boolean
           onboarded_at?: string | null
+          status?: string
           taste_picks?: string[]
           username?: string
+        }
+        Relationships: []
+      }
+      admin_actions: {
+        Row: {
+          id: string
+          actor_id: string
+          target_user_id: string
+          action: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_id: string
+          target_user_id: string
+          action: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          actor_id?: string
+          target_user_id?: string
+          action?: string
+          created_at?: string
         }
         Relationships: []
       }
@@ -483,6 +513,20 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_user_directory: {
+        Row: {
+          id: string
+          username: string
+          display_name: string | null
+          avatar_url: string | null
+          is_admin: boolean
+          status: string
+          created_at: string
+          log_count: number
+          follower_count: number
+        }
+        Relationships: []
+      }
     }
     Functions: {
       log_shop_visit: {
@@ -501,6 +545,20 @@ export type Database = {
           p_hours?: string
         }
         Returns: { shop_id: string; log_id: string }[]
+      }
+      admin_set_user_status: {
+        Args: {
+          p_target_user_id: string
+          p_status: string
+        }
+        Returns: undefined
+      }
+      admin_set_user_admin: {
+        Args: {
+          p_target_user_id: string
+          p_is_admin: boolean
+        }
+        Returns: undefined
       }
     }
     Enums: {

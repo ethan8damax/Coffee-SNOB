@@ -43,6 +43,10 @@ alter table public.shops
 -- overload live next to the new one (ambiguous for PostgREST). Drop the old signature.
 -- Its grants go with it; the new function's are re-asserted below exactly as in 0013
 -- (execute for authenticated only; nothing for public/anon).
+--
+-- Superseded by 0019_admin_user_management.sql, which patches this function again (adds a
+-- suspension check) — check for a later migration touching log_shop_visit before editing
+-- the copy below in isolation.
 drop function public.log_shop_visit(text, text, double precision, double precision, smallint, text, date);
 
 create function public.log_shop_visit(

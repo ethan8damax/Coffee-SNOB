@@ -683,3 +683,50 @@ export async function searchProfiles(client: Client, query: string): Promise<Per
   if (error) throw error;
   return data.map((p) => ({ id: p.id, username: p.username, displayName: p.display_name }));
 }
+
+// ── Admin ─────────────────────────────────────────────────────────
+export type AdminUserRow = {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatarUrl: string | null;
+  isAdmin: boolean;
+  status: string;
+  createdAt: string;
+  logCount: number;
+  followerCount: number;
+};
+
+export async function getAdminUserDirectory(
+  client: Client,
+  opts?: { search?: string; filter?: "all" | "admins" | "suspended" }
+): Promise<AdminUserRow[]> {
+  let query = client.from("admin_user_directory").select("*").order("created_at", { ascending: false });
+  const q = opts?.search?.trim().toLowerCase().replace(/[%_\\]/g, "");
+  if (q) query = query.ilike("username", `%${q}%`);
+  if (opts?.filter === "admins") query = query.eq("is_admin", true);
+  if (opts?.filter === "suspended") query = query.eq("status", "suspended");
+  const { data, error } = await query;
+  if (error) throw error;
+  return data.map((r) => ({
+    id: r.id,
+    username: r.username,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
+    isAdmin: r.is_admin,
+    status: r.status,
+    createdAt: r.created_at,
+    logCount: r.log_count,
+    followerCount: r.follower_count,
+  }));
+}
+
+export async function setUserStatus(client: Client, targetUserId: string, status: "active" | "suspended"): Promise<void> {
+  const { error } = await client.rpc("admin_set_user_status", { p_target_user_id: targetUserId, p_status: status });
+  if (error) throw error;
+}
+
+export async function setUserAdmin(client: Client, targetUserId: string, isAdmin: boolean): Promise<void> {
+  const { error } = await client.rpc("admin_set_user_admin", { p_target_user_id: targetUserId, p_is_admin: isAdmin });
+  if (error) throw error;
+}

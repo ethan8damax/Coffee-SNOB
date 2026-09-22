@@ -41,7 +41,11 @@ export {
   setShopSaved,
   getFollowList,
   searchProfiles,
+  getAdminUserDirectory,
+  setUserStatus,
+  setUserAdmin,
 } from "./queries";
+export { TIERS, snobStatus } from "./profile-status";
 export type {
   ShopDetail,
   ShopReview,
@@ -52,4 +56,5 @@ export type {
   SavedShop,
   PersonRow,
 } from "./queries";
+export type { AdminUserRow } from "./queries";
 export type { Database } from "./types";

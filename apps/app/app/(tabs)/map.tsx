@@ -81,6 +81,9 @@ export default function MapScreen() {
   const visible = useMemo(() => applyFilter(filter, ratedShops, nearbyShops), [filter, ratedShops, nearbyShops]);
   const origin = userCenter ?? (bounds ? boundsCenter(bounds) : null);
   const rows = useMemo(() => buildRows(visible.rated, visible.nearby, origin), [visible, origin]);
+  // Search ranks near-first from what's actually on screen, not your real location —
+  // if you've flown somewhere else to browse, that's "near" for search purposes.
+  const searchOrigin = bounds ? boundsCenter(bounds) : userCenter;
 
   const activeKey = selectedRatedShopId ? `r:${selectedRatedShopId}` : selectedNearbyExternalId ? `n:${selectedNearbyExternalId}` : null;
   const selectedRow = activeKey ? (rows.find((r) => rowKey(r) === activeKey) ?? null) : null;
@@ -134,7 +137,7 @@ export default function MapScreen() {
   const zoom = (delta: 1 | -1) => setZoomRequest({ delta, nonce: ++nonce.current });
 
   const searchPlace = (place: Place) => {
-    setSearchedAreaLabel(place.name);
+    setSearchedAreaLabel(place.primary);
     selectRated(null);
     selectNearby(null);
     flyTo(place.lat, place.lng, 13);
@@ -193,7 +196,9 @@ export default function MapScreen() {
   );
 
   const countLabel = `${rows.length} ${rows.length === 1 ? "shop" : "shops"} nearby`;
-  const areaLabel = searchedAreaLabel ?? (userCenter ? "Near you" : FALLBACK.name);
+  // null until something's actually been searched — the bar shows the "Search a
+  // city or a shop" invite by default, not a "Near you" label nobody asked for.
+  const areaLabel = searchedAreaLabel;
 
   if (desktop) {
     return (
@@ -202,7 +207,7 @@ export default function MapScreen() {
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
             <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
               <View style={{ paddingHorizontal: 20, zIndex: 30 }}>
-                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={origin} onSelectPlace={searchPlace} onSelectShop={searchShop} />
+                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -260,7 +265,7 @@ export default function MapScreen() {
             locateDisabled={!userCenter}
             onRefresh={reload}
             webAppUrl={WEB_APP_URL}
-            origin={origin}
+            origin={searchOrigin}
             onSelectPlace={searchPlace}
             onSelectShop={searchShop}
           />

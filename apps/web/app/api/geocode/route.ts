@@ -26,7 +26,10 @@ export async function GET(request: Request) {
     return NextResponse.json(cached.body, { headers: CORS_HEADERS });
   }
 
-  const params = new URLSearchParams({ q, format: "json", limit: "6" });
+  // addressdetails=1 is what lets us tell a city match from a state or country match,
+  // and build the "City, ST, US" line ourselves instead of parsing Nominatim's
+  // free-text display_name.
+  const params = new URLSearchParams({ q, format: "json", limit: "6", addressdetails: "1" });
   const response = await fetch(`${NOMINATIM_URL}?${params}`, {
     headers: {
       // Nominatim's usage policy requires a real User-Agent identifying the app

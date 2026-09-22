@@ -3,11 +3,12 @@ import { sortByDistance, type SearchResult } from "./search-sort";
 
 const place = (id: string, lat: number, lng: number): SearchResult => ({
   kind: "place",
-  place: { id, name: id, displayName: id, lat, lng },
+  place: { id, primary: id, secondary: "", lat, lng },
 });
 const shop = (id: string, lat: number, lng: number): SearchResult => ({
   kind: "shop",
   shop: { id, name: id, lat, lng, neighborhood: null, isSnobApproved: false, tag: null, priceTier: null, rating: 5, logCount: 1 },
+  secondary: null,
 });
 
 describe("sortByDistance", () => {

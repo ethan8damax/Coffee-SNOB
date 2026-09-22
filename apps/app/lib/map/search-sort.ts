@@ -2,7 +2,10 @@ import { distanceKm } from "./shop-list";
 import type { Place } from "./geocode";
 import type { RatedShopPin } from "../../components/map/types";
 
-export type SearchResult = { kind: "place"; place: Place } | { kind: "shop"; shop: RatedShopPin };
+// A shop's "City, ST, Country" line comes from a reverse-geocode lookup on its
+// coordinates; null means that lookup failed (never shown as a loading state — see
+// map-search.tsx, results aren't set until every lookup in the batch settles).
+export type SearchResult = { kind: "place"; place: Place } | { kind: "shop"; shop: RatedShopPin; secondary: string | null };
 
 function resultPoint(r: SearchResult) {
   return r.kind === "place" ? r.place : r.shop;

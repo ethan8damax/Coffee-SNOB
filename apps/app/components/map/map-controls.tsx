@@ -140,7 +140,7 @@ export function MapTopBar({
   onSelectPlace,
   onSelectShop,
 }: {
-  areaLabel: string;
+  areaLabel: string | null;
   count: number;
   onLocate: () => void;
   locateDisabled: boolean;

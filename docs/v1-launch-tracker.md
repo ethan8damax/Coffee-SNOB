@@ -93,6 +93,8 @@ it short — details live in the spec.
 
 - [x] Map search polish 9/21: results now sort closest-first (real location, else the current map center) so a same-named place across the world can't outrank the local one — `lib/map/search-sort.ts`, unit tested; fixed the results dropdown rendering underneath the All/Rated/Make the trip filter chips (missing z-index on the search row's stacking context, not the dropdown itself).
 
+- [x] Map search cleanup 9/21 (per your notes): removed the results-dropdown-under-filter-chips fix's 'Places © OpenStreetMap contributors.' footer and the Place/Shop label column; results now show a bold headline + a smaller 'City, ST, USA' (or just state/country when that's the finest match) line — shops get theirs from a new reverse-geocode lookup (`/api/reverse-geocode`, same Nominatim/cache pattern), places from Nominatim's `addressdetails`; US abbreviated as USA, not the bare ISO code. 'Near you' is gone from the bar — it now always reads 'Search a city or a shop' until you've actually searched something. Search ranks closest-first from what's on screen (the current map center) rather than your real location, so browsing a city and searching stays local to that city. Fixed a real overflow bug found along the way: the results dropdown had a maxHeight but no clipping/scrolling, so a long list spilled out past its own border.
+
 ## Q · QA + launch prep (Mon 9/28)
 
 - [ ] Compare each screen to the design at 393 / 834 / 1440 in Chrome; fix diffs

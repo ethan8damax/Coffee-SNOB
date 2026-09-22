@@ -1,19 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
-import { geocodePlaces, type Place } from "../../lib/map/geocode";
+import { geocodePlaces, reverseGeocode, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { sortByDistance, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
 import type { RatedShopPin } from "./types";
 
 const DEBOUNCE_MS = 350;
+const DEFAULT_LABEL = "Search a city or a shop";
 
-// The map's area pill doubles as a search box: tap it, type a city or a shop name,
-// pick a result. "Near you" (or the fallback area) is the untouched default — this
-// never fires on its own, only on a tap.
+// The map's area pill doubles as a search box: tap it, type a city or a shop name, pick
+// a result. Nothing fires on its own — "Search a city or a shop" is the permanent
+// invite until you actually pick something.
 export function MapSearch({
   areaLabel,
   count,
@@ -22,11 +23,12 @@ export function MapSearch({
   onSelectPlace,
   onSelectShop,
 }: {
-  areaLabel: string;
+  // null = nothing searched yet, shows the DEFAULT_LABEL invite.
+  areaLabel: string | null;
   count: number;
   webAppUrl: string;
-  // Roughly "where the searcher is" (real location, or the current map center) —
-  // used only to rank results near-first, never sent anywhere.
+  // Ranks results near-first: what's on screen if we're looking at the map, else the
+  // real device location. Never sent anywhere.
   origin: { lat: number; lng: number } | null;
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
@@ -43,17 +45,27 @@ export function MapSearch({
       setResults(null);
       return;
     }
+    let cancelled = false;
     const timer = setTimeout(() => {
       const { supabase } = require("../../lib/supabase");
-      Promise.all([geocodePlaces(q, webAppUrl).catch(() => []), searchRatedShops(supabase, q).catch(() => [])]).then(([places, shopRows]) => {
+      Promise.all([geocodePlaces(q, webAppUrl).catch(() => []), searchRatedShops(supabase, q).catch(() => [])]).then(async ([places, shopRows]) => {
+        const shops = shopRows.map(toRatedShopPin);
+        // One reverse lookup per shop match (city/state/country from its coordinates) —
+        // in parallel and awaited together, so the list appears once, fully formed,
+        // rather than filling in row by row.
+        const secondaries = await Promise.all(shops.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null)));
+        if (cancelled) return;
         const combined: SearchResult[] = [
           ...places.map((place): SearchResult => ({ kind: "place", place })),
-          ...shopRows.map((row): SearchResult => ({ kind: "shop", shop: toRatedShopPin(row) })),
+          ...shops.map((shop, i): SearchResult => ({ kind: "shop", shop, secondary: secondaries[i] })),
         ];
         setResults(sortByDistance(combined, origin));
       });
     }, DEBOUNCE_MS);
-    return () => clearTimeout(timer);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [active, query, webAppUrl, origin]);
 
   function open() {
@@ -83,10 +95,20 @@ export function MapSearch({
 
   if (!active) {
     return (
-      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel="Search a city or a shop" style={pillBase}>
+      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={DEFAULT_LABEL} style={pillBase}>
         <PinIcon color={colors.oxblood} />
-        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: "AreaExtended-Bold", fontSize: 8.5, letterSpacing: 1.19, textTransform: "uppercase", color: colors.ink }}>
-          {areaLabel}
+        <Text
+          numberOfLines={1}
+          style={{
+            flexShrink: 1,
+            fontFamily: "AreaExtended-Bold",
+            fontSize: 8.5,
+            letterSpacing: 1.19,
+            textTransform: "uppercase",
+            color: areaLabel ? colors.ink : colors.ink3,
+          }}
+        >
+          {areaLabel ?? DEFAULT_LABEL}
         </Text>
         <Text style={{ marginLeft: "auto", fontFamily: "AreaExtended-Black", fontSize: 9, color: colors.ink3 }}>{count}</Text>
       </Pressable>
@@ -101,9 +123,9 @@ export function MapSearch({
           ref={inputRef}
           value={query}
           onChangeText={setQuery}
-          placeholder="Search a city or a shop"
+          placeholder={DEFAULT_LABEL}
           placeholderTextColor={colors.ink3}
-          accessibilityLabel="Search a city or a shop"
+          accessibilityLabel={DEFAULT_LABEL}
           autoCapitalize="none"
           style={{ flex: 1, fontFamily: "Area-Regular", fontSize: 13, color: colors.ink }}
         />
@@ -123,15 +145,21 @@ export function MapSearch({
             borderColor: colors.rule,
             borderRadius: 2,
             maxHeight: 280,
+            overflow: "hidden",
             zIndex: 20,
           }}
         >
+          <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 280 }}>
           {results.length === 0 ? (
             <Label style={{ padding: 14, color: colors.ink3 }}>No matches.</Label>
           ) : (
             results.map((r) => {
               const key = r.kind === "place" ? `p:${r.place.id}` : `s:${r.shop.id}`;
-              const title = r.kind === "place" ? r.place.displayName : r.shop.name;
+              // Whatever the searcher actually matched — the shop name, or the finest
+              // place Nominatim resolved to (a city, a state, or just a country) — is
+              // the bold headline; the rest (if any) trails smaller beneath it.
+              const primary = r.kind === "place" ? r.place.primary : r.shop.name;
+              const secondary = r.kind === "place" ? r.place.secondary : r.secondary;
               return (
                 <Pressable
                   key={key}
@@ -141,18 +169,22 @@ export function MapSearch({
                     close();
                   }}
                   accessibilityRole="button"
-                  accessibilityLabel={title}
-                  style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 44, paddingHorizontal: 12, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
+                  accessibilityLabel={secondary ? `${primary}, ${secondary}` : primary}
+                  style={{ gap: 2, minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
                 >
-                  <Label style={{ color: colors.ink3, width: 40 }}>{r.kind === "place" ? "Place" : "Shop"}</Label>
-                  <Text numberOfLines={1} style={{ flex: 1, fontFamily: "Area-Regular", fontSize: 13, color: colors.ink }}>
-                    {title}
+                  <Text numberOfLines={1} style={{ fontFamily: "Area-Bold", fontSize: 13.5, color: colors.ink }}>
+                    {primary}
                   </Text>
+                  {!!secondary && (
+                    <Text numberOfLines={1} style={{ fontFamily: "Area-Regular", fontSize: 11.5, color: colors.ink3 }}>
+                      {secondary}
+                    </Text>
+                  )}
                 </Pressable>
               );
             })
           )}
-          <Label style={{ padding: 10, color: colors.ink3, fontSize: 9 }}>Places © OpenStreetMap contributors.</Label>
+          </ScrollView>
         </View>
       )}
     </View>

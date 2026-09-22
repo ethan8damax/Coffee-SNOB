@@ -86,7 +86,11 @@ export default async function AdminCitiesPage({
           <h2 className="d3" style={{ marginTop: 16 }}>
             {editing.id ? "Edit city" : "New city"}
           </h2>
-          <form action={saveAction} style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}>
+          <form
+            key={editing.id || "new"}
+            action={saveAction}
+            style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 16 }}
+          >
             <input type="hidden" name="id" value={editing.id} />
             <input name="slug" defaultValue={editing.slug} placeholder="Slug" required style={inputStyle} />
             <input name="name" defaultValue={editing.name} placeholder="Name" required style={inputStyle} />

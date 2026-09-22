@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -971,5 +971,105 @@ describe("updateProfile", () => {
   it("throws on error", async () => {
     const { client } = updateClient(new Error("boom"));
     await expect(updateProfile(client, "u1", { bio: "x" })).rejects.toThrow("boom");
+  });
+});
+
+describe("getAdminUserDirectory", () => {
+  function fakeDirectoryClient(rows: unknown[]) {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      ilike: () => builder,
+      eq: () => builder,
+      then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
+    };
+    return { from: () => builder } as any;
+  }
+
+  it("maps view rows to AdminUserRow", async () => {
+    const client = fakeDirectoryClient([
+      {
+        id: "u1",
+        username: "mara",
+        display_name: "Mara K.",
+        avatar_url: null,
+        is_admin: false,
+        status: "active",
+        created_at: "2026-01-01T00:00:00Z",
+        log_count: 12,
+        follower_count: 3,
+      },
+    ]);
+    const rows = await getAdminUserDirectory(client);
+    expect(rows).toEqual([
+      {
+        id: "u1",
+        username: "mara",
+        displayName: "Mara K.",
+        avatarUrl: null,
+        isAdmin: false,
+        status: "active",
+        createdAt: "2026-01-01T00:00:00Z",
+        logCount: 12,
+        followerCount: 3,
+      },
+    ]);
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = {
+      from: () => ({
+        select: () => ({
+          order: () => ({ then: (resolve: any) => resolve({ data: null, error: new Error("boom") }) }),
+        }),
+      }),
+    } as any;
+    await expect(getAdminUserDirectory(client)).rejects.toThrow("boom");
+  });
+});
+
+describe("setUserStatus", () => {
+  it("updates the profile and writes an admin_actions row", async () => {
+    const calls: { table: string; op: string; payload?: unknown }[] = [];
+    const client = {
+      from: (table: string) => ({
+        update: (payload: unknown) => {
+          calls.push({ table, op: "update", payload });
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+        insert: (payload: unknown) => {
+          calls.push({ table, op: "insert", payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setUserStatus(client, "admin-1", "target-1", "suspended");
+    expect(calls).toEqual([
+      { table: "profiles", op: "update", payload: { status: "suspended" } },
+      { table: "admin_actions", op: "insert", payload: { actor_id: "admin-1", target_user_id: "target-1", action: "suspend" } },
+    ]);
+  });
+});
+
+describe("setUserAdmin", () => {
+  it("updates the profile and writes an admin_actions row", async () => {
+    const calls: { table: string; op: string; payload?: unknown }[] = [];
+    const client = {
+      from: (table: string) => ({
+        update: (payload: unknown) => {
+          calls.push({ table, op: "update", payload });
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+        insert: (payload: unknown) => {
+          calls.push({ table, op: "insert", payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setUserAdmin(client, "admin-1", "target-1", true);
+    expect(calls).toEqual([
+      { table: "profiles", op: "update", payload: { is_admin: true } },
+      { table: "admin_actions", op: "insert", payload: { actor_id: "admin-1", target_user_id: "target-1", action: "grant_admin" } },
+    ]);
   });
 });

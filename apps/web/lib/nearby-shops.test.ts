@@ -21,6 +21,12 @@ describe("buildOverpassQuery", () => {
     expect(q).toContain('node["amenity"="cafe"](38.7,-9.2,38.8,-9.1)');
     expect(q).toContain('way["amenity"="cafe"](38.7,-9.2,38.8,-9.1)');
   });
+
+  it("also matches restaurants/bars tagged with a coffee_shop cuisine", () => {
+    const q = buildOverpassQuery({ minLat: 38.7, minLng: -9.2, maxLat: 38.8, maxLng: -9.1 });
+    expect(q).toContain('node["cuisine"~"coffee_shop"](38.7,-9.2,38.8,-9.1)');
+    expect(q).toContain('way["cuisine"~"coffee_shop"](38.7,-9.2,38.8,-9.1)');
+  });
 });
 
 describe("toNearbyShop", () => {

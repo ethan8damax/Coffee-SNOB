@@ -1,5 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
+import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
+import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -1063,5 +1065,314 @@ describe("setUserAdmin", () => {
   it("throws when the RPC returns an error", async () => {
     const client = { rpc: () => Promise.resolve({ error: new Error("boom") }) } as any;
     await expect(setUserAdmin(client, "target-1", true)).rejects.toThrow("boom");
+  });
+});
+
+describe("createCity", () => {
+  it("inserts a city and returns it", async () => {
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => ({
+          select: () => ({
+            single: () => Promise.resolve({ data: { id: "c1", ...(payload as object) }, error: null }),
+          }),
+        }),
+      }),
+    } as any;
+    const city = await createCity(client, { slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe" });
+    expect(city).toEqual({ id: "c1", slug: "lisbon", name: "Lisbon", country: "Portugal", region: "Europe" });
+  });
+
+  it("throws when the client returns an error", async () => {
+    const client = {
+      from: () => ({
+        insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("boom") }) }) }),
+      }),
+    } as any;
+    await expect(createCity(client, { slug: "x", name: "X", country: "X", region: "X" })).rejects.toThrow("boom");
+  });
+});
+
+describe("updateCity", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCity(client, "c1", { status: "live" });
+    expect(calls).toEqual([{ status: "live" }]);
+  });
+
+  it("omits fields left undefined, even when mixed with defined ones", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCity(client, "c1", { name: "Lisbon", status: undefined });
+    expect(calls).toEqual([{ name: "Lisbon" }]);
+  });
+});
+
+describe("createShop", () => {
+  it("inserts a shop and returns it", async () => {
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => ({
+          select: () => ({ single: () => Promise.resolve({ data: { id: "s1", ...(payload as object) }, error: null }) }),
+        }),
+      }),
+    } as any;
+    const shop = await createShop(client, { name: "Corvo", cityId: "c1", neighborhood: "Alcântara", lat: 38.7, lng: -9.17 });
+    expect(shop).toMatchObject({ id: "s1", name: "Corvo" });
+  });
+});
+
+describe("updateShop", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateShop(client, "s1", { website: "https://corvo.pt" });
+    expect(calls).toEqual([{ website: "https://corvo.pt" }]);
+  });
+});
+
+describe("upsertShopCuration", () => {
+  it("upserts the curation row keyed on shop_id, then clears promotion_status", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: (table: string) => ({
+        upsert: (payload: unknown) => {
+          calls.push({ table, op: "upsert", payload });
+          return Promise.resolve({ error: null });
+        },
+        update: (payload: unknown) => {
+          calls.push({ table, op: "update", payload });
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await upsertShopCuration(client, "s1", { priceTier: "€€", tag: "Best pour-over", editorialRating: 5, writeup: "..." });
+    expect(calls).toEqual([
+      {
+        table: "shop_curations",
+        op: "upsert",
+        payload: { shop_id: "s1", price_tier: "€€", tag: "Best pour-over", editorial_rating: 5, writeup: "...", order_note: undefined },
+      },
+      { table: "shops", op: "update", payload: { promotion_status: "none" } },
+    ]);
+  });
+
+  it("throws if clearing promotion_status fails, without swallowing the error", async () => {
+    const client = {
+      from: (table: string) =>
+        table === "shop_curations"
+          ? { upsert: () => Promise.resolve({ error: null }) }
+          : { update: () => ({ eq: () => Promise.resolve({ error: new Error("boom") }) }) },
+    } as any;
+    await expect(upsertShopCuration(client, "s1", { priceTier: "€€" })).rejects.toThrow("boom");
+  });
+});
+
+describe("rejectShopPromotion", () => {
+  it("sets promotion_status to rejected", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await rejectShopPromotion(client, "s1");
+    expect(calls).toEqual([{ promotion_status: "rejected" }]);
+  });
+});
+
+describe("getAdminShops", () => {
+  function fakeShopsClient(rows: unknown[]) {
+    const builder: any = {
+      select: () => builder,
+      order: () => builder,
+      ilike: () => builder,
+      eq: () => builder,
+      then: (resolve: (v: { data: unknown[]; error: null }) => void) => resolve({ data: rows, error: null }),
+    };
+    return { from: () => builder } as any;
+  }
+
+  it("maps rows including nested curation", async () => {
+    const client = fakeShopsClient([
+      {
+        id: "s1",
+        name: "Corvo",
+        city_id: "c1",
+        neighborhood: "Alcântara",
+        lat: 38.7,
+        lng: -9.17,
+        address: null,
+        website: null,
+        phone: null,
+        hours: null,
+        promotion_status: "flagged",
+        shop_curations: null,
+      },
+    ]);
+    const shops = await getAdminShops(client);
+    expect(shops).toEqual([
+      {
+        id: "s1",
+        name: "Corvo",
+        cityId: "c1",
+        neighborhood: "Alcântara",
+        lat: 38.7,
+        lng: -9.17,
+        address: null,
+        website: null,
+        phone: null,
+        hours: null,
+        promotionStatus: "flagged",
+        curation: null,
+      },
+    ]);
+  });
+});
+
+describe("getAdminCityGuides", () => {
+  it("lists city_guide lists with city name and item count", async () => {
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      order: () => Promise.resolve({
+        data: [
+          { id: "l1", slug: "lisbon", title: "Lisbon Guide", city_id: "c1", description: "A guide", body: "Long body", cities: { name: "Lisbon" }, list_items: [{ count: 3 }] },
+          { id: "l2", slug: "tampa", title: "Tampa Guide", city_id: "c2", description: null, body: null, cities: null, list_items: [] },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: () => builder } as any;
+    const guides = await getAdminCityGuides(client);
+    expect(guides).toEqual([
+      { id: "l1", slug: "lisbon", title: "Lisbon Guide", cityId: "c1", cityName: "Lisbon", itemCount: 3, description: "A guide", body: "Long body" },
+      { id: "l2", slug: "tampa", title: "Tampa Guide", cityId: "c2", cityName: "—", itemCount: 0, description: null, body: null },
+    ]);
+  });
+});
+
+describe("createCityGuide", () => {
+  it("inserts a list with type city_guide", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        insert: (payload: unknown) => {
+          calls.push(payload);
+          return { select: () => ({ single: () => Promise.resolve({ data: { id: "l1" }, error: null }) }) };
+        },
+      }),
+    } as any;
+    await createCityGuide(client, { slug: "lisbon", title: "Lisbon", cityId: "c1" });
+    expect(calls).toEqual([{ type: "city_guide", slug: "lisbon", title: "Lisbon", city_id: "c1", description: undefined, body: undefined, cover_photo_alt: undefined }]);
+  });
+});
+
+describe("updateCityGuide", () => {
+  it("updates only the given fields", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCityGuide(client, "l1", { title: "New Title" });
+    expect(calls).toEqual([{ title: "New Title" }]);
+  });
+});
+
+describe("getCityGuideItems", () => {
+  it("returns ordered items with shop names", async () => {
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      order: () => Promise.resolve({
+        data: [{ id: "li1", shop_id: "s1", position: 0, note: null, shops: { name: "Corvo" } }],
+        error: null,
+      }),
+    };
+    const client = { from: () => builder } as any;
+    const items = await getCityGuideItems(client, "l1");
+    expect(items).toEqual([{ id: "li1", shopId: "s1", shopName: "Corvo", position: 0, note: null }]);
+  });
+});
+
+describe("setCityGuideItems", () => {
+  it("replaces all items for the list in position order", async () => {
+    const calls: { table: string; op: string; payload?: unknown }[] = [];
+    const client = {
+      from: (table: string) => ({
+        delete: () => ({
+          eq: () => {
+            calls.push({ table, op: "delete" });
+            return Promise.resolve({ error: null });
+          },
+        }),
+        insert: (payload: unknown) => {
+          calls.push({ table, op: "insert", payload });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setCityGuideItems(client, "l1", ["s1", "s2"]);
+    expect(calls).toEqual([
+      { table: "list_items", op: "delete" },
+      {
+        table: "list_items",
+        op: "insert",
+        payload: [
+          { list_id: "l1", shop_id: "s1", position: 0 },
+          { list_id: "l1", shop_id: "s2", position: 1 },
+        ],
+      },
+    ]);
+  });
+
+  it("does nothing more after delete when the new list is empty", async () => {
+    const calls: { table: string; op: string }[] = [];
+    const client = {
+      from: (table: string) => ({
+        delete: () => ({
+          eq: () => {
+            calls.push({ table, op: "delete" });
+            return Promise.resolve({ error: null });
+          },
+        }),
+        insert: () => {
+          calls.push({ table, op: "insert" });
+          return Promise.resolve({ error: null });
+        },
+      }),
+    } as any;
+    await setCityGuideItems(client, "l1", []);
+    expect(calls).toEqual([{ table: "list_items", op: "delete" }]);
   });
 });

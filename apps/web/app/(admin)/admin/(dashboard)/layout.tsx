@@ -33,6 +33,15 @@ export default function AdminDashboardLayout({ children }: { children: ReactNode
         <Link href="/admin/users" className="label">
           Users
         </Link>
+        <Link href="/admin/cities" className="label">
+          Cities
+        </Link>
+        <Link href="/admin/shops" className="label">
+          Shops
+        </Link>
+        <Link href="/admin/guides" className="label">
+          Guides
+        </Link>
         <form action={signOut} style={{ marginLeft: "auto" }}>
           <button type="submit" className="label" style={{ background: "none", border: "none", cursor: "pointer" }}>
             Sign out

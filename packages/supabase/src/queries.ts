@@ -12,6 +12,25 @@ export async function getCities(client: Client) {
   return data;
 }
 
+export type CityFields = { slug: string; name: string; country: string; region: string; status?: "live" | "coming_soon" | "demo" };
+
+export async function createCity(client: Client, fields: CityFields) {
+  const { data, error } = await client.from("cities").insert(fields).select().single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCity(client: Client, id: string, fields: Partial<CityFields>): Promise<void> {
+  const update: Partial<CityFields> = {};
+  if (fields.slug !== undefined) update.slug = fields.slug;
+  if (fields.name !== undefined) update.name = fields.name;
+  if (fields.country !== undefined) update.country = fields.country;
+  if (fields.region !== undefined) update.region = fields.region;
+  if (fields.status !== undefined) update.status = fields.status;
+  const { error } = await client.from("cities").update(update).eq("id", id);
+  if (error) throw error;
+}
+
 export async function getCitiesWithShopCounts(client: Client) {
   const cities = await getCities(client);
 
@@ -729,4 +748,256 @@ export async function setUserStatus(client: Client, targetUserId: string, status
 export async function setUserAdmin(client: Client, targetUserId: string, isAdmin: boolean): Promise<void> {
   const { error } = await client.rpc("admin_set_user_admin", { p_target_user_id: targetUserId, p_is_admin: isAdmin });
   if (error) throw error;
+}
+
+export type ShopFields = {
+  name: string;
+  cityId: string;
+  neighborhood?: string;
+  lat?: number;
+  lng?: number;
+  address?: string;
+  website?: string;
+  phone?: string;
+  hours?: string;
+};
+
+export async function createShop(client: Client, fields: ShopFields) {
+  const { data, error } = await client
+    .from("shops")
+    .insert({
+      name: fields.name,
+      city_id: fields.cityId,
+      neighborhood: fields.neighborhood ?? null,
+      lat: fields.lat ?? null,
+      lng: fields.lng ?? null,
+      address: fields.address ?? null,
+      website: fields.website ?? null,
+      phone: fields.phone ?? null,
+      hours: fields.hours ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateShop(client: Client, id: string, fields: Partial<ShopFields>): Promise<void> {
+  const update: Database["public"]["Tables"]["shops"]["Update"] = {};
+  if (fields.name !== undefined) update.name = fields.name;
+  if (fields.cityId !== undefined) update.city_id = fields.cityId;
+  if (fields.neighborhood !== undefined) update.neighborhood = fields.neighborhood;
+  if (fields.lat !== undefined) update.lat = fields.lat;
+  if (fields.lng !== undefined) update.lng = fields.lng;
+  if (fields.address !== undefined) update.address = fields.address;
+  if (fields.website !== undefined) update.website = fields.website;
+  if (fields.phone !== undefined) update.phone = fields.phone;
+  if (fields.hours !== undefined) update.hours = fields.hours;
+  const { error } = await client.from("shops").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export type ShopCurationFields = {
+  priceTier: "€" | "€€" | "€€€";
+  tag?: string;
+  editorialRating?: number;
+  writeup?: string;
+  orderNote?: string;
+};
+
+// A shop is "Snob-Approved" exactly when it has a shop_curations row (see shop_ratings
+// view) — this function IS the approval action, not a separate flag flip.
+//
+// ponytail: the upsert and the promotion_status reset below are two separate writes, not
+// one transaction — if the upsert succeeds but the reset throws (rare: network blip, not
+// reachable via normal admin input since the UI already constrains price_tier/rating),
+// the shop is left "Snob-Approved" while promotion_status is still 'flagged'/'rejected',
+// exactly the contradictory state this function exists to prevent. Lower stakes than the
+// admin_set_user_status/admin_set_user_admin RPCs (this is content moderation, not access
+// control), so left as two calls rather than a new RPC for now — upgrade to one if this
+// path sees enough traffic that the rare-failure window starts mattering in practice.
+export async function upsertShopCuration(client: Client, shopId: string, fields: ShopCurationFields): Promise<void> {
+  const { error } = await client.from("shop_curations").upsert({
+    shop_id: shopId,
+    price_tier: fields.priceTier,
+    tag: fields.tag,
+    editorial_rating: fields.editorialRating,
+    writeup: fields.writeup,
+    order_note: fields.orderNote,
+  });
+  if (error) throw error;
+  // Approving a shop must clear any flagged/rejected state — otherwise a shop can end up
+  // simultaneously "Snob-Approved" (has a curation row, per shop_ratings) and
+  // promotion_status = 'flagged'/'rejected', since nothing else ever resets this column
+  // (the promotion trigger in 0009 only ever sets 'flagged', never clears it) and the
+  // admin UI's Reject button is gated on promotion_status alone, not on curation presence.
+  const { error: statusError } = await client.from("shops").update({ promotion_status: "none" }).eq("id", shopId);
+  if (statusError) throw statusError;
+}
+
+export async function rejectShopPromotion(client: Client, shopId: string): Promise<void> {
+  const { error } = await client.from("shops").update({ promotion_status: "rejected" }).eq("id", shopId);
+  if (error) throw error;
+}
+
+export type AdminCityGuideRow = {
+  id: string;
+  slug: string;
+  title: string;
+  cityId: string;
+  cityName: string;
+  itemCount: number;
+  description: string | null;
+  body: string | null;
+};
+
+// Selects description/body (beyond what the plan's admin-table listing strictly needs)
+// because the admin guides page reuses this same row as the edit form's defaultValue
+// source — without them the form would silently blank out an existing guide's
+// description/body on every edit.
+export async function getAdminCityGuides(client: Client): Promise<AdminCityGuideRow[]> {
+  const { data, error } = await client
+    .from("lists")
+    .select("id, slug, title, city_id, description, body, cities(name), list_items(count)")
+    .eq("type", "city_guide")
+    .order("title");
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    cityId: r.city_id,
+    cityName: r.cities?.name ?? "—",
+    itemCount: r.list_items[0]?.count ?? 0,
+    description: r.description ?? null,
+    body: r.body ?? null,
+  }));
+}
+
+export type CityGuideFields = { slug: string; title: string; cityId: string; description?: string; body?: string; coverPhotoAlt?: string };
+
+export async function createCityGuide(client: Client, fields: CityGuideFields) {
+  const { data, error } = await client
+    .from("lists")
+    .insert({
+      type: "city_guide",
+      slug: fields.slug,
+      title: fields.title,
+      city_id: fields.cityId,
+      description: fields.description,
+      body: fields.body,
+      cover_photo_alt: fields.coverPhotoAlt,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateCityGuide(client: Client, id: string, fields: Partial<CityGuideFields>): Promise<void> {
+  const update: Database["public"]["Tables"]["lists"]["Update"] = {};
+  if (fields.slug !== undefined) update.slug = fields.slug;
+  if (fields.title !== undefined) update.title = fields.title;
+  if (fields.cityId !== undefined) update.city_id = fields.cityId;
+  if (fields.description !== undefined) update.description = fields.description;
+  if (fields.body !== undefined) update.body = fields.body;
+  if (fields.coverPhotoAlt !== undefined) update.cover_photo_alt = fields.coverPhotoAlt;
+  const { error } = await client.from("lists").update(update).eq("id", id);
+  if (error) throw error;
+}
+
+export type CityGuideItem = { id: string; shopId: string; shopName: string; position: number; note: string | null };
+
+export async function getCityGuideItems(client: Client, listId: string): Promise<CityGuideItem[]> {
+  const { data, error } = await client
+    .from("list_items")
+    .select("id, shop_id, position, note, shops(name)")
+    .eq("list_id", listId)
+    .order("position");
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    shopId: r.shop_id,
+    shopName: r.shops.name,
+    position: r.position,
+    note: r.note,
+  }));
+}
+
+// Replace-all rather than diff/patch: an admin's guide-editor form always submits the
+// full ordered shop list, and a city guide has at most a handful of shops (the curation
+// standard is 5-10 per city) — a delete+reinsert is simpler than computing a diff and
+// costs nothing at this scale. Not wrapped in a transaction/RPC (unlike the user-
+// management audit writes): the real failure mode if the insert fails after the delete
+// already committed is the guide ending up COMPLETELY EMPTY, not "short some shops" —
+// this is a content page, not a security/audit surface, so that's an acceptable risk,
+// but only if the caller actually surfaces the thrown error to the admin (don't reuse
+// the bare <form action> pattern from admin/users for this call without a try/catch —
+// a silently-swallowed failure here means a public guide goes empty with no one told).
+
+export async function setCityGuideItems(client: Client, listId: string, shopIds: string[]): Promise<void> {
+  const { error: deleteError } = await client.from("list_items").delete().eq("list_id", listId);
+  if (deleteError) throw deleteError;
+  if (shopIds.length === 0) return;
+  const { error: insertError } = await client.from("list_items").insert(
+    shopIds.map((shopId, position) => ({ list_id: listId, shop_id: shopId, position }))
+  );
+  if (insertError) throw insertError;
+}
+
+export type AdminShopRow = {
+  id: string;
+  name: string;
+  cityId: string | null;
+  neighborhood: string | null;
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  website: string | null;
+  phone: string | null;
+  hours: string | null;
+  promotionStatus: string;
+  curation: { priceTier: string; tag: string | null; editorialRating: number | null; writeup: string | null; orderNote: string | null } | null;
+};
+
+export async function getAdminShops(
+  client: Client,
+  opts?: { search?: string; cityId?: string; filter?: "all" | "flagged" | "approved" }
+): Promise<AdminShopRow[]> {
+  let query = client
+    .from("shops")
+    .select("id, name, city_id, neighborhood, lat, lng, address, website, phone, hours, promotion_status, shop_curations(price_tier, tag, editorial_rating, writeup, order_note)")
+    .order("name");
+  const q = opts?.search?.trim().toLowerCase().replace(/[%_\\]/g, "");
+  if (q) query = query.ilike("name", `%${q}%`);
+  if (opts?.cityId) query = query.eq("city_id", opts.cityId);
+  if (opts?.filter === "flagged") query = query.eq("promotion_status", "flagged");
+  const { data, error } = await query;
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    cityId: r.city_id,
+    neighborhood: r.neighborhood,
+    lat: r.lat,
+    lng: r.lng,
+    address: r.address,
+    website: r.website,
+    phone: r.phone,
+    hours: r.hours,
+    promotionStatus: r.promotion_status,
+    // shop_curations_shop_id_fkey is one-to-one (shop_id is shop_curations' primary key),
+    // so Postgres/Supabase always embeds this as a single nullable object, never an array
+    // — confirmed via generated types and existing app code (getCityGuide in this same
+    // file does the same embed with no array handling). No Array.isArray branch needed.
+    curation: r.shop_curations
+      ? {
+          priceTier: r.shop_curations.price_tier,
+          tag: r.shop_curations.tag,
+          editorialRating: r.shop_curations.editorial_rating,
+          writeup: r.shop_curations.writeup,
+          orderNote: r.shop_curations.order_note,
+        }
+      : null,
+  }));
 }

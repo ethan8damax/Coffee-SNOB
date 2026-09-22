@@ -1,6 +1,8 @@
 export { createSupabaseClient } from "./client";
 export {
   getCities,
+  createCity,
+  updateCity,
   getCitiesWithShopCounts,
   getCityGuide,
   getProfile,
@@ -44,6 +46,16 @@ export {
   getAdminUserDirectory,
   setUserStatus,
   setUserAdmin,
+  createShop,
+  updateShop,
+  upsertShopCuration,
+  rejectShopPromotion,
+  getAdminShops,
+  getAdminCityGuides,
+  createCityGuide,
+  updateCityGuide,
+  getCityGuideItems,
+  setCityGuideItems,
 } from "./queries";
 export { TIERS, snobStatus } from "./profile-status";
 export type {
@@ -55,6 +67,9 @@ export type {
   ProfileEntry,
   SavedShop,
   PersonRow,
+  CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow } from "./queries";
+export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";

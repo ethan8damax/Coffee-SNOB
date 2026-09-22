@@ -5,6 +5,7 @@
 // before any admin page renders"). /admin/sign-in is excluded so signing in doesn't loop.
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { Database } from "@coffeesnob/supabase";
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({ request });
@@ -13,7 +14,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {

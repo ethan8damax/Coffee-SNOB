@@ -3,11 +3,11 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
-import { geocodePlaces, reverseGeocode, type Place } from "../../lib/map/geocode";
+import { geocodePlaces, reverseGeocode, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { sortByDistance, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
-import type { RatedShopPin } from "./types";
+import type { NearbyShopPin, RatedShopPin } from "./types";
 
 const DEBOUNCE_MS = 350;
 const DEFAULT_LABEL = "Search a city or a shop";
@@ -22,16 +22,19 @@ export function MapSearch({
   origin,
   onSelectPlace,
   onSelectShop,
+  onSelectNearbyShop,
 }: {
   // null = nothing searched yet, shows the DEFAULT_LABEL invite.
   areaLabel: string | null;
   count: number;
   webAppUrl: string;
   // Ranks results near-first: what's on screen if we're looking at the map, else the
-  // real device location. Never sent anywhere.
+  // real device location. Never sent anywhere. Also anchors the "search a shop by
+  // name" radius — without it, unrated shops aren't searched (no anchor point).
   origin: { lat: number; lng: number } | null;
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
+  onSelectNearbyShop: (shop: NearbyShopPin) => void;
 }) {
   const [active, setActive] = useState(false);
   const [query, setQuery] = useState("");
@@ -48,16 +51,27 @@ export function MapSearch({
     let cancelled = false;
     const timer = setTimeout(() => {
       const { supabase } = require("../../lib/supabase");
-      Promise.all([geocodePlaces(q, webAppUrl).catch(() => []), searchRatedShops(supabase, q).catch(() => [])]).then(async ([places, shopRows]) => {
+      Promise.all([
+        geocodePlaces(q, webAppUrl).catch(() => []),
+        searchRatedShops(supabase, q).catch(() => []),
+        // Most early searches are someone looking for a shop they've already been
+        // to, to rate or favorite it for the first time — it won't be rated yet,
+        // so it has to come from live OSM data too, not just searchRatedShops.
+        origin ? searchNearbyShops(q, origin, webAppUrl).catch(() => []) : Promise.resolve([]),
+      ]).then(async ([places, shopRows, nearby]) => {
         const shops = shopRows.map(toRatedShopPin);
         // One reverse lookup per shop match (city/state/country from its coordinates) —
         // in parallel and awaited together, so the list appears once, fully formed,
         // rather than filling in row by row.
-        const secondaries = await Promise.all(shops.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null)));
+        const [shopSecondaries, nearbySecondaries] = await Promise.all([
+          Promise.all(shops.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null))),
+          Promise.all(nearby.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null))),
+        ]);
         if (cancelled) return;
         const combined: SearchResult[] = [
           ...places.map((place): SearchResult => ({ kind: "place", place })),
-          ...shops.map((shop, i): SearchResult => ({ kind: "shop", shop, secondary: secondaries[i] })),
+          ...shops.map((shop, i): SearchResult => ({ kind: "shop", shop, secondary: shopSecondaries[i] })),
+          ...nearby.map((shop, i): SearchResult => ({ kind: "nearby", shop, secondary: nearbySecondaries[i] })),
         ];
         setResults(sortByDistance(combined, origin));
       });
@@ -154,7 +168,7 @@ export function MapSearch({
             <Label style={{ padding: 14, color: colors.ink3 }}>No matches.</Label>
           ) : (
             results.map((r) => {
-              const key = r.kind === "place" ? `p:${r.place.id}` : `s:${r.shop.id}`;
+              const key = r.kind === "place" ? `p:${r.place.id}` : r.kind === "shop" ? `s:${r.shop.id}` : `n:${r.shop.externalId}`;
               // Whatever the searcher actually matched — the shop name, or the finest
               // place Nominatim resolved to (a city, a state, or just a country) — is
               // the bold headline; the rest (if any) trails smaller beneath it.
@@ -165,7 +179,8 @@ export function MapSearch({
                   key={key}
                   onPress={() => {
                     if (r.kind === "place") onSelectPlace(r.place);
-                    else onSelectShop(r.shop);
+                    else if (r.kind === "shop") onSelectShop(r.shop);
+                    else onSelectNearbyShop(r.shop);
                     close();
                   }}
                   accessibilityRole="button"

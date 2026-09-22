@@ -27,6 +27,17 @@ describe("buildOverpassQuery", () => {
     expect(q).toContain('node["cuisine"~"coffee_shop"](38.7,-9.2,38.8,-9.1)');
     expect(q).toContain('way["cuisine"~"coffee_shop"](38.7,-9.2,38.8,-9.1)');
   });
+
+  it("adds a case-insensitive name filter to every clause when searching by name", () => {
+    const q = buildOverpassQuery({ minLat: 38.7, minLng: -9.2, maxLat: 38.8, maxLng: -9.1 }, "Muchacho");
+    expect(q).toContain('node["amenity"="cafe"]["name"~"Muchacho",i](38.7,-9.2,38.8,-9.1)');
+    expect(q).toContain('way["cuisine"~"coffee_shop"]["name"~"Muchacho",i](38.7,-9.2,38.8,-9.1)');
+  });
+
+  it("escapes regex metacharacters and quotes in a searched name", () => {
+    const q = buildOverpassQuery({ minLat: 0, minLng: 0, maxLat: 1, maxLng: 1 }, 'Foo (bar)+ "baz"');
+    expect(q).toContain('"name"~"Foo \\(bar\\)\\+ \\"baz\\"",i');
+  });
 });
 
 describe("toNearbyShop", () => {

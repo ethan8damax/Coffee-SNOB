@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { buildOverpassQuery, tileKey, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
 
-const OVERPASS_URL = "https://overpass-api.de/api/interpreter";
+// The main public instance has flaked repeatedly (outages, "server too busy"
+// 504s) — kumi.systems is Overpass's other well-known public mirror, same
+// query language and data. Tried in order; the first to answer wins.
+const OVERPASS_URLS = ["https://overpass-api.de/api/interpreter", "https://overpass.kumi.systems/api/interpreter"];
+const OVERPASS_TIMEOUT_MS = 15 * 1000;
 // ponytail: in-memory, per-instance cache only — good enough at launch
 // scale; move to a shared cache (Vercel KV/Upstash) if the public Overpass
 // instance's fair-use limits become a real constraint (see spec's
@@ -30,24 +34,40 @@ export async function GET(request: Request) {
   }
 
   const bounds = { minLat, minLng, maxLat, maxLng };
-  const key = tileKey(minLat, minLng, maxLat, maxLng);
+  // "search a shop by name" (map-search.tsx) hits this same endpoint with a
+  // wide box + ?q=, so the name has to be part of the cache key too.
+  const name = url.searchParams.get("q") || undefined;
+  const key = `${tileKey(minLat, minLng, maxLat, maxLng)}|${name ?? ""}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     return NextResponse.json(cached.body, { headers: CORS_HEADERS });
   }
 
-  const response = await fetch(OVERPASS_URL, {
-    method: "POST",
-    body: `data=${encodeURIComponent(buildOverpassQuery(bounds))}`,
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      // Overpass's server 406s Node's default "node" User-Agent; it also
-      // asks API consumers to identify their app per its usage policy.
-      "User-Agent": "coffeesnob.app nearby-shops proxy (https://coffeesnob.app)",
-    },
-  });
+  const query = buildOverpassQuery(bounds, name);
+  let response: Response | null = null;
+  for (const endpoint of OVERPASS_URLS) {
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        body: `data=${encodeURIComponent(query)}`,
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          // Overpass's server 406s Node's default "node" User-Agent; it also
+          // asks API consumers to identify their app per its usage policy.
+          "User-Agent": "coffeesnob.app nearby-shops proxy (https://coffeesnob.app)",
+        },
+        signal: AbortSignal.timeout(OVERPASS_TIMEOUT_MS),
+      });
+      if (res.ok) {
+        response = res;
+        break;
+      }
+    } catch {
+      // timed out or unreachable — fall through to the next mirror
+    }
+  }
 
-  if (!response.ok) {
+  if (!response) {
     return NextResponse.json({ error: "Overpass request failed" }, { status: 502, headers: CORS_HEADERS });
   }
 

@@ -2,7 +2,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { MAP_FILTERS, type MapFilter } from "../../lib/map/shop-list";
 import type { Place } from "../../lib/map/geocode";
-import type { RatedShopPin } from "./types";
+import type { NearbyShopPin, RatedShopPin } from "./types";
 import { Chip } from "../chip";
 import { LocateIcon } from "./locate-icon";
 import { MapSearch } from "./map-search";
@@ -139,6 +139,7 @@ export function MapTopBar({
   origin,
   onSelectPlace,
   onSelectShop,
+  onSelectNearbyShop,
 }: {
   areaLabel: string | null;
   count: number;
@@ -149,10 +150,11 @@ export function MapTopBar({
   origin: { lat: number; lng: number } | null;
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
+  onSelectNearbyShop: (shop: NearbyShopPin) => void;
 }) {
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10, zIndex: 30 }}>
-      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} />
+      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} onSelectNearbyShop={onSelectNearbyShop} />
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

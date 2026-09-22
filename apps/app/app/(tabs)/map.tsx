@@ -10,7 +10,7 @@ import { PreviewCard } from "../../components/map/preview-card";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { rowKey } from "../../components/map/shop-row";
 import { Label } from "../../components/primitives";
-import type { MapBounds, MapViewProps, RatedShopPin } from "../../components/map/types";
+import type { MapBounds, MapViewProps, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
 import { useOnline } from "../../lib/map/use-online";
 import { useUserLocation } from "../../lib/map/use-user-location";
@@ -147,6 +147,11 @@ export default function MapScreen() {
     selectRated(shop.id);
     flyTo(shop.lat, shop.lng, 16);
   };
+  const searchNearbyShop = (shop: NearbyShopPin) => {
+    setSearchedAreaLabel(shop.name);
+    selectNearby(shop.externalId);
+    flyTo(shop.lat, shop.lng, 16);
+  };
 
   if (locationLoading) {
     return (
@@ -207,7 +212,7 @@ export default function MapScreen() {
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
             <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
               <View style={{ paddingHorizontal: 20, zIndex: 30 }}>
-                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} />
+                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -268,6 +273,7 @@ export default function MapScreen() {
             origin={searchOrigin}
             onSelectPlace={searchPlace}
             onSelectShop={searchShop}
+            onSelectNearbyShop={searchNearbyShop}
           />
           <FilterChips value={filter} onChange={setFilter} />
         </View>

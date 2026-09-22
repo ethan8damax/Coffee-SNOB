@@ -40,15 +40,26 @@ export function tileKey(minLat: number, minLng: number, maxLat: number, maxLng: 
   return `${round((minLat + maxLat) / 2)},${round((minLng + maxLng) / 2)},${zoomBucket}`;
 }
 
-export function buildOverpassQuery(bounds: Bounds): string {
+// Regex-escapes a user-typed search term, then quote-escapes it, so it's a
+// literal case-insensitive substring match inside the Overpass QL query's
+// own quoted string — never user-controlled regex.
+function escapeOverpassName(name: string): string {
+  return name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/"/g, '\\"');
+}
+
+// `name` narrows to shops whose OSM name matches — used for "search this
+// shop by name" (searchNearbyShops), as opposed to the plain viewport fetch
+// (fetchNearbyOsmShops) which wants every cafe in the box.
+export function buildOverpassQuery(bounds: Bounds, name?: string): string {
   const { minLat, minLng, maxLat, maxLng } = bounds;
   const bbox = `${minLat},${minLng},${maxLat},${maxLng}`;
+  const nameFilter = name ? `["name"~"${escapeOverpassName(name)}",i]` : "";
   // amenity=cafe alone misses plenty of real specialty-coffee spots that
   // live inside a restaurant/bar (a coffee-forward brunch spot, a bar that
   // does pour-overs by day) — OSM's convention there is a cuisine value of
   // "coffee_shop" (often alongside others, e.g. "mexican;coffee_shop")
   // rather than the amenity tag itself. Match on either.
-  return `[out:json][timeout:25];(node["amenity"="cafe"](${bbox});way["amenity"="cafe"](${bbox});node["cuisine"~"coffee_shop"](${bbox});way["cuisine"~"coffee_shop"](${bbox}););out center;`;
+  return `[out:json][timeout:25];(node["amenity"="cafe"]${nameFilter}(${bbox});way["amenity"="cafe"]${nameFilter}(${bbox});node["cuisine"~"coffee_shop"]${nameFilter}(${bbox});way["cuisine"~"coffee_shop"]${nameFilter}(${bbox}););out center;`;
 }
 
 export function toNearbyShop(el: OverpassElement): NearbyShop | null {

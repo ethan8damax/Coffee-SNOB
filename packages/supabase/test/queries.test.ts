@@ -1153,13 +1153,17 @@ describe("updateShop", () => {
 });
 
 describe("upsertShopCuration", () => {
-  it("upserts the curation row keyed on shop_id", async () => {
+  it("upserts the curation row keyed on shop_id, then clears promotion_status", async () => {
     const calls: unknown[] = [];
     const client = {
       from: (table: string) => ({
         upsert: (payload: unknown) => {
-          calls.push({ table, payload });
+          calls.push({ table, op: "upsert", payload });
           return Promise.resolve({ error: null });
+        },
+        update: (payload: unknown) => {
+          calls.push({ table, op: "update", payload });
+          return { eq: () => Promise.resolve({ error: null }) };
         },
       }),
     } as any;
@@ -1167,9 +1171,21 @@ describe("upsertShopCuration", () => {
     expect(calls).toEqual([
       {
         table: "shop_curations",
+        op: "upsert",
         payload: { shop_id: "s1", price_tier: "€€", tag: "Best pour-over", editorial_rating: 5, writeup: "...", order_note: undefined },
       },
+      { table: "shops", op: "update", payload: { promotion_status: "none" } },
     ]);
+  });
+
+  it("throws if clearing promotion_status fails, without swallowing the error", async () => {
+    const client = {
+      from: (table: string) =>
+        table === "shop_curations"
+          ? { upsert: () => Promise.resolve({ error: null }) }
+          : { update: () => ({ eq: () => Promise.resolve({ error: new Error("boom") }) }) },
+    } as any;
+    await expect(upsertShopCuration(client, "s1", { priceTier: "€€" })).rejects.toThrow("boom");
   });
 });
 

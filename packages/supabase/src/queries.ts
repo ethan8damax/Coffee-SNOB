@@ -817,6 +817,13 @@ export async function upsertShopCuration(client: Client, shopId: string, fields:
     order_note: fields.orderNote,
   });
   if (error) throw error;
+  // Approving a shop must clear any flagged/rejected state — otherwise a shop can end up
+  // simultaneously "Snob-Approved" (has a curation row, per shop_ratings) and
+  // promotion_status = 'flagged'/'rejected', since nothing else ever resets this column
+  // (the promotion trigger in 0009 only ever sets 'flagged', never clears it) and the
+  // admin UI's Reject button is gated on promotion_status alone, not on curation presence.
+  const { error: statusError } = await client.from("shops").update({ promotion_status: "none" }).eq("id", shopId);
+  if (statusError) throw statusError;
 }
 
 export async function rejectShopPromotion(client: Client, shopId: string): Promise<void> {
@@ -865,7 +872,11 @@ export async function getAdminShops(
     phone: r.phone,
     hours: r.hours,
     promotionStatus: r.promotion_status,
-    curation: Array.isArray(r.shop_curations) ? (r.shop_curations[0] ?? null) : r.shop_curations
+    // shop_curations_shop_id_fkey is one-to-one (shop_id is shop_curations' primary key),
+    // so Postgres/Supabase always embeds this as a single nullable object, never an array
+    // — confirmed via generated types and existing app code (getCityGuide in this same
+    // file does the same embed with no array handling). No Array.isArray branch needed.
+    curation: r.shop_curations
       ? {
           priceTier: r.shop_curations.price_tier,
           tag: r.shop_curations.tag,

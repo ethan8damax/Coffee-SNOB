@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, shrink-to-fit=no" />
     <title>%WEB_TITLE%</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
@@ -45,6 +45,28 @@
          redundant here. (Buttons/links keep their normal focus outline —
          this only touches text entry.) */
       input, textarea { outline: none; }
+
+      /* iOS Safari auto-zooms the page on focus for any input under 16px —
+         the viewport lock above blocks pinch/manual zoom, but not this.
+         !important because react-native-web sets font-size via its own
+         atomic CSS classes, which a plain selector can't out-rank. */
+      input, textarea { font-size: 16px !important; }
+
+      /* Chrome/Safari force autofilled inputs to a yellow background —
+         they don't allow overriding it with a plain background-color, only
+         this inset-box-shadow trick. Matches colors.paper/colors.ink
+         (every input here sits directly on the paper background, no boxed
+         card behind it). The long transition delays the browser's own
+         yellow from ever painting in the first place. */
+      input:-webkit-autofill,
+      input:-webkit-autofill:hover,
+      input:-webkit-autofill:focus,
+      input:-webkit-autofill:active {
+        -webkit-box-shadow: 0 0 0 1000px #f0ecdf inset;
+        -webkit-text-fill-color: #161310;
+        caret-color: #161310;
+        transition: background-color 9999s ease-in-out 0s;
+      }
     </style>
   </head>
 

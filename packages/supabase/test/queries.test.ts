@@ -1105,4 +1105,18 @@ describe("updateCity", () => {
     await updateCity(client, "c1", { status: "live" });
     expect(calls).toEqual([{ status: "live" }]);
   });
+
+  it("omits fields left undefined, even when mixed with defined ones", async () => {
+    const calls: unknown[] = [];
+    const client = {
+      from: () => ({
+        update: (payload: unknown) => {
+          calls.push(payload);
+          return { eq: () => Promise.resolve({ error: null }) };
+        },
+      }),
+    } as any;
+    await updateCity(client, "c1", { name: "Lisbon", status: undefined });
+    expect(calls).toEqual([{ name: "Lisbon" }]);
+  });
 });

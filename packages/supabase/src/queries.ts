@@ -21,7 +21,13 @@ export async function createCity(client: Client, fields: CityFields) {
 }
 
 export async function updateCity(client: Client, id: string, fields: Partial<CityFields>): Promise<void> {
-  const { error } = await client.from("cities").update(fields).eq("id", id);
+  const update: Partial<CityFields> = {};
+  if (fields.slug !== undefined) update.slug = fields.slug;
+  if (fields.name !== undefined) update.name = fields.name;
+  if (fields.country !== undefined) update.country = fields.country;
+  if (fields.region !== undefined) update.region = fields.region;
+  if (fields.status !== undefined) update.status = fields.status;
+  const { error } = await client.from("cities").update(update).eq("id", id);
   if (error) throw error;
 }
 

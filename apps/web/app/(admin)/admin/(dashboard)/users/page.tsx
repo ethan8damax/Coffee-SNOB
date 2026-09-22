@@ -30,10 +30,25 @@ export default async function AdminUsersPage({
 }) {
   const { search, filter = "all", user: selectedUserId } = await searchParams;
   const supabase = await getSupabaseServer();
-  const users = await getAdminUserDirectory(supabase, { search, filter });
+  const [users, currentUserResult] = await Promise.all([
+    getAdminUserDirectory(supabase, { search, filter }),
+    supabase.auth.getUser(),
+  ]);
+  const currentUserId = currentUserResult.data.user?.id;
+
+  // Preserves the current search/filter across in-page navigation (View, filter chips,
+  // Close) — without this, clicking any of them silently drops the search text.
+  const hrefWith = (overrides: { filter?: Filter; user?: string }) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    params.set("filter", overrides.filter ?? filter);
+    if (overrides.user) params.set("user", overrides.user);
+    return `/admin/users?${params.toString()}`;
+  };
 
   const selectedUser = selectedUserId ? users.find((u) => u.id === selectedUserId) : undefined;
   const selectedUserLogs = selectedUser ? await getProfileEntries(supabase, selectedUser.id, { limit: 10 }) : [];
+  const isSelf = selectedUser?.id === currentUserId;
 
   return (
     <div>
@@ -51,7 +66,7 @@ export default async function AdminUsersPage({
           Search
         </button>
         {(["all", "admins", "suspended"] as const).map((f) => (
-          <Link key={f} href={`/admin/users?filter=${f}`} className={`chip ${filter === f ? "on" : ""}`}>
+          <Link key={f} href={hrefWith({ filter: f })} className={`chip ${filter === f ? "on" : ""}`}>
             {f}
           </Link>
         ))}
@@ -82,7 +97,7 @@ export default async function AdminUsersPage({
               <td>{u.followerCount}</td>
               <td>{u.status}</td>
               <td>
-                <Link href={`/admin/users?filter=${filter}&user=${u.id}`} className="label">
+                <Link href={hrefWith({ user: u.id })} className="label">
                   View
                 </Link>
               </td>
@@ -105,7 +120,7 @@ export default async function AdminUsersPage({
             overflowY: "auto",
           }}
         >
-          <Link href={`/admin/users?filter=${filter}`} className="label">
+          <Link href={hrefWith({})} className="label">
             Close
           </Link>
           <h2 className="d3" style={{ marginTop: 16 }}>
@@ -117,21 +132,30 @@ export default async function AdminUsersPage({
           </p>
           <p className="body">Status: {selectedUser.status}</p>
 
-          <form action={suspendAction} style={{ marginTop: 16 }}>
-            <input type="hidden" name="targetUserId" value={selectedUser.id} />
-            <input type="hidden" name="nextStatus" value={selectedUser.status === "active" ? "suspended" : "active"} />
-            <button type="submit" className="btn btn-line">
-              {selectedUser.status === "active" ? "Suspend" : "Reactivate"}
-            </button>
-          </form>
+          {isSelf ? (
+            <p className="body-sm" style={{ marginTop: 16, color: "var(--oxblood)" }}>
+              This is your own account — suspend/revoke-admin are disabled here to prevent
+              accidentally locking yourself (or everyone, if you're the only admin) out.
+            </p>
+          ) : (
+            <>
+              <form action={suspendAction} style={{ marginTop: 16 }}>
+                <input type="hidden" name="targetUserId" value={selectedUser.id} />
+                <input type="hidden" name="nextStatus" value={selectedUser.status === "active" ? "suspended" : "active"} />
+                <button type="submit" className="btn btn-line">
+                  {selectedUser.status === "active" ? "Suspend" : "Reactivate"}
+                </button>
+              </form>
 
-          <form action={adminAction} style={{ marginTop: 8 }}>
-            <input type="hidden" name="targetUserId" value={selectedUser.id} />
-            <input type="hidden" name="nextIsAdmin" value={(!selectedUser.isAdmin).toString()} />
-            <button type="submit" className="btn btn-line">
-              {selectedUser.isAdmin ? "Revoke admin" : "Grant admin"}
-            </button>
-          </form>
+              <form action={adminAction} style={{ marginTop: 8 }}>
+                <input type="hidden" name="targetUserId" value={selectedUser.id} />
+                <input type="hidden" name="nextIsAdmin" value={(!selectedUser.isAdmin).toString()} />
+                <button type="submit" className="btn btn-line">
+                  {selectedUser.isAdmin ? "Revoke admin" : "Grant admin"}
+                </button>
+              </form>
+            </>
+          )}
 
           <h3 className="d4" style={{ marginTop: 24 }}>
             Recent activity

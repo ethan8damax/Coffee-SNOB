@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
-import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems } from "../src/queries";
+import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
 function fakeClient(rows: unknown[]) {
   return {
@@ -1251,6 +1251,28 @@ describe("getAdminShops", () => {
         promotionStatus: "flagged",
         curation: null,
       },
+    ]);
+  });
+});
+
+describe("getAdminCityGuides", () => {
+  it("lists city_guide lists with city name and item count", async () => {
+    const builder: any = {
+      select: () => builder,
+      eq: () => builder,
+      order: () => Promise.resolve({
+        data: [
+          { id: "l1", slug: "lisbon", title: "Lisbon Guide", city_id: "c1", description: "A guide", body: "Long body", cities: { name: "Lisbon" }, list_items: [{ count: 3 }] },
+          { id: "l2", slug: "tampa", title: "Tampa Guide", city_id: "c2", description: null, body: null, cities: null, list_items: [] },
+        ],
+        error: null,
+      }),
+    };
+    const client = { from: () => builder } as any;
+    const guides = await getAdminCityGuides(client);
+    expect(guides).toEqual([
+      { id: "l1", slug: "lisbon", title: "Lisbon Guide", cityId: "c1", cityName: "Lisbon", itemCount: 3, description: "A guide", body: "Long body" },
+      { id: "l2", slug: "tampa", title: "Tampa Guide", cityId: "c2", cityName: "—", itemCount: 0, description: null, body: null },
     ]);
   });
 });

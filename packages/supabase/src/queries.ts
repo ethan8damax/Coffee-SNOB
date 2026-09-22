@@ -840,6 +840,40 @@ export async function rejectShopPromotion(client: Client, shopId: string): Promi
   if (error) throw error;
 }
 
+export type AdminCityGuideRow = {
+  id: string;
+  slug: string;
+  title: string;
+  cityId: string;
+  cityName: string;
+  itemCount: number;
+  description: string | null;
+  body: string | null;
+};
+
+// Selects description/body (beyond what the plan's admin-table listing strictly needs)
+// because the admin guides page reuses this same row as the edit form's defaultValue
+// source — without them the form would silently blank out an existing guide's
+// description/body on every edit.
+export async function getAdminCityGuides(client: Client): Promise<AdminCityGuideRow[]> {
+  const { data, error } = await client
+    .from("lists")
+    .select("id, slug, title, city_id, description, body, cities(name), list_items(count)")
+    .eq("type", "city_guide")
+    .order("title");
+  if (error) throw error;
+  return data.map((r: any) => ({
+    id: r.id,
+    slug: r.slug,
+    title: r.title,
+    cityId: r.city_id,
+    cityName: r.cities?.name ?? "—",
+    itemCount: r.list_items[0]?.count ?? 0,
+    description: r.description ?? null,
+    body: r.body ?? null,
+  }));
+}
+
 export type CityGuideFields = { slug: string; title: string; cityId: string; description?: string; body?: string; coverPhotoAlt?: string };
 
 export async function createCityGuide(client: Client, fields: CityGuideFields) {

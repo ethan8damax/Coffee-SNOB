@@ -22,7 +22,11 @@
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro",
-      "output": "single"
+      "output": "single",
+      "shortName": "Coffee Snob",
+      "themeColor": "#f0ecdf",
+      "backgroundColor": "#f0ecdf",
+      "display": "standalone"
     },
     "plugins": [
       "expo-router",

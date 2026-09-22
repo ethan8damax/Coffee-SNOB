@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, shrink-to-fit=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, shrink-to-fit=no, viewport-fit=cover" />
     <title>%WEB_TITLE%</title>
     <!-- The `react-native-web` recommended style reset: https://necolas.github.io/react-native-web/docs/setup/#root-element -->
     <style id="expo-reset">
@@ -29,10 +29,18 @@
     </style>
 
     <!-- Add to Home Screen: standalone display (no URL bar/back button),
-         matching the app's own chrome so there's no visible seam. -->
+         matching the app's own chrome so there's no visible seam.
+         status-bar-style is one of iOS's 3 fixed options, not a color —
+         "default" renders as a plain WHITE bar no matter what, which is
+         what the white box at the top of the map was: iOS's own hardcoded
+         bar, not a rendering gap. "black-translucent" makes it transparent
+         instead, so the app's own content (the map) draws underneath it —
+         paired with viewport-fit=cover above and real safe-area-top
+         padding on the map's search bar (map-controls.tsx) so it still
+         clears the notch/Dynamic Island rather than sitting under it. -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Coffee Snob" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />

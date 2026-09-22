@@ -2,7 +2,7 @@ import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { setLogLike } from "@coffeesnob/supabase";
-import { Avatar, Body, Label, D2, IconBookmark, IconComment, IconHeart } from "../primitives";
+import { Avatar, Body, Label, D2, IconComment, IconHeart } from "../primitives";
 import { Detour } from "../detour";
 import { CommentThread } from "./comment-thread";
 import type { LogFeedCard } from "../../lib/feed/types";
@@ -60,12 +60,6 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
           <IconComment size={15} color={commentsOpen ? colors.ink : colors.ink2} />
           <Label style={{ color: colors.ink2 }}>{String(commentCount)}</Label>
         </Pressable>
-        {/* ponytail: not wired yet — LogFeedCard has no shopId to save against. Matches the
-            shop page's real Save (shop_saves) once the feed query carries one. */}
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 5, opacity: 0.5 }}>
-          <IconBookmark size={15} color={colors.ink3} />
-          <Label style={{ color: colors.ink3 }}>Save</Label>
-        </View>
       </View>
 
       {commentsOpen && <CommentThread logId={item.id} userId={userId} onCountChange={setCommentCount} />}

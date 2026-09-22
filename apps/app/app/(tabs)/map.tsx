@@ -5,15 +5,17 @@ import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
 import { FilterChips, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
 import { ChevronIcon } from "../../components/map/map-icons";
+import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { rowKey } from "../../components/map/shop-row";
-import { D4, Label } from "../../components/primitives";
-import type { MapBounds, MapViewProps } from "../../components/map/types";
+import { Label } from "../../components/primitives";
+import type { MapBounds, MapViewProps, RatedShopPin } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
 import { useOnline } from "../../lib/map/use-online";
 import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
+import type { Place } from "../../lib/map/geocode";
 import { applyFilter, buildRows, type ListRow, type MapFilter } from "../../lib/map/shop-list";
 import { openDirections } from "../../lib/directions";
 import { isDesktopWidth } from "@/lib/nav";
@@ -43,6 +45,9 @@ export default function MapScreen() {
   const [filter, setFilter] = useState<MapFilter>("all");
   const [mode, setMode] = useState<"Map" | "List">("Map");
   const [listCollapsed, setListCollapsed] = useState(false);
+  // null = automatic ("Near you" / the fallback city); set once someone searches a
+  // place or a shop, cleared back to automatic by Locate.
+  const [searchedAreaLabel, setSearchedAreaLabel] = useState<string | null>(null);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
   const [camera, setCamera] = useState<CameraTarget | null>(null);
@@ -121,8 +126,24 @@ export default function MapScreen() {
     flyTo(row.shop.lat, row.shop.lng, 16);
   };
 
-  const locate = () => userCenter && flyTo(userCenter.lat, userCenter.lng);
+  const locate = () => {
+    if (!userCenter) return;
+    setSearchedAreaLabel(null);
+    flyTo(userCenter.lat, userCenter.lng);
+  };
   const zoom = (delta: 1 | -1) => setZoomRequest({ delta, nonce: ++nonce.current });
+
+  const searchPlace = (place: Place) => {
+    setSearchedAreaLabel(place.name);
+    selectRated(null);
+    selectNearby(null);
+    flyTo(place.lat, place.lng, 13);
+  };
+  const searchShop = (shop: RatedShopPin) => {
+    setSearchedAreaLabel(shop.name);
+    selectRated(shop.id);
+    flyTo(shop.lat, shop.lng, 16);
+  };
 
   if (locationLoading) {
     return (
@@ -172,6 +193,7 @@ export default function MapScreen() {
   );
 
   const countLabel = `${rows.length} ${rows.length === 1 ? "shop" : "shops"} nearby`;
+  const areaLabel = searchedAreaLabel ?? (userCenter ? "Near you" : FALLBACK.name);
 
   if (desktop) {
     return (
@@ -179,9 +201,9 @@ export default function MapScreen() {
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
             <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
-              <D4 accessibilityRole="header" style={{ paddingHorizontal: 20, fontSize: 22, lineHeight: 22, letterSpacing: -0.62 }}>
-                {countLabel}
-              </D4>
+              <View style={{ paddingHorizontal: 20 }}>
+                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} onSelectPlace={searchPlace} onSelectShop={searchShop} />
+              </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
             <View style={{ flex: 1 }}>{list(true)}</View>
@@ -231,7 +253,16 @@ export default function MapScreen() {
       {map}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
         <View pointerEvents="box-none">
-          <MapTopBar areaLabel={userCenter ? "Near you" : FALLBACK.name} count={rows.length} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
+          <MapTopBar
+            areaLabel={areaLabel}
+            count={rows.length}
+            onLocate={locate}
+            locateDisabled={!userCenter}
+            onRefresh={reload}
+            webAppUrl={WEB_APP_URL}
+            onSelectPlace={searchPlace}
+            onSelectShop={searchShop}
+          />
           <FilterChips value={filter} onChange={setFilter} />
         </View>
         <View pointerEvents="box-none">

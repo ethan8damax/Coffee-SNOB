@@ -29,7 +29,15 @@ function TabStrip({ tabs, tab, counts, onChange }: { tabs: Tab[]; tab: Tab; coun
           onPress={() => onChange(t)}
           accessibilityRole="tab"
           accessibilityState={{ selected: tab === t }}
-          style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, borderBottomWidth: 2, borderBottomColor: tab === t ? colors.ink : "transparent", marginBottom: -1 }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            paddingVertical: 12,
+            minHeight: 44,
+            borderBottomWidth: 2,
+            borderBottomColor: tab === t ? colors.ink : "transparent",
+            marginBottom: -1,
+          }}
         >
           <Label style={{ color: tab === t ? colors.ink : colors.ink3 }}>
             {t}

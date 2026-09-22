@@ -1,8 +1,11 @@
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { MAP_FILTERS, type MapFilter } from "../../lib/map/shop-list";
+import type { Place } from "../../lib/map/geocode";
+import type { RatedShopPin } from "./types";
 import { Chip } from "../chip";
 import { LocateIcon } from "./locate-icon";
+import { MapSearch } from "./map-search";
 import { MinusIcon, PinIcon, PlusIcon, RefreshIcon } from "./map-icons";
 
 // Chips sit on the map, so an inactive chip needs a solid ground to stay legible.
@@ -132,36 +135,22 @@ export function MapTopBar({
   onLocate,
   locateDisabled,
   onRefresh,
+  webAppUrl,
+  onSelectPlace,
+  onSelectShop,
 }: {
   areaLabel: string;
   count: number;
   onLocate: () => void;
   locateDisabled: boolean;
   onRefresh: () => void;
+  webAppUrl: string;
+  onSelectPlace: (place: Place) => void;
+  onSelectShop: (shop: RatedShopPin) => void;
 }) {
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 10 }}>
-      <View
-        accessibilityRole="header"
-        style={{
-          flex: 1,
-          height: 44,
-          flexDirection: "row",
-          alignItems: "center",
-          gap: 7,
-          paddingHorizontal: 11,
-          borderWidth: 1,
-          borderColor: colors.rule,
-          borderRadius: 2,
-          backgroundColor: colors.card,
-        }}
-      >
-        <PinIcon color={colors.oxblood} />
-        <Text numberOfLines={1} style={{ flexShrink: 1, fontFamily: "AreaExtended-Bold", fontSize: 8.5, letterSpacing: 1.19, textTransform: "uppercase", color: colors.ink }}>
-          {areaLabel}
-        </Text>
-        <Text style={{ marginLeft: "auto", fontFamily: "AreaExtended-Black", fontSize: 9, color: colors.ink3 }}>{count}</Text>
-      </View>
+      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} />
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

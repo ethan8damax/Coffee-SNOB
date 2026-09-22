@@ -40,6 +40,11 @@ export const useVisitDates = (userId: string) =>
 
 export const useFaves = (userId: string, enabled: boolean) => useLoad<ProfileEntry[]>((s) => getProfileFaves(s as never, userId), [userId], enabled);
 
+// The status block's "Top shops" showcase — same query as Faves, just capped to a
+// handful for a Letterboxd-style row instead of the full grid.
+export const useTopShops = (userId: string, limit = 3) =>
+  useLoad<ProfileEntry[]>((s) => getProfileFaves(s as never, userId, limit), [userId, limit]);
+
 export const useSaved = (userId: string, enabled: boolean) => useLoad<SavedShop[]>((s) => getSavedShops(s as never, userId), [userId], enabled);
 
 // Optimistic bookmark toggle for the shop page. Signed-out (userId null) never loads or writes.

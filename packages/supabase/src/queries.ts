@@ -109,6 +109,22 @@ export async function getRatedShopsInBounds(
   return data;
 }
 
+// Global (not bounded to the current viewport) name search over rated shops, for the
+// map's search bar. `%` `_` `\` are stripped so a query can't act as a wildcard.
+export async function searchRatedShops(client: Client, query: string, limit = 8) {
+  const q = query.trim().replace(/[%_\\]/g, "");
+  if (q.length < 2) return [];
+  const { data, error } = await client
+    .from("shop_ratings")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count")
+    .ilike("name", `%${q}%`)
+    .not("rating", "is", null)
+    .order("rating", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data;
+}
+
 // Superseded by logVisit. Since 0015 the RPC returns [{ shop_id, log_id }] rather than the logs row.
 export async function logShopVisit(
   client: Client,

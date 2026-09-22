@@ -8,6 +8,7 @@ export {
   saveIdentity,
   saveTastePicks,
   getRatedShopsInBounds,
+  searchRatedShops,
   logShopVisit,
   getProfilesByIds,
   getCitiesByIds,

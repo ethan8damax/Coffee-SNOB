@@ -135,7 +135,7 @@ export default async function AdminUsersPage({
           {isSelf ? (
             <p className="body-sm" style={{ marginTop: 16, color: "var(--oxblood)" }}>
               This is your own account — suspend/revoke-admin are disabled here to prevent
-              accidentally locking yourself (or everyone, if you're the only admin) out.
+              accidentally locking yourself (or everyone, if you&apos;re the only admin) out.
             </p>
           ) : (
             <>

@@ -2,7 +2,7 @@
   "name": "Coffee Snob",
   "short_name": "Coffee Snob",
   "description": "Find coffee worth the detour.",
-  "start_url": "/?debug=layout",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

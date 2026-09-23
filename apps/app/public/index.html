@@ -11,13 +11,13 @@
       html {
         height: 100%;
       }
-      /* iOS standalone (Add to Home Screen) under-reports every viewport
-         unit — 100vh and 100dvh both came up ~70pt short of the screen,
-         which is the gap that kept showing below the tab bar. Fixing the
-         body to the initial containing block sizes it against the screen
-         itself. NOTE: no `height` here on purpose — an explicit height
-         out-ranks the top/bottom pair and puts the short viewport unit
-         straight back (that's what defeated the first attempt at this). */
+      /* Pinned to the viewport rather than sized with a viewport unit, so the
+         page is exactly the visible area and an iOS rubber-band bounce has
+         nothing to reveal. NOTE: no `height` here on purpose — an explicit
+         height out-ranks the top/bottom pair.
+         (This is not what fixed the strip below the tab bar; the status-bar
+         style was. Measured: body, #root and the tab bar's bottom edge were
+         already identical to innerHeight in every mode.) */
       body {
         position: fixed;
         top: 0;
@@ -41,32 +41,33 @@
         flex: 1;
       }
       /* iOS Safari quirk (github.com/w3c/csswg-drafts, Apple dev forums, well-
-         documented): in standalone "Add to Home Screen" mode there's no
-         toolbar to anchor a safe area to, so env(safe-area-inset-bottom)
-         reports 0 — and separately, height:100%/100vh don't reliably reach
-         the true bottom of the visual viewport in standalone mode either.
-         Both together are what left a gap of this cream background color
-         between the app's own content (which pads for a *reported* 0 inset)
-         and the physical screen edge. 100dvh (iOS 15.4+, this app's whole
-         audience) is the fix for the viewport-height half of that; nothing
-         further is needed for the safe-area-inset half since a 0 report
-         just means "no inset to add" here, which is now actually correct
-         once the real viewport height is being measured. */
+         documented): the app's own layout reaches the bottom of the viewport
+         correctly — measured on an iPhone 15 in standalone, the tab bar's
+         bottom edge and the page's bottom edge are the same pixel. What used
+         to leave a cream strip below it was the status-bar style, not this
+         CSS; see the note on that meta tag below. */
     </style>
 
-    <!-- Add to Home Screen: standalone display (no URL bar/back button),
-         matching the app's own chrome so there's no visible seam.
-         status-bar-style is one of iOS's 3 fixed options, not a color —
-         "default" renders as a plain WHITE bar no matter what, which is
-         what the white box at the top of the map was: iOS's own hardcoded
-         bar, not a rendering gap. "black-translucent" makes it transparent
-         instead, so the app's own content (the map) draws underneath it —
-         paired with viewport-fit=cover above and real safe-area-top
-         padding on the map's search bar (map-controls.tsx) so it still
-         clears the notch/Dynamic Island rather than sitting under it. -->
+    <!-- Add to Home Screen: standalone display (no URL bar/back button).
+
+         status-bar-style was "black-translucent" so the map could draw under
+         the status bar. Measured on an iPhone 15 in standalone, that costs a
+         59pt strip: iOS draws the page from y=0 but sizes the viewport at
+         793 against an 852 screen, and the leftover 59pt at the bottom is
+         OUTSIDE the web view — the page cannot paint there. That strip, not
+         any app-side layout bug, is the cream band that kept showing under
+         the tab bar. Growing the document only clipped the bar, since the
+         extra height lands past the viewport's bottom edge.
+
+         "default" gives the web view the normal 59..852 box, so the page
+         reaches the real bottom and the strip cannot exist. The status bar
+         it draws is no longer the hardcoded white it used to be: since iOS
+         15, theme-color tints it, so it reads as the app's own paper. -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <!-- colors.paper — tints the iOS status bar and Safari's chrome to match. -->
+    <meta name="theme-color" content="#f0ecdf" />
     <meta name="apple-mobile-web-app-title" content="Coffee Snob" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.json" />
@@ -112,56 +113,5 @@
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
 
-    <!-- Opt-in layout readout: only renders for /?debug=layout, so it can't
-         reach anyone who didn't ask for it. Exists because the gap below the
-         tab bar isn't reproducible off-device — this prints the real numbers
-         (which box is short, and by how much) instead of inferring them from
-         source. Delete once the gap is understood. -->
-    <script>
-      if (location.search.includes("debug=layout")) {
-        var probe = document.createElement("div");
-        probe.style.cssText =
-          "position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);visibility:hidden;pointer-events:none";
-        document.body.appendChild(probe);
-
-        var out = document.createElement("pre");
-        out.style.cssText =
-          "position:fixed;top:0;left:0;z-index:99999;margin:0;padding:6px 8px;font:11px/1.35 ui-monospace,monospace;color:#f0ecdf;background:rgba(22,19,16,.92);white-space:pre";
-        document.body.appendChild(out);
-
-        // Magenta bar pinned to the very bottom of the page. Where it lands on
-        // screen answers the question the numbers can't: if it sits ABOVE the
-        // cream strip, the page genuinely ends there and nothing the page does
-        // can fill the strip. If it's hidden behind the strip, the page does
-        // reach the bottom and the strip is something drawing over it.
-        var edge = document.createElement("div");
-        edge.style.cssText =
-          "position:fixed;left:0;right:0;bottom:0;height:4px;z-index:99999;background:#ff00aa;pointer-events:none";
-        document.body.appendChild(edge);
-
-        var read = function () {
-          var cs = getComputedStyle(probe);
-          var root = document.getElementById("root");
-          var vv = window.visualViewport;
-          out.textContent = [
-            "screen.height     " + screen.height,
-            "innerHeight       " + window.innerHeight,
-            "visualViewport.h  " + (vv ? Math.round(vv.height) : "n/a"),
-            "doc.clientHeight  " + document.documentElement.clientHeight,
-            "body rect.h       " + Math.round(document.body.getBoundingClientRect().height),
-            "#root rect.h      " + (root ? Math.round(root.getBoundingClientRect().height) : "n/a"),
-            "#root child h     " + (root && root.firstElementChild ? Math.round(root.firstElementChild.getBoundingClientRect().height) : "n/a"),
-            "safe-area T/B     " + cs.paddingTop + " / " + cs.paddingBottom,
-            "dpr               " + window.devicePixelRatio,
-            "standalone        " + (navigator.standalone === true),
-          ].join("\n");
-        };
-        read();
-        addEventListener("resize", read);
-        addEventListener("orientationchange", read);
-        if (window.visualViewport) window.visualViewport.addEventListener("resize", read);
-        setTimeout(read, 1500);
-      }
-    </script>
   </body>
 </html>

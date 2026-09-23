@@ -10,7 +10,8 @@
       /* These styles make the body full-height */
       html,
       body {
-        height: 100%;
+        height: 100%; /* fallback for browsers without dvh support */
+        height: 100dvh;
         /* colors.paper — so an iOS rubber-band overscroll bounce (or any
            other momentary gap) shows the app's own background, not a stark
            white flash/line. */
@@ -23,9 +24,22 @@
       /* These styles make the root element full-height */
       #root {
         display: flex;
-        height: 100%;
+        height: 100%; /* fallback for browsers without dvh support */
+        height: 100dvh;
         flex: 1;
       }
+      /* iOS Safari quirk (github.com/w3c/csswg-drafts, Apple dev forums, well-
+         documented): in standalone "Add to Home Screen" mode there's no
+         toolbar to anchor a safe area to, so env(safe-area-inset-bottom)
+         reports 0 — and separately, height:100%/100vh don't reliably reach
+         the true bottom of the visual viewport in standalone mode either.
+         Both together are what left a gap of this cream background color
+         between the app's own content (which pads for a *reported* 0 inset)
+         and the physical screen edge. 100dvh (iOS 15.4+, this app's whole
+         audience) is the fix for the viewport-height half of that; nothing
+         further is needed for the safe-area-inset half since a 0 report
+         just means "no inset to add" here, which is now actually correct
+         once the real viewport height is being measured. */
     </style>
 
     <!-- Add to Home Screen: standalone display (no URL bar/back button),

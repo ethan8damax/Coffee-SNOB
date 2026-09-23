@@ -1,6 +1,8 @@
 import { useCallback, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
 import { router, useFocusEffect } from "expo-router";
+import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { Body, ButtonLine, ButtonOx, Label } from "@/components/primitives";
 import { isDesktopWidth } from "@/lib/nav";
@@ -12,7 +14,15 @@ import { ProfileHeader } from "./profile-header";
 import { StatusBlock } from "./status-block";
 
 function Centered({ children }: { children: React.ReactNode }) {
-  return <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, gap: 16, backgroundColor: colors.paper }}>{children}</View>;
+  // See sign-in-prompt.tsx: the custom tab bar isn't auto-excluded from scene
+  // content, so centering needs the real tab bar height to center within the
+  // actually-visible area, not the full screen height (which the bar covers part of).
+  const tabBarHeight = useBottomTabBarHeight();
+  return (
+    <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: 24, paddingBottom: 24 + tabBarHeight, gap: 16, backgroundColor: colors.paper }}>
+      {children}
+    </View>
+  );
 }
 
 const message = { textAlign: "center", color: colors.ink3, maxWidth: 260 } as const;
@@ -98,6 +108,8 @@ function SavedTab({ userId }: { userId: string }) {
 export function ProfileView({ username, viewerId }: { username: string; viewerId: string | null }) {
   const { state, retry, loadMore, loadingMore, moreFailed, toggleFollow, refresh } = useProfile(username, viewerId);
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = useBottomTabBarHeight();
   const [followFailed, setFollowFailed] = useState(false);
   const [tab, setTab] = useState<Tab>("Entries");
 
@@ -139,7 +151,14 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
   }
 
   return (
-    <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ alignItems: "center", paddingBottom: 40 }}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: colors.paper }}
+      // paddingTop for the status bar (this screen starts content at the top, unlike
+      // the centered empty states above, so it needs the real inset directly).
+      // paddingBottom for the real tab bar height, not a guessed fixed value — the
+      // last row of entries was otherwise scrollable-but-hidden behind the bar.
+      contentContainerStyle={{ alignItems: "center", paddingTop: insets.top, paddingBottom: 40 + tabBarHeight }}
+    >
       <View style={{ width: "100%", maxWidth: isDesktopWidth(width) ? PROFILE_MAX_WIDTH : undefined }}>
         <ProfileHeader
           profile={profile}

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { View, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { useAuth } from "@/context/auth";
 import { SignInPrompt } from "@/components/sign-in-prompt";
@@ -33,6 +34,7 @@ function renderItem(item: FeedItem, userId: string) {
 
 export default function HomeScreen() {
   const { session } = useAuth();
+  const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("Following");
   const { center: userCenter, loading: locationLoading } = useUserLocation();
   const center = userCenter ?? LISBON_FALLBACK;
@@ -50,7 +52,7 @@ export default function HomeScreen() {
   const active = tab === "Following" ? following : nearby;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.paper }}>
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.paper }}>
       <View style={{ flexDirection: "row", borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule }}>
         {TABS.map((t) => (
           <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 11, alignItems: "center", backgroundColor: tab === t ? colors.ink : "transparent" }}>

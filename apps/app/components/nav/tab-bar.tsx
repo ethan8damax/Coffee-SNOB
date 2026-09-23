@@ -12,7 +12,13 @@ type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>
 
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
-  const bottom = Math.max(insets.bottom, 18);
+  // 34 (not 18) matches the real iOS home-indicator safe-area inset: on the web/PWA
+  // build, insets.bottom has been observed reading as 0/too-small (a known Safari
+  // standalone-mode quirk — see apps/app/public/index.html's notes on this), which
+  // previously left the bar itself too short to reach the true bottom edge even
+  // after the page-height (100dvh) fix. This floor is the fallback for exactly that
+  // case; a correctly-reporting device just uses its own (equal or larger) value.
+  const bottom = Math.max(insets.bottom, 34);
 
   return (
     <View

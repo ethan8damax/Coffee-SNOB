@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, ActivityIndicator, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
+import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
 import { FilterChips, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
@@ -25,7 +26,6 @@ const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 // Where the map opens when the visitor's real location isn't available.
 const FALLBACK = { name: "Atlanta", lat: 33.749, lng: -84.388 };
 const PANEL_WIDTH = 380;
-const TAB_BAR_HEIGHT = 78;
 
 type CameraTarget = NonNullable<MapViewProps["cameraTarget"]>;
 type ZoomRequest = NonNullable<MapViewProps["zoomRequest"]>;
@@ -37,6 +37,11 @@ function boundsCenter(b: MapBounds) {
 export default function MapScreen() {
   const { width, height } = useWindowDimensions();
   const desktop = isDesktopWidth(width);
+  // Real, always-correct tab bar height (desktop hides the tab bar for the Rail
+  // instead, but the hook must still be called unconditionally — Rules of Hooks —
+  // its value is just unused on that branch). Was a hardcoded TAB_BAR_HEIGHT guess;
+  // see sign-in-prompt.tsx for the same fix and why the guess approach is fragile.
+  const tabBarHeight = useBottomTabBarHeight();
   const { center: userCenter, loading: locationLoading } = useUserLocation();
   const online = useOnline();
   const center = userCenter ?? FALLBACK;
@@ -253,7 +258,7 @@ export default function MapScreen() {
     );
   }
 
-  const areaHeight = height - TAB_BAR_HEIGHT;
+  const areaHeight = height - tabBarHeight;
   // List mode takes the whole page — nothing useful shows through the sliver of map
   // behind a partial sheet once you've chosen to browse the list instead of the pins.
   const sheetHeight = mode === "List" ? areaHeight : Math.min(316, Math.round(areaHeight * 0.42));

@@ -112,28 +112,6 @@
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
 
-    <!-- iOS standalone only. black-translucent (see the meta above) draws the
-         page from y=0 under the status bar, but iOS still sizes the viewport
-         as though the status bar took up room — so the page ends ~60pt short
-         of the screen and that shortfall shows as a strip of background under
-         the tab bar. Verified in a browser that the app's own layout is fine:
-         the bar's bottom equals #root's bottom equals innerHeight exactly.
-         The deficit is measured (screen.height vs innerHeight) rather than
-         derived from env(safe-area-inset-top), which reports 0px on device.
-         Math.max means this can only ever grow the page, never shrink it, so
-         a correctly-reporting viewport is left untouched. Portrait-locked in
-         manifest.json, so screen.height is stable. -->
-    <script>
-      if (navigator.standalone === true) {
-        var fitToScreen = function () {
-          document.body.style.height = Math.max(window.innerHeight, screen.height) + "px";
-        };
-        fitToScreen();
-        addEventListener("resize", fitToScreen);
-        addEventListener("orientationchange", fitToScreen);
-      }
-    </script>
-
     <!-- Opt-in layout readout: only renders for /?debug=layout, so it can't
          reach anyone who didn't ask for it. Exists because the gap below the
          tab bar isn't reproducible off-device — this prints the real numbers

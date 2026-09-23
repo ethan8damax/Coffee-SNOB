@@ -1,7 +1,7 @@
 import type { ComponentProps } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text, Pressable, useWindowDimensions } from "react-native";
 import { Tabs } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSafeAreaInsets, useSafeAreaFrame } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { NAV_ITEMS } from "@/lib/nav";
 import { NavIcon } from "./nav-icon";
@@ -10,9 +10,20 @@ import { NavIcon } from "./nav-icon";
 // @react-navigation/bottom-tabs directly.
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>["tabBar"]>>[0];
 
+// ponytail: TEMPORARY diagnostic for the real-device bottom-gap bug — remove this whole
+// block (and the <Text> that renders DEBUG_INFO below) once we have the real values and
+// a confirmed fix. Shows what this component actually reads vs. the window's own report.
+function useDebugInfo() {
+  const insets = useSafeAreaInsets();
+  const frame = useSafeAreaFrame();
+  const window = useWindowDimensions();
+  return `insets b=${insets.bottom} t=${insets.top} | frame h=${Math.round(frame.height)} | window h=${Math.round(window.height)}`;
+}
+
 export function TabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const bottom = Math.max(insets.bottom, 18);
+  const debugInfo = useDebugInfo();
 
   return (
     <View
@@ -25,6 +36,10 @@ export function TabBar({ state, navigation }: TabBarProps) {
         paddingBottom: bottom,
       }}
     >
+      {/* ponytail: TEMPORARY — remove with useDebugInfo above once diagnosed. */}
+      <Text style={{ position: "absolute", top: 2, left: 4, right: 4, fontSize: 8, color: colors.cream, opacity: 0.9 }} numberOfLines={1}>
+        {debugInfo}
+      </Text>
       {NAV_ITEMS.map((item) => {
         const route = state.routes.find((r) => r.name === item.route);
         if (!route) return null;

@@ -12,6 +12,13 @@
       body {
         height: 100%; /* fallback for browsers without dvh support */
         height: 100dvh;
+        /* iOS standalone (Add to Home Screen) still under-reports 100dvh on
+           some devices, leaving a white strip of page-less screen below the
+           tab bar. position:fixed + inset:0 sizes against the initial
+           containing block instead of any viewport unit, so the document is
+           exactly the screen — no unit semantics to get wrong. */
+        position: fixed;
+        inset: 0;
         /* colors.paper — so an iOS rubber-band overscroll bounce (or any
            other momentary gap) shows the app's own background, not a stark
            white flash/line. */
@@ -24,8 +31,8 @@
       /* These styles make the root element full-height */
       #root {
         display: flex;
-        height: 100%; /* fallback for browsers without dvh support */
-        height: 100dvh;
+        /* body is now fixed to the screen, so 100% of it is the real screen. */
+        height: 100%;
         flex: 1;
       }
       /* iOS Safari quirk (github.com/w3c/csswg-drafts, Apple dev forums, well-

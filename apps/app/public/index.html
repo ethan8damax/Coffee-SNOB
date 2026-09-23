@@ -120,22 +120,13 @@
          the bar's bottom equals #root's bottom equals innerHeight exactly.
          The deficit is measured (screen.height vs innerHeight) rather than
          derived from env(safe-area-inset-top), which reports 0px on device.
-         The correction is bounded: only a shortfall in the plausible
-         status-bar range is closed. iOS does not honour manifest.json's
-         portrait lock, so the app can rotate; in landscape screen.height
-         still reports the portrait value on some iOS versions, which would
-         otherwise stretch the page to roughly twice the viewport. A deficit
-         that large is not a status bar, so it is left alone. -->
+         Math.max means this can only ever grow the page, never shrink it, so
+         a correctly-reporting viewport is left untouched. Portrait-locked in
+         manifest.json, so screen.height is stable. -->
     <script>
       if (navigator.standalone === true) {
-        // Generous ceiling: the tallest iPhone status bar / Dynamic Island
-        // inset is ~62pt, so anything past this is a rotation or a viewport
-        // state this correction has no business touching.
-        var MAX_STATUS_BAR_DEFICIT = 120;
         var fitToScreen = function () {
-          var deficit = screen.height - window.innerHeight;
-          var fits = deficit > 0 && deficit <= MAX_STATUS_BAR_DEFICIT;
-          document.body.style.height = fits ? screen.height + "px" : "";
+          document.body.style.height = Math.max(window.innerHeight, screen.height) + "px";
         };
         fitToScreen();
         addEventListener("resize", fitToScreen);

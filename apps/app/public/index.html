@@ -111,5 +111,47 @@
     </noscript>
     <!-- The root element for your Expo app. -->
     <div id="root"></div>
+
+    <!-- Opt-in layout readout: only renders for /?debug=layout, so it can't
+         reach anyone who didn't ask for it. Exists because the gap below the
+         tab bar isn't reproducible off-device — this prints the real numbers
+         (which box is short, and by how much) instead of inferring them from
+         source. Delete once the gap is understood. -->
+    <script>
+      if (location.search.includes("debug=layout")) {
+        var probe = document.createElement("div");
+        probe.style.cssText =
+          "position:fixed;padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);visibility:hidden;pointer-events:none";
+        document.body.appendChild(probe);
+
+        var out = document.createElement("pre");
+        out.style.cssText =
+          "position:fixed;top:0;left:0;z-index:99999;margin:0;padding:6px 8px;font:11px/1.35 ui-monospace,monospace;color:#f0ecdf;background:rgba(22,19,16,.92);white-space:pre";
+        document.body.appendChild(out);
+
+        var read = function () {
+          var cs = getComputedStyle(probe);
+          var root = document.getElementById("root");
+          var vv = window.visualViewport;
+          out.textContent = [
+            "screen.height     " + screen.height,
+            "innerHeight       " + window.innerHeight,
+            "visualViewport.h  " + (vv ? Math.round(vv.height) : "n/a"),
+            "doc.clientHeight  " + document.documentElement.clientHeight,
+            "body rect.h       " + Math.round(document.body.getBoundingClientRect().height),
+            "#root rect.h      " + (root ? Math.round(root.getBoundingClientRect().height) : "n/a"),
+            "#root child h     " + (root && root.firstElementChild ? Math.round(root.firstElementChild.getBoundingClientRect().height) : "n/a"),
+            "safe-area T/B     " + cs.paddingTop + " / " + cs.paddingBottom,
+            "dpr               " + window.devicePixelRatio,
+            "standalone        " + (navigator.standalone === true),
+          ].join("\n");
+        };
+        read();
+        addEventListener("resize", read);
+        addEventListener("orientationchange", read);
+        if (window.visualViewport) window.visualViewport.addEventListener("resize", read);
+        setTimeout(read, 1500);
+      }
+    </script>
   </body>
 </html>

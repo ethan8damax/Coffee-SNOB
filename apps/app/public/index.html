@@ -129,6 +129,16 @@
           "position:fixed;top:0;left:0;z-index:99999;margin:0;padding:6px 8px;font:11px/1.35 ui-monospace,monospace;color:#f0ecdf;background:rgba(22,19,16,.92);white-space:pre";
         document.body.appendChild(out);
 
+        // Magenta bar pinned to the very bottom of the page. Where it lands on
+        // screen answers the question the numbers can't: if it sits ABOVE the
+        // cream strip, the page genuinely ends there and nothing the page does
+        // can fill the strip. If it's hidden behind the strip, the page does
+        // reach the bottom and the strip is something drawing over it.
+        var edge = document.createElement("div");
+        edge.style.cssText =
+          "position:fixed;left:0;right:0;bottom:0;height:4px;z-index:99999;background:#ff00aa;pointer-events:none";
+        document.body.appendChild(edge);
+
         var read = function () {
           var cs = getComputedStyle(probe);
           var root = document.getElementById("root");

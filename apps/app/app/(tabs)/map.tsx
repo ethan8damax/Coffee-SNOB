@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, ActivityIndicator, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { router } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
@@ -16,6 +16,7 @@ import { useNearbyMapData } from "../../lib/map/nearby-map-data";
 import { useOnline } from "../../lib/map/use-online";
 import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
+import { FALLBACK_CITY, readLastLocation, saveLastLocation } from "../../lib/map/fallback";
 import type { Place } from "../../lib/map/geocode";
 import { applyFilter, buildRows, type ListRow, type MapFilter } from "../../lib/map/shop-list";
 import { openDirections } from "../../lib/directions";
@@ -23,8 +24,6 @@ import { isDesktopWidth } from "@/lib/nav";
 
 const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
-// Where the map opens when the visitor's real location isn't available.
-const FALLBACK = { name: "Atlanta", lat: 33.749, lng: -84.388 };
 const PANEL_WIDTH = 380;
 
 type CameraTarget = NonNullable<MapViewProps["cameraTarget"]>;
@@ -44,7 +43,13 @@ export default function MapScreen() {
   const tabBarHeight = useBottomTabBarHeight();
   const { center: userCenter, loading: locationLoading } = useUserLocation();
   const online = useOnline();
-  const center = userCenter ?? FALLBACK;
+  // Open right away on the real fix, else where they last were, else the
+  // fallback city — never a spinner while the location prompt is pending.
+  const [startCenter] = useState(() => {
+    const last = readLastLocation();
+    return last ? { ...last, name: "where you last were" } : FALLBACK_CITY;
+  });
+  const center = userCenter ?? startCenter;
 
   const [bounds, setBounds] = useState<MapBounds | null>(null);
   const [filter, setFilter] = useState<MapFilter>("all");
@@ -61,24 +66,20 @@ export default function MapScreen() {
 
   const flyTo = (lat: number, lng: number, zoom?: number) => setCamera({ lat, lng, zoom, nonce: ++nonce.current });
 
-  // Seed bounds once location settles, so the first data fetch fires
-  // immediately instead of waiting for the first pan. Runs once: the `!bounds`
+  // Seed bounds immediately (on startCenter, before any fix arrives) so the
+  // first data fetch fires without waiting for a pan. Runs once: the `!bounds`
   // check stops it from re-seeding after a real pan has set bounds.
   useEffect(() => {
-    if (!locationLoading && !bounds) setBounds(boundsAround(center, 0.04));
-  }, [locationLoading, bounds, center]);
+    if (!bounds) setBounds(boundsAround(center, 0.04));
+  }, [bounds, center]);
 
-  // If the map opened on the fallback (no fix in time) and the device's
-  // location then arrives, move there once.
-  const openedOnFallback = useRef(false);
+  // The map opened before the fix (last location or fallback); move once it arrives.
+  const flewToFix = useRef(false);
   useEffect(() => {
-    if (!locationLoading && !userCenter) openedOnFallback.current = true;
-  }, [locationLoading, userCenter]);
-  useEffect(() => {
-    if (userCenter && openedOnFallback.current) {
-      openedOnFallback.current = false;
-      flyTo(userCenter.lat, userCenter.lng);
-    }
+    if (!userCenter || flewToFix.current) return;
+    flewToFix.current = true;
+    saveLastLocation(userCenter);
+    flyTo(userCenter.lat, userCenter.lng);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userCenter]);
 
@@ -86,6 +87,8 @@ export default function MapScreen() {
   const visible = useMemo(() => applyFilter(filter, ratedShops, nearbyShops), [filter, ratedShops, nearbyShops]);
   const origin = userCenter ?? (bounds ? boundsCenter(bounds) : null);
   const rows = useMemo(() => buildRows(visible.rated, visible.nearby, origin), [visible, origin]);
+  // The list stops at MAX_ROWS; the count is everything the filter shows.
+  const total = visible.rated.length + visible.nearby.length;
   // Search ranks near-first from what's actually on screen, not your real location —
   // if you've flown somewhere else to browse, that's "near" for search purposes.
   const searchOrigin = bounds ? boundsCenter(bounds) : userCenter;
@@ -158,14 +161,6 @@ export default function MapScreen() {
     flyTo(shop.lat, shop.lng, 16);
   };
 
-  if (locationLoading) {
-    return (
-      <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.paper }}>
-        <ActivityIndicator color={colors.oxblood} />
-      </View>
-    );
-  }
-
   const map = (
     <MapView
       ratedShops={visible.rated}
@@ -199,13 +194,13 @@ export default function MapScreen() {
       wide={wide}
       status={status}
       offline={!online}
-      fallbackLabel={userCenter ? null : FALLBACK.name}
+      fallbackLabel={userCenter || locationLoading ? null : startCenter.name}
       onPressRow={onPressRow}
       onRetry={reload}
     />
   );
 
-  const countLabel = `${rows.length} ${rows.length === 1 ? "shop" : "shops"} nearby`;
+  const countLabel = `${total} ${total === 1 ? "shop" : "shops"} nearby`;
   // null until something's actually been searched — the bar shows the "Search a
   // city or a shop" invite by default, not a "Near you" label nobody asked for.
   const areaLabel = searchedAreaLabel;
@@ -217,7 +212,7 @@ export default function MapScreen() {
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
             <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
               <View style={{ paddingHorizontal: 20, zIndex: 30 }}>
-                <MapSearch areaLabel={areaLabel} count={rows.length} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} />
+                <MapSearch areaLabel={areaLabel} count={total} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -270,7 +265,7 @@ export default function MapScreen() {
         <View pointerEvents="box-none">
           <MapTopBar
             areaLabel={areaLabel}
-            count={rows.length}
+            count={total}
             onLocate={locate}
             locateDisabled={!userCenter}
             onRefresh={reload}

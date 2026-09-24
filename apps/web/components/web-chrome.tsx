@@ -3,10 +3,10 @@ import { Script, Eyebrow } from "./primitives";
 import { MobileNav } from "./mobile-nav";
 import { APP_SIGN_UP_URL, APP_SIGN_IN_URL, APP_MAP_URL } from "@/lib/app-url";
 
-const NAV_ITEMS: [string, string][] = [
-  ["City guides", "/city-guides"],
-  ["Journal", "/journal"],
-];
+// ponytail: City guides and Journal are hidden for v1 (not developed yet);
+// their pages still exist. Re-add ["City guides", "/city-guides"] and
+// ["Journal", "/journal"] here and in WebFooter when they're ready.
+const NAV_ITEMS: [string, string][] = [];
 
 export function WebNav({ active }: { active?: string }) {
   return (
@@ -32,15 +32,15 @@ export function Doors() {
       <div className="door ox">
         <span className="label">Do this now</span>
         <h3 className="d3">Log what you drink</h3>
-        <Link href={APP_SIGN_UP_URL} className="btn" style={{ background: "var(--cream)", color: "var(--ink)", marginTop: 14 }}>Create your account</Link>
+        <a href={APP_SIGN_UP_URL} className="btn" style={{ background: "var(--cream)", color: "var(--ink)", marginTop: 14 }}>Create your account</a>
       </div>
       <div className="door">
-        <span className="label">Coming to your phone</span>
-        <h3 className="d3">Get the app</h3>
-        <Link href="/#get-the-app" className="btn btn-line" style={{ marginTop: 14 }}>Join the waitlist</Link>
+        <span className="label">No account needed</span>
+        <h3 className="d3">See what&apos;s near you</h3>
+        <a href={APP_MAP_URL} className="btn btn-line" style={{ marginTop: 14 }}>Open the map</a>
       </div>
       <div className="door cr">
-        <span className="label">No account needed</span>
+        <span className="label">Read first</span>
         <h3 className="d3">Browse the guides</h3>
         <Link href="/city-guides" className="btn btn-line" style={{ marginTop: 14 }}>City guides →</Link>
       </div>
@@ -50,15 +50,14 @@ export function Doors() {
 
 export function WebFooter() {
   const cols: [string, [string, string][]][] = [
-    ["Discover", [["City guides", "/city-guides"]]],
-    ["Read", [["Journal", "/journal"]]],
+    ["The app", [["The map", APP_MAP_URL], ["Create an account", APP_SIGN_UP_URL], ["Sign in", APP_SIGN_IN_URL]]],
   ];
   return (
     <footer className="foot">
       <div className="wrap foot-in">
         <div className="foot-brand">
           <Script height={34} color="var(--cream)" />
-          <p className="body-sm">A specialty coffee locator. In build, from wherever the coffee is good.</p>
+          <p className="body-sm">A specialty coffee locator, from wherever the coffee is good.</p>
         </div>
         {cols.map(([heading, links]) => (
           <div key={heading} className="foot-col">

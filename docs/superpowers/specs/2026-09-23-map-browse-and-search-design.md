@@ -102,18 +102,21 @@ Search answers "find a place", anywhere, fast.
 "dancing goats" lists Atlanta + Decatur; rated matches appear before Photon
 returns; picking a far shop opens its preview card.
 
-## Phase 3 — city pages (once ratings exist)
+## Phase 3 — city pages (after launch)
 
-"Best shops in a city" only has something to rank once people log, so this
-comes after launch and is ranked on our data, not OSM.
+A shop joins its city's page the moment it gets its first rating, so city
+pages grow with the community. Curated "best in city" guides come later,
+built on top of them once there's enough to choose from.
 
 - **Shops know their city.** When a shop is first logged, store
   `locality` (city), `region`, `country` on `shops`, from the Photon/OSM data
   the log already comes from. Backfill the existing shops once.
-- **City page** (`/city/[slug]` in the app): rated shops in that city,
-  ordered by verdict then log count, with each shop's consensus chip; below a
-  small threshold of rated shops, an honest "Not enough verdicts yet — see
-  every café on the map" state.
+- **City page** (`/city/[slug]` in the app): every rated shop in that city,
+  ordered by verdict then log count, with each shop's consensus chip. A city
+  with no rated shops yet shows "No verdicts here yet — see every café on the
+  map".
+- **Later, not in this phase:** editorial "best in city" guides picked from
+  the city page's shops (reusing the parked `lists`/city-guide tables).
 - **Search links to it.** A city result offers "Best in Atlanta" alongside
   "Show on map".
 - **Faster rated pins.** Replace the bounds query on `shop_ratings` (which
@@ -122,8 +125,9 @@ comes after launch and is ranked on our data, not OSM.
 - The `cities` table stays for editorial guides (parked); city pages key off
   `shops.locality`, not `city_id`.
 
-**Done when:** logging a shop records its city; an Atlanta page lists rated
-Atlanta shops best-first; a city with no ratings shows the empty state; the
+**Done when:** logging a shop records its city and it appears on that city's
+page right away; an Atlanta page lists rated Atlanta shops best-first; a city
+with no ratings shows the empty state; the
 rated-pins query plan filters on the index.
 
 ## Out of scope

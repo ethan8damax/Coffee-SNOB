@@ -48,7 +48,7 @@ export function abbreviateState(state: string, countryCode: string | null | unde
 }
 
 // "USA", not the ISO "US" — everywhere else, the ISO 2-letter code (uppercased) is fine.
-function abbreviateCountry(countryCode: string): string {
+export function abbreviateCountry(countryCode: string): string {
   const upper = countryCode.toUpperCase();
   return upper === "US" ? "USA" : upper;
 }

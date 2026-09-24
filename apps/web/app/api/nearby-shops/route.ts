@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getChainBlocklist } from "@coffeesnob/supabase";
-import { buildOverpassQuery, isChain, isCoffeePlace, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
-import { getSupabase } from "@/lib/supabase";
+import { getBlocklist } from "@/lib/chain-blocklist";
+import { buildOverpassQuery, isChain, isCoffeePlace, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
 // 504s) — kumi.systems is Overpass's other well-known public mirror, same
@@ -16,21 +15,6 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 
 type CacheEntry = { expiresAt: number; body: { shops: ReturnType<typeof toNearbyShop>[] } };
 const cache = new Map<string, CacheEntry>();
-
-// The chain blocklist, cached briefly so admin edits land within a minute
-// (plus up to CACHE_TTL_MS for boxes already cached). If Supabase is down the
-// map still works: it serves the last list it had, or no filter at all.
-const BLOCKLIST_TTL_MS = 60 * 1000;
-let blocklist: { expiresAt: number; names: ChainEntry[] } = { expiresAt: 0, names: [] };
-async function getBlocklist(): Promise<ChainEntry[]> {
-  if (blocklist.expiresAt > Date.now()) return blocklist.names;
-  try {
-    blocklist = { expiresAt: Date.now() + BLOCKLIST_TTL_MS, names: await getChainBlocklist(getSupabase()) };
-  } catch {
-    blocklist = { ...blocklist, expiresAt: Date.now() + 5000 };
-  }
-  return blocklist.names;
-}
 
 // ponytail: wide-open CORS — this is a public, unauthenticated, read-only
 // proxy over public OSM data, and its only client (apps/app's web export)

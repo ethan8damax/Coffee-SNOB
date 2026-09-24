@@ -112,6 +112,8 @@ describe("isCoffeePlace", () => {
     // Real Atlanta cases: tea shops tagged with a mixed cuisine, or not tagged at all.
     expect(isCoffeePlace({ name: "Tea Leaf and Creamery", amenity: "cafe", cuisine: "bubble_tea;ice_cream" })).toBe(false);
     expect(isCoffeePlace({ name: "Queen Tea", amenity: "cafe" })).toBe(false);
+    expect(isCoffeePlace({ name: "Boba Mocha", amenity: "cafe" })).toBe(false);
+    expect(isCoffeePlace({ name: "Landmark Diner - Downtown", amenity: "cafe" })).toBe(false);
   });
 
   it("keeps coffee places that mention tea, and words that only contain 'tea'", () => {

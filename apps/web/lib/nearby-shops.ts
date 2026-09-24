@@ -64,13 +64,13 @@ export function buildOverpassQuery(bounds: Bounds, name?: string): string {
 
 // OSM files bubble tea shops, tea rooms and institutional cafeterias under
 // amenity=cafe too. Anything tagged coffee_shop stays. Otherwise drop tea
-// cuisines (alone or mixed, e.g. "bubble_tea;ice_cream"), cafeteria-style
-// names, and names with the word "tea" that don't also say coffee/café/espresso
+// cuisines (alone or mixed, e.g. "bubble_tea;ice_cream"), cafeteria/diner
+// names, and names with "tea"/"boba" that don't also say coffee/café/espresso
 // (many tea shops carry no cuisine tag). Named case list, not a classifier:
 // extend as new noise shows up in real areas.
 const NON_COFFEE_CUISINES = new Set(["bubble_tea", "tea"]);
-const NON_COFFEE_NAME = /\b(cafeteria|dining hall|food court)\b/i;
-const TEA_NAME = /\btea\b/i;
+const NON_COFFEE_NAME = /\b(cafeteria|dining hall|food court|diner)\b/i;
+const TEA_NAME = /\b(tea|boba)\b/i;
 const COFFEE_NAME = /\b(coffee|caf[eé]|espresso)(?![a-z])/i; // lookahead, not \b: "é" isn't a \w character
 
 export function isCoffeePlace(tags: Record<string, string>): boolean {

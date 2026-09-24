@@ -11,6 +11,9 @@ import { DrinkChips } from "./drink-chips";
 import { VERDICT_FOOTNOTE } from "../../lib/log/verdicts";
 import { NOTE_MAX, buildLogVisitInput, canPublish, type LogParams } from "../../lib/log/params";
 import { useShopName } from "../../lib/log/use-shop-name";
+import { locateShop } from "../../lib/log/locate";
+
+const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
 function cancel() {
   if (router.canGoBack()) router.back();
@@ -33,12 +36,16 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
 
   async function publish() {
     if (inFlight.current) return;
-    const input = buildLogVisitInput(params, { rating, drink, note });
+    let input = buildLogVisitInput(params, { rating, drink, note });
     if (!input) return;
     inFlight.current = true;
     setSubmitting(true);
     setError(null);
     try {
+      // A new shop from OSM: find its city so it lands on that city's page.
+      if (input.kind === "osm") {
+        input = { ...input, ...(await locateShop(input.lat, input.lng, WEB_APP_URL)) };
+      }
       const { shopId } = await logVisit(supabase, userId, input);
       // Tab screens stay mounted; clear the form so the next visit starts fresh.
       setRating(null);

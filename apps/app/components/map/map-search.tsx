@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
-import { geocodePlaces, reverseGeocode, searchNearbyShops, type Place } from "../../lib/map/geocode";
+import { geocodePlaces, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { sortByDistance, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
@@ -58,20 +58,16 @@ export function MapSearch({
         // to, to rate or favorite it for the first time — it won't be rated yet,
         // so it has to come from live OSM data too, not just searchRatedShops.
         origin ? searchNearbyShops(q, origin, webAppUrl).catch(() => []) : Promise.resolve([]),
-      ]).then(async ([places, shopRows, nearby]) => {
-        const shops = shopRows.map(toRatedShopPin);
-        // One reverse lookup per shop match (city/state/country from its coordinates) —
-        // in parallel and awaited together, so the list appears once, fully formed,
-        // rather than filling in row by row.
-        const [shopSecondaries, nearbySecondaries] = await Promise.all([
-          Promise.all(shops.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null))),
-          Promise.all(nearby.map((s) => reverseGeocode(s.lat, s.lng, webAppUrl).catch(() => null))),
-        ]);
+      ]).then(([places, shopRows, nearby]) => {
         if (cancelled) return;
+        const shops = shopRows.map(toRatedShopPin);
+        // No per-result reverse geocoding (it burst Nominatim's 1 req/s policy);
+        // the secondary line comes from data we already have. Phase 2's Photon
+        // search brings back a proper "City, ST" line.
         const combined: SearchResult[] = [
           ...places.map((place): SearchResult => ({ kind: "place", place })),
-          ...shops.map((shop, i): SearchResult => ({ kind: "shop", shop, secondary: shopSecondaries[i] })),
-          ...nearby.map((shop, i): SearchResult => ({ kind: "nearby", shop, secondary: nearbySecondaries[i] })),
+          ...shops.map((shop): SearchResult => ({ kind: "shop", shop, secondary: shop.neighborhood })),
+          ...nearby.map((shop): SearchResult => ({ kind: "nearby", shop, secondary: shop.address })),
         ];
         setResults(sortByDistance(combined, origin));
       });

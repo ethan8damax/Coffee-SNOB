@@ -39,13 +39,3 @@ export async function geocodePlaces(query: string, webAppUrl: string): Promise<P
   const { places } = (await response.json()) as { places: Place[] };
   return places;
 }
-
-// The "City, ST, Country" trailing line for a shop's own coordinates — the shop's name
-// is the headline, supplied by the caller, not by this lookup.
-export async function reverseGeocode(lat: number, lng: number, webAppUrl: string): Promise<string> {
-  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
-  const response = await fetch(`${webAppUrl}/api/reverse-geocode?${params}`);
-  if (!response.ok) throw new Error(`reverse-geocode request failed: ${response.status}`);
-  const { secondary } = (await response.json()) as { secondary: string };
-  return secondary;
-}

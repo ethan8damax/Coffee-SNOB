@@ -109,6 +109,16 @@ describe("isCoffeePlace", () => {
     expect(isCoffeePlace({ name: "Queen Tea", amenity: "cafe", cuisine: "tea" })).toBe(false);
     expect(isCoffeePlace({ name: "Piedmont North Dining Hall", amenity: "cafe" })).toBe(false);
     expect(isCoffeePlace({ name: "One Georgia Center Cafeteria", amenity: "cafe" })).toBe(false);
+    // Real Atlanta cases: tea shops tagged with a mixed cuisine, or not tagged at all.
+    expect(isCoffeePlace({ name: "Tea Leaf and Creamery", amenity: "cafe", cuisine: "bubble_tea;ice_cream" })).toBe(false);
+    expect(isCoffeePlace({ name: "Queen Tea", amenity: "cafe" })).toBe(false);
+  });
+
+  it("keeps coffee places that mention tea, and words that only contain 'tea'", () => {
+    expect(isCoffeePlace({ name: "Marlee's Coffee and Tea", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "Café Tea House", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "Teaspoon Roasters", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "Steady Espresso & Tea", amenity: "cafe" })).toBe(true);
   });
 });
 

@@ -63,17 +63,23 @@ export function buildOverpassQuery(bounds: Bounds, name?: string): string {
 }
 
 // OSM files bubble tea shops, tea rooms and institutional cafeterias under
-// amenity=cafe too. Keep anything tagged coffee_shop; drop tea-only cuisines
-// and cafeteria-style names. Named case list (not a classifier): extend the
-// regex / cuisine set as new noise shows up in real areas.
+// amenity=cafe too. Anything tagged coffee_shop stays. Otherwise drop tea
+// cuisines (alone or mixed, e.g. "bubble_tea;ice_cream"), cafeteria-style
+// names, and names with the word "tea" that don't also say coffee/café/espresso
+// (many tea shops carry no cuisine tag). Named case list, not a classifier:
+// extend as new noise shows up in real areas.
 const NON_COFFEE_CUISINES = new Set(["bubble_tea", "tea"]);
 const NON_COFFEE_NAME = /\b(cafeteria|dining hall|food court)\b/i;
+const TEA_NAME = /\btea\b/i;
+const COFFEE_NAME = /\b(coffee|caf[eé]|espresso)(?![a-z])/i; // lookahead, not \b: "é" isn't a \w character
 
 export function isCoffeePlace(tags: Record<string, string>): boolean {
   const cuisines = (tags.cuisine ?? "").split(";").map((c) => c.trim().toLowerCase()).filter(Boolean);
   if (cuisines.includes("coffee_shop")) return true;
-  if (cuisines.length > 0 && cuisines.every((c) => NON_COFFEE_CUISINES.has(c))) return false;
-  return !NON_COFFEE_NAME.test(tags.name ?? "");
+  if (cuisines.some((c) => NON_COFFEE_CUISINES.has(c))) return false;
+  const name = tags.name ?? "";
+  if (NON_COFFEE_NAME.test(name)) return false;
+  return !TEA_NAME.test(name) || COFFEE_NAME.test(name);
 }
 
 export function toNearbyShop(el: OverpassElement): NearbyShop | null {

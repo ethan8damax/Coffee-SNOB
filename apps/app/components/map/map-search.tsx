@@ -5,7 +5,7 @@ import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
 import { searchEverywhere, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
-import { rankResults, type SearchResult } from "../../lib/map/search-sort";
+import { mergeResults, rankResults, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
 import type { NearbyShopPin, RatedShopPin } from "./types";
 
@@ -39,6 +39,7 @@ export function MapSearch({
   const [active, setActive] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
+  const [pending, setPending] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -46,30 +47,42 @@ export function MapSearch({
     const q = query.trim();
     if (q.length < 2) {
       setResults(null);
+      setPending(false);
       return;
     }
     let cancelled = false;
     const timer = setTimeout(() => {
       const { supabase } = require("../../lib/supabase");
-      Promise.all([
-        searchEverywhere(q, origin, webAppUrl).then((r) => r.places).catch(() => []),
-        searchRatedShops(supabase, q).catch(() => []),
-        // Most early searches are someone looking for a shop they've already been
-        // to, to rate or favorite it for the first time — it won't be rated yet,
-        // so it has to come from live OSM data too, not just searchRatedShops.
-        origin ? searchNearbyShops(q, origin, webAppUrl).catch(() => []) : Promise.resolve([]),
-      ]).then(([places, shopRows, nearby]) => {
+      // Sources land in stages and the list updates as each arrives, so our
+      // own rated shops show instantly instead of waiting on the slowest source.
+      let merged: SearchResult[] = [];
+      const add = (incoming: SearchResult[]) => {
         if (cancelled) return;
-        const shops = shopRows.map(toRatedShopPin);
-        // No per-result reverse geocoding (it burst Nominatim's 1 req/s policy);
-        // the secondary line comes from data we already have. Phase 2's Photon
-        // search brings back a proper "City, ST" line.
-        const combined: SearchResult[] = [
-          ...places.map((place): SearchResult => ({ kind: "place", place })),
-          ...shops.map((shop): SearchResult => ({ kind: "shop", shop, secondary: shop.neighborhood })),
-          ...nearby.map((shop): SearchResult => ({ kind: "nearby", shop, secondary: shop.address })),
-        ];
-        setResults(rankResults(combined, q, origin));
+        merged = mergeResults(merged, incoming);
+        setResults(rankResults(merged, q, origin));
+      };
+      setResults(null);
+      setPending(true);
+      // 1. Our rated shops (anywhere) — instant.
+      const rated = searchRatedShops(supabase, q)
+        .catch((): Awaited<ReturnType<typeof searchRatedShops>> => [])
+        .then((rows) => add(rows.map((row): SearchResult => ({ kind: "shop", shop: toRatedShopPin(row), secondary: row.neighborhood }))));
+      // 2. Cafés and places worldwide (Photon) — ~1s.
+      // 3. Only if that found few cafés: the local OSM name search, which also
+      //    catches coffee-serving restaurants/bars Photon can't filter for.
+      const wide = searchEverywhere(q, origin, webAppUrl)
+        .catch((): Awaited<ReturnType<typeof searchEverywhere>> => ({ places: [], shops: [] }))
+        .then(async ({ places, shops }) => {
+          add([
+            ...places.map((place): SearchResult => ({ kind: "place", place })),
+            ...shops.map(({ shop, secondary }): SearchResult => ({ kind: "nearby", shop, secondary })),
+          ]);
+          if (shops.length >= 3 || !origin) return;
+          const local = await searchNearbyShops(q, origin, webAppUrl).catch(() => []);
+          add(local.map((shop): SearchResult => ({ kind: "nearby", shop, secondary: shop.address })));
+        });
+      Promise.all([rated, wide]).then(() => {
+        if (!cancelled) setPending(false);
       });
     }, DEBOUNCE_MS);
     return () => {
@@ -82,12 +95,14 @@ export function MapSearch({
     setActive(true);
     setQuery("");
     setResults(null);
+    setPending(false);
     setTimeout(() => inputRef.current?.focus(), 0);
   }
   function close() {
     setActive(false);
     setQuery("");
     setResults(null);
+    setPending(false);
   }
 
   const pillBase = {
@@ -143,7 +158,7 @@ export function MapSearch({
           <CloseIcon size={12} color={colors.ink3} />
         </Pressable>
       </View>
-      {results && (
+      {(results || pending) && (
         <View
           style={{
             position: "absolute",
@@ -160,10 +175,7 @@ export function MapSearch({
           }}
         >
           <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 280 }}>
-          {results.length === 0 ? (
-            <Label style={{ padding: 14, color: colors.ink3 }}>No matches.</Label>
-          ) : (
-            results.map((r) => {
+          {(results ?? []).map((r) => {
               const key = r.kind === "place" ? `p:${r.place.id}` : r.kind === "shop" ? `s:${r.shop.id}` : `n:${r.shop.externalId}`;
               // Whatever the searcher actually matched — the shop name, or the finest
               // place Nominatim resolved to (a city, a state, or just a country) — is
@@ -193,8 +205,12 @@ export function MapSearch({
                   )}
                 </Pressable>
               );
-            })
-          )}
+            })}
+          {pending ? (
+            <Label style={{ padding: 14, color: colors.ink3 }}>Searching more cafés…</Label>
+          ) : results && results.length === 0 ? (
+            <Label style={{ padding: 14, color: colors.ink3 }}>No matches.</Label>
+          ) : null}
           </ScrollView>
         </View>
       )}

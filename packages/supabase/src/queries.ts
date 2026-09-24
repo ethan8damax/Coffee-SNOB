@@ -144,6 +144,20 @@ export async function searchRatedShops(client: Client, query: string, limit = 8)
   return data;
 }
 
+// A city page: every rated shop whose city_key matches, best verdict first,
+// then the most-logged. A shop joins the moment it's first rated.
+export async function getCityShops(client: Client, key: string) {
+  const { data, error } = await client
+    .from("shop_ratings")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id, locality, region, country_code")
+    .eq("city_key", key)
+    .not("rating", "is", null)
+    .order("rating", { ascending: false })
+    .order("log_count", { ascending: false });
+  if (error) throw error;
+  return data;
+}
+
 // Superseded by logVisit. Since 0015 the RPC returns [{ shop_id, log_id }] rather than the logs row.
 export async function logShopVisit(
   client: Client,
@@ -445,6 +459,9 @@ export type LogVisitInput =
       website?: string | null;
       phone?: string | null;
       hours?: string | null;
+      locality?: string | null;
+      region?: string | null;
+      countryCode?: string | null;
     } & LogVisitCommon);
 
 const blankToNull = (s: string | null | undefined) => s?.trim() || null;
@@ -482,6 +499,9 @@ export async function logVisit(client: Client, userId: string, input: LogVisitIn
     p_website: input.website ?? undefined,
     p_phone: input.phone ?? undefined,
     p_hours: input.hours ?? undefined,
+    p_locality: input.locality ?? undefined,
+    p_region: input.region ?? undefined,
+    p_country_code: input.countryCode ?? undefined,
   });
   if (error) throw error;
   const row = data?.[0];

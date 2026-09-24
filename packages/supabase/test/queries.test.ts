@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops, getCityShops } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
@@ -1401,5 +1401,27 @@ describe("searchRatedShops", () => {
     await searchRatedShops(client, "50%_off\\");
     expect(ilikes).toEqual([["name", "%50off%"]]);
     expect(await searchRatedShops(recordingClient().client, "a")).toEqual([]);
+  });
+});
+
+describe("getCityShops", () => {
+  it("reads rated shops for a city key, best verdict then most logs first", async () => {
+    const calls: unknown[][] = [];
+    const builder: any = {
+      eq: (...a: unknown[]) => { calls.push(["eq", ...a]); return builder; },
+      not: (...a: unknown[]) => { calls.push(["not", ...a]); return builder; },
+      order: (...a: unknown[]) => { calls.push(["order", ...a]); return builder; },
+      then: (resolve: (v: unknown) => void) => resolve({ data: [{ id: "s1", name: "Muchacho" }], error: null }),
+    };
+    const client = { from: (t: string) => { calls.push(["from", t]); return { select: () => builder }; } } as any;
+    const rows = await getCityShops(client, "atlanta-georgia-us");
+    expect(rows).toEqual([{ id: "s1", name: "Muchacho" }]);
+    expect(calls).toEqual([
+      ["from", "shop_ratings"],
+      ["eq", "city_key", "atlanta-georgia-us"],
+      ["not", "rating", "is", null],
+      ["order", "rating", { ascending: false }],
+      ["order", "log_count", { ascending: false }],
+    ]);
   });
 });

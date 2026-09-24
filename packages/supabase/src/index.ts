@@ -11,6 +11,7 @@ export {
   saveTastePicks,
   getRatedShopsInBounds,
   searchRatedShops,
+  getCityShops,
   logShopVisit,
   getProfilesByIds,
   getCitiesByIds,
@@ -60,6 +61,7 @@ export {
   addChainBlock,
   removeChainBlock,
 } from "./queries";
+export { cityKey } from "./city";
 export { TIERS, snobStatus } from "./profile-status";
 export type {
   ShopDetail,

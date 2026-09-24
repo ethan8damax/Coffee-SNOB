@@ -423,46 +423,56 @@ export type Database = {
         Row: {
           address: string | null
           city_id: string | null
+          city_key: string | null
+          country_code: string | null
           created_at: string
           external_id: string | null
           hours: string | null
           id: string
           lat: number | null
           lng: number | null
+          locality: string | null
           name: string
           neighborhood: string | null
           phone: string | null
           promotion_status: string
+          region: string | null
           website: string | null
         }
         Insert: {
           address?: string | null
           city_id?: string | null
+          country_code?: string | null
           created_at?: string
           external_id?: string | null
           hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          locality?: string | null
           name: string
           neighborhood?: string | null
           phone?: string | null
           promotion_status?: string
+          region?: string | null
           website?: string | null
         }
         Update: {
           address?: string | null
           city_id?: string | null
+          country_code?: string | null
           created_at?: string
           external_id?: string | null
           hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          locality?: string | null
           name?: string
           neighborhood?: string | null
           phone?: string | null
           promotion_status?: string
+          region?: string | null
           website?: string | null
         }
         Relationships: [
@@ -529,6 +539,10 @@ export type Database = {
           rating: number | null
           log_count: number
           external_id: string | null
+          locality: string | null
+          region: string | null
+          country_code: string | null
+          city_key: string | null
         }
         Relationships: []
       }
@@ -562,6 +576,9 @@ export type Database = {
           p_website?: string
           p_phone?: string
           p_hours?: string
+          p_locality?: string
+          p_region?: string
+          p_country_code?: string
         }
         Returns: { shop_id: string; log_id: string }[]
       }

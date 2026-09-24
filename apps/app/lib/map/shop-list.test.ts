@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle } from "./shop-list";
+import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle, withPinned } from "./shop-list";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
@@ -84,6 +84,15 @@ describe("dropRatedDuplicates", () => {
     const rated = [{ externalId: "way/1" }, { externalId: null }];
     const dots = [nearby("way/1", 0, 0), nearby("node/2", 0, 0)];
     expect(dropRatedDuplicates(dots, rated).map((d) => d.externalId)).toEqual(["node/2"]);
+  });
+});
+
+describe("withPinned", () => {
+  it("adds the searched shop until the area's own data includes it", () => {
+    const pinned = nearby("node/9", 1, 1);
+    expect(withPinned([nearby("node/1", 0, 0)], pinned).map((s) => s.externalId)).toEqual(["node/1", "node/9"]);
+    expect(withPinned([nearby("node/9", 1, 1)], pinned).map((s) => s.externalId)).toEqual(["node/9"]);
+    expect(withPinned([nearby("node/1", 0, 0)], null).map((s) => s.externalId)).toEqual(["node/1"]);
   });
 });
 

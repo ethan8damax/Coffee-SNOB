@@ -9,7 +9,6 @@ import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
 import { ShopListView } from "../../components/map/shop-list-view";
-import { rowKey } from "../../components/map/shop-row";
 import { Label } from "../../components/primitives";
 import type { MapBounds, MapViewProps, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
@@ -18,7 +17,7 @@ import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
 import { FALLBACK_CITY, readLastLocation, saveLastLocation } from "../../lib/map/fallback";
 import type { Place } from "../../lib/map/geocode";
-import { applyFilter, buildRows, type ListRow, type MapFilter } from "../../lib/map/shop-list";
+import { applyFilter, buildRows, withPinned, type ListRow, type MapFilter } from "../../lib/map/shop-list";
 import { openDirections } from "../../lib/directions";
 import { isDesktopWidth } from "@/lib/nav";
 
@@ -60,6 +59,9 @@ export default function MapScreen() {
   const [searchedAreaLabel, setSearchedAreaLabel] = useState<string | null>(null);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
+  // A café picked from search shows (and stays selected) before its own area's
+  // OSM data arrives; withPinned below drops it once the real entry shows up.
+  const [pinnedShop, setPinnedShop] = useState<NearbyShopPin | null>(null);
   const [camera, setCamera] = useState<CameraTarget | null>(null);
   const [zoomRequest, setZoomRequest] = useState<ZoomRequest | null>(null);
   const nonce = useRef(0);
@@ -86,7 +88,7 @@ export default function MapScreen() {
   }, [userCenter]);
 
   const { ratedShops, nearbyShops, status, reload } = useNearbyMapData(bounds, WEB_APP_URL);
-  const visible = useMemo(() => applyFilter(filter, ratedShops, nearbyShops), [filter, ratedShops, nearbyShops]);
+  const visible = useMemo(() => applyFilter(filter, ratedShops, withPinned(nearbyShops, pinnedShop)), [filter, ratedShops, nearbyShops, pinnedShop]);
   const origin = userCenter ?? (bounds ? boundsCenter(bounds) : null);
   const rows = useMemo(() => buildRows(visible.rated, visible.nearby, origin), [visible, origin]);
   // The list stops at MAX_ROWS; the count is everything the filter shows.
@@ -96,7 +98,13 @@ export default function MapScreen() {
   const searchOrigin = bounds ? boundsCenter(bounds) : userCenter;
 
   const activeKey = selectedRatedShopId ? `r:${selectedRatedShopId}` : selectedNearbyExternalId ? `n:${selectedNearbyExternalId}` : null;
-  const selectedRow = activeKey ? (rows.find((r) => rowKey(r) === activeKey) ?? null) : null;
+  // Looked up in everything shown, not the capped list, so a far-away pick or a
+  // shop past row 50 still gets its preview card.
+  const selectedRow = useMemo(() => {
+    const rated = selectedRatedShopId ? visible.rated.filter((s) => s.id === selectedRatedShopId) : [];
+    const nearby = selectedNearbyExternalId ? visible.nearby.filter((s) => s.externalId === selectedNearbyExternalId) : [];
+    return buildRows(rated, nearby, origin)[0] ?? null;
+  }, [selectedRatedShopId, selectedNearbyExternalId, visible, origin]);
 
   const selectRated = (id: string | null) => {
     setSelectedRatedShopId(id);
@@ -142,6 +150,7 @@ export default function MapScreen() {
   const locate = () => {
     if (!userCenter) return;
     setSearchedAreaLabel(null);
+    setPinnedShop(null);
     flyTo(userCenter.lat, userCenter.lng);
   };
   const zoom = (delta: 1 | -1) => setZoomRequest({ delta, nonce: ++nonce.current });
@@ -149,6 +158,7 @@ export default function MapScreen() {
   const searchPlace = (place: Place) => {
     flewToFix.current = true;
     setSearchedAreaLabel(place.primary);
+    setPinnedShop(null);
     selectRated(null);
     selectNearby(null);
     flyTo(place.lat, place.lng, 13);
@@ -156,12 +166,14 @@ export default function MapScreen() {
   const searchShop = (shop: RatedShopPin) => {
     flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
+    setPinnedShop(null);
     selectRated(shop.id);
     flyTo(shop.lat, shop.lng, 16);
   };
   const searchNearbyShop = (shop: NearbyShopPin) => {
     flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
+    setPinnedShop(shop);
     selectNearby(shop.externalId);
     flyTo(shop.lat, shop.lng, 16);
   };

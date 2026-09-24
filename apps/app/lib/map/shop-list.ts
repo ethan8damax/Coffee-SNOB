@@ -57,6 +57,13 @@ export function buildRows(rated: RatedShopPin[], nearby: NearbyShopPin[], origin
   return [...ratedRows, ...nearbyRows].slice(0, MAX_ROWS);
 }
 
+// A café picked from search far from the loaded area shows (and stays selected)
+// right away, before that area's OSM data arrives — then the real entry takes over.
+export function withPinned(nearby: NearbyShopPin[], pinned: NearbyShopPin | null): NearbyShopPin[] {
+  if (!pinned || nearby.some((s) => s.externalId === pinned.externalId)) return nearby;
+  return [...nearby, pinned];
+}
+
 // A rated shop logged from OSM is also in the live OSM layer; show it once, as the rated pin.
 export function dropRatedDuplicates(nearby: NearbyShopPin[], rated: { externalId: string | null }[]): NearbyShopPin[] {
   const ratedIds = new Set(rated.map((r) => r.externalId).filter(Boolean));

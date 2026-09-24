@@ -9,9 +9,10 @@ const DEBOUNCE_MS = 400;
 const FETCH_PADDING = 1;
 // Fetch boxes snap outward to this grid (~11 km) so the CDN can share them.
 const GRID_STEP = 0.1;
-// Past roughly a metro area on screen, the OSM request is huge and times out —
-// show rated pins only and ask for a zoom-in instead.
+// Past roughly a metro area on screen (height, or width on wide desktops), the
+// OSM request is huge and times out — show rated pins only and ask for a zoom-in.
 const MAX_NEARBY_VIEW_SPAN = 0.2;
+const MAX_NEARBY_VIEW_WIDTH = 0.4;
 
 export async function fetchNearbyOsmShops(bounds: MapBounds, webAppUrl: string): Promise<NearbyShopPin[]> {
   const params = new URLSearchParams({
@@ -83,11 +84,14 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   useEffect(() => {
     if (!bounds) return;
     if (fetchedRef.current && containsBounds(fetchedRef.current, bounds)) return;
-    const zoomedOut = latSpan(bounds) > MAX_NEARBY_VIEW_SPAN;
-    if (!zoomedOut) setStatus("loading");
+    const zoomedOut = latSpan(bounds) > MAX_NEARBY_VIEW_SPAN || bounds.maxLng - bounds.minLng > MAX_NEARBY_VIEW_WIDTH;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       const requestId = ++requestIdRef.current;
+      // Set here, not before the debounce: a quick pan out and back inside the
+      // fetched box cancels this timer and returns early, which would otherwise
+      // leave the status stuck on "loading".
+      if (!zoomedOut) setStatus("loading");
       const box = snapToGrid(padBounds(bounds, FETCH_PADDING), GRID_STEP);
       const { supabase } = require("../supabase");
       getRatedShopsInBounds(supabase, box)
@@ -101,7 +105,8 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
           if (requestIdRef.current === requestId) setFetchedRated([]);
         });
       if (zoomedOut) {
-        // fetchedRef stays unset so zooming back in fetches the OSM layer.
+        // Forget the last fetched box so zooming back in refetches the OSM layer.
+        fetchedRef.current = null;
         setFetchedNearby([]);
         setStatus("zoomed-out");
         return;

@@ -25,21 +25,6 @@ export type NearbyShop = {
 
 export type Bounds = { minLat: number; minLng: number; maxLat: number; maxLng: number };
 
-// Keyed on the box's center (rounded to ~0.01 degrees, ~1km, so small pans
-// or zoom jitter around the same spot share a cache entry) plus a zoom
-// bucket derived from the box's span. Center-only wasn't enough: a zoomed-in
-// box and a zoomed-out box can share a center point but cover wildly
-// different areas, so the span also has to be part of the key — bucketed
-// via log2 (roughly "zoom level") rather than rounded raw, since raw
-// rounding of a ~0.005 span is unstable across the pan-jitter this key
-// needs to tolerate (0.0048 and 0.0052 round to different hundredths).
-export function tileKey(minLat: number, minLng: number, maxLat: number, maxLng: number): string {
-  const round = (n: number) => Math.round(n * 100) / 100;
-  const span = Math.max(maxLat - minLat, 1e-6);
-  const zoomBucket = Math.round(Math.log2(span));
-  return `${round((minLat + maxLat) / 2)},${round((minLng + maxLng) / 2)},${zoomBucket}`;
-}
-
 // Regex-escapes a user-typed search term, then quote-escapes it, so it's a
 // literal case-insensitive substring match inside the Overpass QL query's
 // own quoted string — never user-controlled regex.
@@ -63,23 +48,24 @@ export function buildOverpassQuery(bounds: Bounds, name?: string): string {
 }
 
 // OSM files bubble tea shops, tea rooms and institutional cafeterias under
-// amenity=cafe too. Anything tagged coffee_shop stays. Otherwise drop tea
+// amenity=cafe too. Anything with a coffee cuisine (coffee_shop, coffee) or a
+// coffee word in its name (coffee/café/caffè/espresso) stays. Otherwise drop tea
 // cuisines (alone or mixed, e.g. "bubble_tea;ice_cream"), cafeteria/diner
-// names, and names with "tea"/"boba" that don't also say coffee/café/espresso
-// (many tea shops carry no cuisine tag). Named case list, not a classifier:
+// names, and names with "tea"/"boba" (many tea shops carry no cuisine tag).
+// Named case list, not a classifier:
 // extend as new noise shows up in real areas.
 const NON_COFFEE_CUISINES = new Set(["bubble_tea", "tea"]);
 const NON_COFFEE_NAME = /\b(cafeteria|dining hall|food court|diner)\b/i;
 const TEA_NAME = /\b(tea|boba)\b/i;
-const COFFEE_NAME = /\b(coffee|caf[eé]|espresso)(?![a-z])/i; // lookahead, not \b: "é" isn't a \w character
+const COFFEE_NAME = /\b(coffee|caf[eé]|caff[eè]|espresso)(?![a-z])/i; // lookahead, not \b: "é" isn't a \w character
 
 export function isCoffeePlace(tags: Record<string, string>): boolean {
   const cuisines = (tags.cuisine ?? "").split(";").map((c) => c.trim().toLowerCase()).filter(Boolean);
-  if (cuisines.includes("coffee_shop")) return true;
+  if (cuisines.some((c) => c.includes("coffee"))) return true;
   if (cuisines.some((c) => NON_COFFEE_CUISINES.has(c))) return false;
   const name = tags.name ?? "";
-  if (NON_COFFEE_NAME.test(name)) return false;
-  return !TEA_NAME.test(name) || COFFEE_NAME.test(name);
+  if (COFFEE_NAME.test(name)) return true;
+  return !NON_COFFEE_NAME.test(name) && !TEA_NAME.test(name);
 }
 
 export function toNearbyShop(el: OverpassElement): NearbyShop | null {

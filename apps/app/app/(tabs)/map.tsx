@@ -73,12 +73,14 @@ export default function MapScreen() {
     if (!bounds) setBounds(boundsAround(center, 0.04));
   }, [bounds, center]);
 
-  // The map opened before the fix (last location or fallback); move once it arrives.
+  // The map opened before the fix (last location or fallback); move once it
+  // arrives — unless they've already searched somewhere (see search* below).
   const flewToFix = useRef(false);
   useEffect(() => {
-    if (!userCenter || flewToFix.current) return;
-    flewToFix.current = true;
+    if (!userCenter) return;
     saveLastLocation(userCenter);
+    if (flewToFix.current) return;
+    flewToFix.current = true;
     flyTo(userCenter.lat, userCenter.lng);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userCenter]);
@@ -145,17 +147,20 @@ export default function MapScreen() {
   const zoom = (delta: 1 | -1) => setZoomRequest({ delta, nonce: ++nonce.current });
 
   const searchPlace = (place: Place) => {
+    flewToFix.current = true;
     setSearchedAreaLabel(place.primary);
     selectRated(null);
     selectNearby(null);
     flyTo(place.lat, place.lng, 13);
   };
   const searchShop = (shop: RatedShopPin) => {
+    flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
     selectRated(shop.id);
     flyTo(shop.lat, shop.lng, 16);
   };
   const searchNearbyShop = (shop: NearbyShopPin) => {
+    flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
     selectNearby(shop.externalId);
     flyTo(shop.lat, shop.lng, 16);

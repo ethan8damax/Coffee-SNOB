@@ -1,19 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tileKey, toNearbyShop, buildOverpassQuery, isChain, normalizeChainName, isCoffeePlace } from "./nearby-shops";
-
-describe("tileKey", () => {
-  it("rounds bounds to 2 decimal places so nearby pans share a key", () => {
-    expect(tileKey(38.7051, -9.1401, 38.7099, -9.1349)).toBe(tileKey(38.7049, -9.1399, 38.7101, -9.1351));
-  });
-
-  it("produces different keys for distant boxes", () => {
-    expect(tileKey(38.7, -9.1, 38.8, -9.0)).not.toBe(tileKey(40.7, -74.0, 40.8, -73.9));
-  });
-
-  it("produces different keys for a tight and a huge box sharing a center", () => {
-    expect(tileKey(38.706, -9.144, 38.714, -9.136)).not.toBe(tileKey(35.0, -11.0, 42.42, -7.28));
-  });
-});
+import { toNearbyShop, buildOverpassQuery, isChain, normalizeChainName, isCoffeePlace } from "./nearby-shops";
 
 describe("buildOverpassQuery", () => {
   it("includes the bounding box and both node and way cafe queries", () => {
@@ -121,6 +107,9 @@ describe("isCoffeePlace", () => {
     expect(isCoffeePlace({ name: "Café Tea House", amenity: "cafe" })).toBe(true);
     expect(isCoffeePlace({ name: "Teaspoon Roasters", amenity: "cafe" })).toBe(true);
     expect(isCoffeePlace({ name: "Steady Espresso & Tea", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "Leaf", amenity: "cafe", cuisine: "coffee;tea" })).toBe(true);
+    expect(isCoffeePlace({ name: "Tea & Caffè", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "The Coffee Diner", amenity: "cafe" })).toBe(true);
   });
 });
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getChainBlocklist } from "@coffeesnob/supabase";
-import { buildOverpassQuery, isChain, isCoffeePlace, tileKey, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
+import { buildOverpassQuery, isChain, isCoffeePlace, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
 import { getSupabase } from "@/lib/supabase";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
@@ -57,9 +57,12 @@ export async function GET(request: Request) {
 
   const bounds = { minLat, minLng, maxLat, maxLng };
   // "search a shop by name" (map-search.tsx) hits this same endpoint with a
-  // wide box + ?q=, so the name has to be part of the cache key too.
+  // wide box + ?q=, so the name has to be part of the cache key too. Keyed on
+  // the exact box: the app snaps boxes to a grid, so repeats already match, and
+  // a looser key could hand one box another box's shops (which the CDN would
+  // then share with everyone under this URL).
   const name = url.searchParams.get("q") || undefined;
-  const key = `${tileKey(minLat, minLng, maxLat, maxLng)}|${name ?? ""}`;
+  const key = `${minLat},${minLng},${maxLat},${maxLng}|${name ?? ""}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
     return NextResponse.json(cached.body, { headers: CACHE_HEADERS });
@@ -93,7 +96,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Overpass request failed" }, { status: 502, headers: CORS_HEADERS });
   }
 
-  const raw = (await response.json()) as { elements: OverpassElement[] };
+  // Overpass can answer 200 with a `remark` (timeout / out of memory) and no
+  // elements — a failure, so don't cache it anywhere.
+  const raw = (await response.json()) as { elements: OverpassElement[]; remark?: string };
   const chains = await getBlocklist();
   const shops = raw.elements
     .filter((el) => isCoffeePlace(el.tags ?? {}) && !isChain(el.tags ?? {}, chains))
@@ -101,6 +106,7 @@ export async function GET(request: Request) {
     .filter((s) => s !== null);
   const body = { shops };
 
+  if (raw.remark) return NextResponse.json(body, { headers: CORS_HEADERS });
   cache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, body });
   return NextResponse.json(body, { headers: CACHE_HEADERS });
 }

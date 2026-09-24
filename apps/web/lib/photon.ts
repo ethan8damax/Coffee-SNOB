@@ -14,10 +14,24 @@ export type PhotonFeature = {
     osm_value: string;
     name?: string;
     city?: string;
+    county?: string;
     state?: string;
     countrycode?: string;
   };
 };
+
+export type Locality = { locality: string | null; region: string | null; countryCode: string | null };
+
+// A shop's city for its city page (/api/locate). Unincorporated areas have no
+// city in OSM, so fall back to the county rather than leave the shop off every page.
+export function toLocality(f: PhotonFeature | undefined): Locality {
+  const p = f?.properties;
+  return {
+    locality: p?.city ?? p?.county ?? null,
+    region: p?.state ?? null,
+    countryCode: p?.countrycode ? p.countrycode.toUpperCase() : null,
+  };
+}
 
 export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number };
 export type SearchHit =

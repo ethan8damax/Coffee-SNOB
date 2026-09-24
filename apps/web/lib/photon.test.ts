@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toSearchHit, type PhotonFeature } from "./photon";
+import { toSearchHit, toLocality, type PhotonFeature } from "./photon";
 
 const feature = (properties: PhotonFeature["properties"], lon = -84.36, lat = 33.75): PhotonFeature => ({
   geometry: { coordinates: [lon, lat] },
@@ -47,5 +47,17 @@ describe("toSearchHit", () => {
     expect(toSearchHit(cafe("Dunkin Donuts"), withIds)).toBeNull();
     expect(toSearchHit(cafe("Dunkin' Donuts"), withIds)).toBeNull();
     expect(toSearchHit(cafe("Costa Rica Café"), withIds)).not.toBeNull();
+  });
+});
+
+describe("toLocality", () => {
+  it("takes the city, state and country code", () => {
+    expect(toLocality(feature({ osm_type: "W", osm_id: 1, osm_key: "amenity", osm_value: "restaurant", city: "Atlanta", state: "Georgia", countrycode: "US" })))
+      .toEqual({ locality: "Atlanta", region: "Georgia", countryCode: "US" });
+  });
+  it("falls back to the county where there's no city, and to nulls with nothing", () => {
+    expect(toLocality(feature({ osm_type: "W", osm_id: 2, osm_key: "highway", osm_value: "secondary", county: "Cobb", state: "Georgia", countrycode: "us" })))
+      .toEqual({ locality: "Cobb", region: "Georgia", countryCode: "US" });
+    expect(toLocality(undefined)).toEqual({ locality: null, region: null, countryCode: null });
   });
 });

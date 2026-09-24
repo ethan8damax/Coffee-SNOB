@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter, buildRows, distanceKm, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle } from "./shop-list";
+import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle } from "./shop-list";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
@@ -76,6 +76,14 @@ describe("buildRows", () => {
     const rows = buildRows(manyRated, manyNearby, origin);
     expect(rows.slice(0, 5).every((r) => r.kind === "rated")).toBe(true);
     expect(rows).toHaveLength(MAX_ROWS);
+  });
+});
+
+describe("dropRatedDuplicates", () => {
+  it("drops unrated dots that are already rated pins", () => {
+    const rated = [{ externalId: "way/1" }, { externalId: null }];
+    const dots = [nearby("way/1", 0, 0), nearby("node/2", 0, 0)];
+    expect(dropRatedDuplicates(dots, rated).map((d) => d.externalId)).toEqual(["node/2"]);
   });
 });
 

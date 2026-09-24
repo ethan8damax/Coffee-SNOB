@@ -57,6 +57,12 @@ export function buildRows(rated: RatedShopPin[], nearby: NearbyShopPin[], origin
   return [...ratedRows, ...nearbyRows].slice(0, MAX_ROWS);
 }
 
+// A rated shop logged from OSM is also in the live OSM layer; show it once, as the rated pin.
+export function dropRatedDuplicates(nearby: NearbyShopPin[], rated: { externalId: string | null }[]): NearbyShopPin[] {
+  const ratedIds = new Set(rated.map((r) => r.externalId).filter(Boolean));
+  return nearby.filter((n) => !ratedIds.has(n.externalId));
+}
+
 export function rowSubtitle(row: ListRow): string {
   if (row.kind === "rated") {
     return [row.shop.neighborhood, row.shop.tag].filter(Boolean).join(" · ") || "Logged by the community";

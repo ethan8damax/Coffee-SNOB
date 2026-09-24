@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
 import { containsBounds, padBounds, withinBounds } from "./bounds";
+import { dropRatedDuplicates } from "./shop-list";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
@@ -121,8 +122,8 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
     [fetchedRated, bounds]
   );
   const nearbyShops = useMemo(
-    () => (bounds ? fetchedNearby.filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
-    [fetchedNearby, bounds]
+    () => (bounds ? dropRatedDuplicates(fetchedNearby, fetchedRated).filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
+    [fetchedNearby, fetchedRated, bounds]
   );
 
   return { ratedShops, nearbyShops, status, reload: () => {

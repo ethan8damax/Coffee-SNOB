@@ -30,3 +30,16 @@ export function containsBounds(outer: MapBounds, inner: MapBounds): boolean {
 export function withinBounds(b: MapBounds, lat: number, lng: number): boolean {
   return lat >= b.minLat && lat <= b.maxLat && lng >= b.minLng && lng <= b.maxLng;
 }
+
+// Grows a box outward to a fixed grid (step in degrees). Viewers looking at
+// roughly the same area then request byte-identical URLs, which the CDN caches
+// for everyone (see /api/nearby-shops Cache-Control).
+export function snapToGrid(b: MapBounds, step: number): MapBounds {
+  const down = (n: number) => round(Math.floor(round(n / step)) * step);
+  const up = (n: number) => round(Math.ceil(round(n / step)) * step);
+  return { minLat: down(b.minLat), minLng: down(b.minLng), maxLat: up(b.maxLat), maxLng: up(b.maxLng) };
+}
+
+export function latSpan(b: MapBounds): number {
+  return b.maxLat - b.minLat;
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { boundsAround, containsBounds, padBounds, withinBounds } from "./bounds";
+import { boundsAround, containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
 
 describe("boundsAround", () => {
   it("builds a symmetric box around the center point", () => {
@@ -30,6 +30,21 @@ describe("padBounds / containsBounds", () => {
     const padded = padBounds(box, 0.5);
     expect(containsBounds(padded, box)).toBe(true);
     expect(containsBounds(padded, { ...box, maxLng: 27 })).toBe(false);
+  });
+});
+
+describe("snapToGrid", () => {
+  it("grows a box outward to the grid so nearby views request the same box", () => {
+    expect(snapToGrid({ minLat: 33.74, minLng: -84.41, maxLat: 33.78, maxLng: -84.37 }, 0.1))
+      .toEqual({ minLat: 33.7, minLng: -84.5, maxLat: 33.8, maxLng: -84.3 });
+    expect(snapToGrid({ minLat: 33.71, minLng: -84.49, maxLat: 33.79, maxLng: -84.31 }, 0.1))
+      .toEqual({ minLat: 33.7, minLng: -84.5, maxLat: 33.8, maxLng: -84.3 });
+  });
+});
+
+describe("latSpan", () => {
+  it("is the box's height in degrees", () => {
+    expect(latSpan({ minLat: 33.7, minLng: 0, maxLat: 33.9, maxLng: 1 })).toBeCloseTo(0.2);
   });
 });
 

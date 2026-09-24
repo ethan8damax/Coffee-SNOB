@@ -30,6 +30,13 @@ function EmptyState({ status, onRetry }: { status: NearbyStatus; onRetry: () => 
       </View>
     );
   }
+  if (status === "zoomed-out") {
+    return (
+      <View style={{ padding: 28 }}>
+        <Body style={{ color: colors.ink2, textAlign: "center" }}>Zoom in to see every café. Rated shops show at any zoom.</Body>
+      </View>
+    );
+  }
   return (
     <View style={{ padding: 28 }}>
       <Body style={{ color: colors.ink2, textAlign: "center" }}>No shops mapped here. Pan the map or zoom out.</Body>
@@ -64,6 +71,7 @@ export function ShopListView({
   if (offline) notices.push("You're offline. Showing what's already loaded.");
   if (fallbackLabel) notices.push(`Location is off, so this is ${fallbackLabel}. Allow location in your browser to see shops near you.`);
   if (status === "error" && rows.length > 0) notices.push("Some nearby shops didn't load. Pan the map to try again.");
+  if (status === "zoomed-out" && rows.length > 0) notices.push("Zoom in to see every café, not just rated ones.");
 
   return (
     <FlatList

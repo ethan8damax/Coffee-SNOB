@@ -1,12 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
-import { containsBounds, padBounds, withinBounds } from "./bounds";
+import { containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
 import { dropRatedDuplicates } from "./shop-list";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
 // Fetch a box this much bigger than the viewport on every side (1 → 3x wide and tall, ~8 mi radius on a phone).
 const FETCH_PADDING = 1;
+// Fetch boxes snap outward to this grid (~11 km) so the CDN can share them.
+const GRID_STEP = 0.1;
+// Past roughly a metro area on screen, the OSM request is huge and times out —
+// show rated pins only and ask for a zoom-in instead.
+const MAX_NEARBY_VIEW_SPAN = 0.2;
 
 export async function fetchNearbyOsmShops(bounds: MapBounds, webAppUrl: string): Promise<NearbyShopPin[]> {
   const params = new URLSearchParams({
@@ -57,7 +62,7 @@ export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
 // `supabase` is required lazily (mirrors lib/directions.ts) so importing
 // this module never pulls in react-native — that's what let the tests
 // above run under vitest with no RN transform.
-export type NearbyStatus = "loading" | "ready" | "error";
+export type NearbyStatus = "loading" | "ready" | "error" | "zoomed-out";
 
 export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   // Full padded-box fetch, kept as-is to avoid re-hitting the network on every small pan.
@@ -78,11 +83,12 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   useEffect(() => {
     if (!bounds) return;
     if (fetchedRef.current && containsBounds(fetchedRef.current, bounds)) return;
-    setStatus("loading");
+    const zoomedOut = latSpan(bounds) > MAX_NEARBY_VIEW_SPAN;
+    if (!zoomedOut) setStatus("loading");
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       const requestId = ++requestIdRef.current;
-      const box = padBounds(bounds, FETCH_PADDING);
+      const box = snapToGrid(padBounds(bounds, FETCH_PADDING), GRID_STEP);
       const { supabase } = require("../supabase");
       getRatedShopsInBounds(supabase, box)
         .then((rows) => {
@@ -94,6 +100,12 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
         .catch(() => {
           if (requestIdRef.current === requestId) setFetchedRated([]);
         });
+      if (zoomedOut) {
+        // fetchedRef stays unset so zooming back in fetches the OSM layer.
+        setFetchedNearby([]);
+        setStatus("zoomed-out");
+        return;
+      }
       fetchNearbyOsmShops(box, webAppUrl)
         .then((shops) => {
           if (requestIdRef.current !== requestId) return;

@@ -3,7 +3,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
-import { geocodePlaces, searchNearbyShops, type Place } from "../../lib/map/geocode";
+import { searchEverywhere, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { rankResults, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
@@ -52,7 +52,7 @@ export function MapSearch({
     const timer = setTimeout(() => {
       const { supabase } = require("../../lib/supabase");
       Promise.all([
-        geocodePlaces(q, webAppUrl).catch(() => []),
+        searchEverywhere(q, origin, webAppUrl).then((r) => r.places).catch(() => []),
         searchRatedShops(supabase, q).catch(() => []),
         // Most early searches are someone looking for a shop they've already been
         // to, to rate or favorite it for the first time — it won't be rated yet,

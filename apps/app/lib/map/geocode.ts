@@ -1,8 +1,8 @@
-// Client for the web app's /api/geocode and /api/reverse-geocode proxies (Nominatim) —
+// Client for the web app's /api/search (Photon) and /api/nearby-shops proxies —
 // mirrors fetchNearbyOsmShops in nearby-map-data.ts. Pure fetch/parse so it's testable
 // without a running server. All the address-formatting knowledge (city/state/country,
-// state abbreviation) lives server-side (apps/web/lib/geocode.ts); this just renders
-// the primary/secondary strings it's handed.
+// state abbreviation) lives server-side; this just renders the primary/secondary
+// strings it's handed.
 import { boundsAround } from "./bounds";
 import type { NearbyShopPin } from "../../components/map/types";
 
@@ -32,10 +32,29 @@ export async function searchNearbyShops(query: string, origin: { lat: number; ln
   return shops;
 }
 
-export async function geocodePlaces(query: string, webAppUrl: string): Promise<Place[]> {
+// Cafés and places worldwide in one call (the web app's /api/search, Photon).
+// The bias is rounded to ~10 km so nearby searchers share CDN-cached answers.
+export async function searchEverywhere(
+  query: string,
+  origin: { lat: number; lng: number } | null,
+  webAppUrl: string,
+): Promise<{ places: Place[]; shops: { shop: NearbyShopPin; secondary: string }[] }> {
   const params = new URLSearchParams({ q: query });
-  const response = await fetch(`${webAppUrl}/api/geocode?${params}`);
-  if (!response.ok) throw new Error(`geocode request failed: ${response.status}`);
-  const { places } = (await response.json()) as { places: Place[] };
-  return places;
+  if (origin) {
+    params.set("lat", origin.lat.toFixed(1));
+    params.set("lng", origin.lng.toFixed(1));
+  }
+  const response = await fetch(`${webAppUrl}/api/search?${params}`);
+  if (!response.ok) throw new Error(`search request failed: ${response.status}`);
+  const body = (await response.json()) as {
+    places: Place[];
+    shops: { externalId: string; name: string; secondary: string; lat: number; lng: number }[];
+  };
+  return {
+    places: body.places,
+    shops: body.shops.map(({ externalId, name, secondary, lat, lng }) => ({
+      shop: { externalId, name, lat, lng, address: null, hours: null, website: null, phone: null },
+      secondary,
+    })),
+  };
 }

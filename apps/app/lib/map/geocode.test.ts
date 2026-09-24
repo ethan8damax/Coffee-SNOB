@@ -1,23 +1,33 @@
 import { describe, it, expect, vi } from "vitest";
-import { geocodePlaces, searchNearbyShops } from "./geocode";
+import { searchEverywhere, searchNearbyShops } from "./geocode";
 
-describe("geocodePlaces", () => {
-  it("fetches from the given web app's proxy with the query as a param", async () => {
-    const fetchSpy = vi.fn(() =>
-      Promise.resolve({ ok: true, json: () => Promise.resolve({ places: [{ id: "1", primary: "Kennesaw", secondary: "GA, US", lat: 34, lng: -84.6 }] }) })
-    );
+describe("searchEverywhere", () => {
+  it("calls /api/search with the query and a rounded bias, and shapes shops as pins", async () => {
+    const fetchSpy = vi.fn(() => Promise.resolve({
+      ok: true,
+      json: () => Promise.resolve({
+        places: [{ id: "R1", primary: "Atlanta", secondary: "GA, USA", lat: 33.7, lng: -84.4 }],
+        shops: [{ externalId: "node/1", name: "Dancing Goats Coffee", secondary: "Atlanta, GA, USA", lat: 33.75, lng: -84.36 }],
+      }),
+    }));
     vi.stubGlobal("fetch", fetchSpy);
-
-    const places = await geocodePlaces("Kennesaw", "https://example.com");
-
-    expect(places).toEqual([{ id: "1", primary: "Kennesaw", secondary: "GA, US", lat: 34, lng: -84.6 }]);
-    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/api/geocode?q=Kennesaw");
+    const result = await searchEverywhere("dancing goats", { lat: 36.1627, lng: -86.7816 }, "https://example.com");
+    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/api/search?q=dancing+goats&lat=36.2&lng=-86.8");
+    expect(result.places).toEqual([{ id: "R1", primary: "Atlanta", secondary: "GA, USA", lat: 33.7, lng: -84.4 }]);
+    expect(result.shops).toEqual([{
+      shop: { externalId: "node/1", name: "Dancing Goats Coffee", lat: 33.75, lng: -84.36, address: null, hours: null, website: null, phone: null },
+      secondary: "Atlanta, GA, USA",
+    }]);
     vi.unstubAllGlobals();
   });
 
-  it("throws when the response is not ok", async () => {
+  it("omits the bias without an origin, and throws on a failed response", async () => {
+    const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ places: [], shops: [] }) }));
+    vi.stubGlobal("fetch", fetchSpy);
+    await searchEverywhere("atlanta", null, "https://example.com");
+    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/api/search?q=atlanta");
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false, status: 502 })));
-    await expect(geocodePlaces("x", "https://example.com")).rejects.toThrow("geocode request failed: 502");
+    await expect(searchEverywhere("x y", null, "https://example.com")).rejects.toThrow("search request failed: 502");
     vi.unstubAllGlobals();
   });
 });

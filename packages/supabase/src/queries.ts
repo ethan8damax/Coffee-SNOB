@@ -133,13 +133,13 @@ export async function getRatedShopsInBounds(
 export async function searchRatedShops(client: Client, query: string, limit = 8) {
   const q = query.trim().replace(/[%_\\]/g, "");
   if (q.length < 2) return [];
-  const { data, error } = await client
+  // Every word must appear in the name, in any order ("goats dancing" finds
+  // "Dancing Goats Coffee").
+  let request = client
     .from("shop_ratings")
-    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id")
-    .ilike("name", `%${q}%`)
-    .not("rating", "is", null)
-    .order("rating", { ascending: false })
-    .limit(limit);
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id");
+  for (const word of q.split(/\s+/)) request = request.ilike("name", `%${word}%`);
+  const { data, error } = await request.not("rating", "is", null).order("rating", { ascending: false }).limit(limit);
   if (error) throw error;
   return data;
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity } from "../src/queries";
+import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
@@ -1374,5 +1374,32 @@ describe("setCityGuideItems", () => {
     } as any;
     await setCityGuideItems(client, "l1", []);
     expect(calls).toEqual([{ table: "list_items", op: "delete" }]);
+  });
+});
+
+describe("searchRatedShops", () => {
+  function recordingClient() {
+    const ilikes: [string, string][] = [];
+    const builder: any = {
+      ilike: (col: string, pattern: string) => { ilikes.push([col, pattern]); return builder; },
+      not: () => builder,
+      order: () => builder,
+      limit: () => Promise.resolve({ data: [{ id: "s1", name: "Dancing Goats Coffee" }], error: null }),
+    };
+    return { ilikes, client: { from: () => ({ select: () => builder }) } as any };
+  }
+
+  it("matches every word, in any order", async () => {
+    const { ilikes, client } = recordingClient();
+    const rows = await searchRatedShops(client, "  goats   dancing ");
+    expect(ilikes).toEqual([["name", "%goats%"], ["name", "%dancing%"]]);
+    expect(rows).toEqual([{ id: "s1", name: "Dancing Goats Coffee" }]);
+  });
+
+  it("strips wildcard characters and skips too-short queries", async () => {
+    const { ilikes, client } = recordingClient();
+    await searchRatedShops(client, "50%_off\\");
+    expect(ilikes).toEqual([["name", "%50off%"]]);
+    expect(await searchRatedShops(recordingClient().client, "a")).toEqual([]);
   });
 });

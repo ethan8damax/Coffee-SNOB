@@ -45,7 +45,11 @@ export function toSearchHit(f: PhotonFeature, chains: ChainEntry[]): SearchHit |
   // serving restaurants come from the local Overpass search instead.
   if (p.osm_key !== "amenity" || p.osm_value !== "cafe") return null;
   const tags = { name: p.name };
-  if (!isCoffeePlace(tags) || isChain(tags, chains)) return null;
+  // Photon returns no brand:wikidata, so match every chain by name prefix
+  // (isChain only does that for entries without an ID) — else "Dunkin Donuts"
+  // slips past the "dunkin" entry.
+  const byName = chains.map((c) => ({ ...c, wikidata: null }));
+  if (!isCoffeePlace(tags) || isChain(tags, byName)) return null;
   return {
     kind: "shop",
     externalId: `${OSM_TYPE[p.osm_type]}/${p.osm_id}`,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
@@ -42,6 +42,17 @@ export function MapSearch({
   const [pending, setPending] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
+  // The map re-renders constantly (location fix, fly-to, area loads, pans) and
+  // hands a fresh origin object each time. Key the search on the same ~10 km
+  // rounding the server's bias uses, so re-renders don't restart the search
+  // and repeat searches still share CDN-cached answers.
+  const nearKey = origin ? `${origin.lat.toFixed(1)},${origin.lng.toFixed(1)}` : null;
+  const near = useMemo(() => {
+    if (!nearKey) return null;
+    const [lat, lng] = nearKey.split(",").map(Number);
+    return { lat, lng };
+  }, [nearKey]);
+
   useEffect(() => {
     if (!active) return;
     const q = query.trim();
@@ -59,9 +70,10 @@ export function MapSearch({
       const add = (incoming: SearchResult[]) => {
         if (cancelled) return;
         merged = mergeResults(merged, incoming);
-        setResults(rankResults(merged, q, origin));
+        setResults(rankResults(merged, q, near));
       };
-      setResults(null);
+      // No clearing here: the first stage to land replaces the previous
+      // query's list, so it doesn't blank on every keystroke.
       setPending(true);
       // 1. Our rated shops (anywhere) — instant.
       const rated = searchRatedShops(supabase, q)
@@ -70,15 +82,15 @@ export function MapSearch({
       // 2. Cafés and places worldwide (Photon) — ~1s.
       // 3. Only if that found few cafés: the local OSM name search, which also
       //    catches coffee-serving restaurants/bars Photon can't filter for.
-      const wide = searchEverywhere(q, origin, webAppUrl)
+      const wide = searchEverywhere(q, near, webAppUrl)
         .catch((): Awaited<ReturnType<typeof searchEverywhere>> => ({ places: [], shops: [] }))
         .then(async ({ places, shops }) => {
           add([
             ...places.map((place): SearchResult => ({ kind: "place", place })),
             ...shops.map(({ shop, secondary }): SearchResult => ({ kind: "nearby", shop, secondary })),
           ]);
-          if (shops.length >= 3 || !origin) return;
-          const local = await searchNearbyShops(q, origin, webAppUrl).catch(() => []);
+          if (shops.length >= 3 || !near) return;
+          const local = await searchNearbyShops(q, near, webAppUrl).catch(() => []);
           add(local.map((shop): SearchResult => ({ kind: "nearby", shop, secondary: shop.address })));
         });
       Promise.all([rated, wide]).then(() => {
@@ -89,7 +101,7 @@ export function MapSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [active, query, webAppUrl, origin]);
+  }, [active, query, webAppUrl, near]);
 
   function open() {
     setActive(true);

@@ -88,7 +88,12 @@ export default function MapScreen() {
   }, [userCenter]);
 
   const { ratedShops, nearbyShops, status, reload } = useNearbyMapData(bounds, WEB_APP_URL);
-  const visible = useMemo(() => applyFilter(filter, ratedShops, withPinned(nearbyShops, pinnedShop)), [filter, ratedShops, nearbyShops, pinnedShop]);
+  const visible = useMemo(() => applyFilter(filter, ratedShops, withPinned(nearbyShops, pinnedShop, ratedShops)), [filter, ratedShops, nearbyShops, pinnedShop]);
+  // The pin only exists to hold a fresh search pick; once the selection moves
+  // off it (another pin, dismissed card), let it go so it can't follow you home.
+  useEffect(() => {
+    if (pinnedShop && selectedNearbyExternalId !== pinnedShop.externalId) setPinnedShop(null);
+  }, [pinnedShop, selectedNearbyExternalId]);
   const origin = userCenter ?? (bounds ? boundsCenter(bounds) : null);
   const rows = useMemo(() => buildRows(visible.rated, visible.nearby, origin), [visible, origin]);
   // The list stops at MAX_ROWS; the count is everything the filter shows.

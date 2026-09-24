@@ -39,9 +39,11 @@ describe("rankResults", () => {
     expect(rankResults(results, "dancing goats", nashville).map(key)).toEqual(["s1", "node/1", "node/3", "node/9", "R2"]);
   });
 
-  it("puts the exact city first when searching a place", () => {
-    const results = [place("R3", "Atlanta", 33.07, -94.16), nearby("node/5", "Atlanta Coffee Roasters", 33.75, -84.39), place("R1", "Atlanta", 33.75, -84.39)];
-    expect(rankResults(results, "atlanta", nashville).map(key)).toEqual(["R1", "R3", "node/5"]);
+  it("keeps places in the source's order (importance), not by distance", () => {
+    // Photon lists the state of Georgia before small places named Georgia that
+    // happen to be nearer; distance mustn't undo that.
+    const results = [place("R-state", "Georgia", 32.6, -83.4), nearby("node/5", "Georgia Coffee", 36.1, -86.7), place("R-hamlet", "Georgia", 34.6, -86.9)];
+    expect(rankResults(results, "georgia", nashville).map(key)).toEqual(["R-state", "R-hamlet", "node/5"]);
   });
 
   it("ignores accents, case and punctuation when matching", () => {

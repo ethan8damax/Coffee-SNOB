@@ -53,13 +53,15 @@ function matchTier(name: string, q: string): number {
 }
 
 // Best name match first; within a tier rated shops before everything else,
-// then nearest to what's on screen.
+// then nearest to what's on screen. Places keep their source order (Photon's
+// importance + location bias), so the state of Georgia isn't outranked by a
+// nearer hamlet named Georgia.
 export function rankResults(results: SearchResult[], query: string, origin: { lat: number; lng: number } | null): SearchResult[] {
   const q = normalize(query);
   const score = (r: SearchResult) => ({
     tier: matchTier(resultName(r), q),
     rated: r.kind === "shop" ? 0 : 1,
-    dist: origin ? distanceKm(origin, resultPoint(r)) : 0,
+    dist: origin && r.kind !== "place" ? distanceKm(origin, resultPoint(r)) : 0,
   });
   return results
     .map((r) => ({ r, s: score(r) }))

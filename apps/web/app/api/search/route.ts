@@ -44,5 +44,7 @@ export async function GET(request: Request) {
   const hits = features.map((f) => toSearchHit(f, chains)).filter((h): h is SearchHit => h !== null);
   const places = hits.flatMap((h) => (h.kind === "place" ? [h.place] : []));
   const shops = hits.flatMap((h) => (h.kind === "shop" ? [{ externalId: h.externalId, name: h.name, secondary: h.secondary, lat: h.lat, lng: h.lng }] : []));
-  return NextResponse.json({ places, shops }, { headers: CACHE_HEADERS });
+  // If the chain list couldn't load (cold start + Supabase down), results are
+  // unfiltered — serve them, but don't let the CDN keep them.
+  return NextResponse.json({ places, shops }, { headers: chains.length > 0 ? CACHE_HEADERS : CORS_HEADERS });
 }

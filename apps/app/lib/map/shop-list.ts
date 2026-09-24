@@ -59,8 +59,9 @@ export function buildRows(rated: RatedShopPin[], nearby: NearbyShopPin[], origin
 
 // A café picked from search far from the loaded area shows (and stays selected)
 // right away, before that area's OSM data arrives — then the real entry takes over.
-export function withPinned(nearby: NearbyShopPin[], pinned: NearbyShopPin | null): NearbyShopPin[] {
-  if (!pinned || nearby.some((s) => s.externalId === pinned.externalId)) return nearby;
+// Skipped once it's rated (logged since it was picked) so it doesn't double up.
+export function withPinned(nearby: NearbyShopPin[], pinned: NearbyShopPin | null, rated: { externalId: string | null }[] = []): NearbyShopPin[] {
+  if (!pinned || nearby.some((s) => s.externalId === pinned.externalId) || rated.some((r) => r.externalId === pinned.externalId)) return nearby;
   return [...nearby, pinned];
 }
 

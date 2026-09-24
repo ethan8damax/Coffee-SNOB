@@ -40,4 +40,12 @@ describe("toSearchHit", () => {
     expect(toSearchHit(feature({ osm_type: "N", osm_id: 4, osm_key: "amenity", osm_value: "restaurant", name: "Muchacho" }), chains)).toBeNull();
     expect(toSearchHit(feature({ osm_type: "N", osm_id: 5, osm_key: "amenity", osm_value: "cafe" }), chains)).toBeNull();
   });
+
+  it("matches chain names loosely, since Photon returns no brand IDs", () => {
+    const withIds = [{ name: "dunkin", wikidata: "Q847743" }, { name: "costa coffee", wikidata: "Q608845" }];
+    const cafe = (name: string) => feature({ osm_type: "N", osm_id: 9, osm_key: "amenity", osm_value: "cafe", name });
+    expect(toSearchHit(cafe("Dunkin Donuts"), withIds)).toBeNull();
+    expect(toSearchHit(cafe("Dunkin' Donuts"), withIds)).toBeNull();
+    expect(toSearchHit(cafe("Costa Rica Café"), withIds)).not.toBeNull();
+  });
 });

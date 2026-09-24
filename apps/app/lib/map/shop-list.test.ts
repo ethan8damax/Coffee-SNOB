@@ -93,6 +93,8 @@ describe("withPinned", () => {
     expect(withPinned([nearby("node/1", 0, 0)], pinned).map((s) => s.externalId)).toEqual(["node/1", "node/9"]);
     expect(withPinned([nearby("node/9", 1, 1)], pinned).map((s) => s.externalId)).toEqual(["node/9"]);
     expect(withPinned([nearby("node/1", 0, 0)], null).map((s) => s.externalId)).toEqual(["node/1"]);
+    // Logged since it was picked: it's a rated pin now, so no unrated twin.
+    expect(withPinned([nearby("node/1", 0, 0)], pinned, [{ externalId: "node/9" }]).map((s) => s.externalId)).toEqual(["node/1"]);
   });
 });
 

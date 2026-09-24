@@ -12,6 +12,7 @@ import { useFollowingFeed } from "@/lib/feed/use-following-feed";
 import { useNearbyFeed } from "@/lib/feed/use-nearby-feed";
 import { useUserLocation } from "@/lib/map/use-user-location";
 import { boundsAround } from "@/lib/map/bounds";
+import { FALLBACK_CITY } from "@/lib/map/fallback";
 import type { FeedItem } from "@/lib/feed/types";
 
 const TABS = ["Following", "Nearby"] as const;
@@ -21,11 +22,6 @@ const EMPTY_MESSAGE: Record<Tab, string> = {
   Following: "Nobody you follow has logged a visit yet.",
   Nearby: "Nothing logged nearby yet.",
 };
-
-// Used only when the visitor's real location can't be resolved (denied,
-// unavailable, or timed out) — see useUserLocation. Mirrors the same
-// fallback in apps/app/app/(tabs)/map.tsx.
-const LISBON_FALLBACK = { lat: 38.71, lng: -9.14 };
 
 function renderItem(item: FeedItem, userId: string) {
   if (item.type === "log") return <LogCard item={item} userId={userId} />;
@@ -37,7 +33,7 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>("Following");
   const { center: userCenter, loading: locationLoading } = useUserLocation();
-  const center = userCenter ?? LISBON_FALLBACK;
+  const center = userCenter ?? FALLBACK_CITY;
   const [bounds, setBounds] = useState<ReturnType<typeof boundsAround> | null>(null);
 
   useEffect(() => {

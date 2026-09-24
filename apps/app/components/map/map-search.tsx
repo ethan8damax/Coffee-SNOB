@@ -5,7 +5,7 @@ import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
 import { geocodePlaces, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
-import { sortByDistance, type SearchResult } from "../../lib/map/search-sort";
+import { rankResults, type SearchResult } from "../../lib/map/search-sort";
 import { CloseIcon, PinIcon } from "./map-icons";
 import type { NearbyShopPin, RatedShopPin } from "./types";
 
@@ -69,7 +69,7 @@ export function MapSearch({
           ...shops.map((shop): SearchResult => ({ kind: "shop", shop, secondary: shop.neighborhood })),
           ...nearby.map((shop): SearchResult => ({ kind: "nearby", shop, secondary: shop.address })),
         ];
-        setResults(sortByDistance(combined, origin));
+        setResults(rankResults(combined, q, origin));
       });
     }, DEBOUNCE_MS);
     return () => {

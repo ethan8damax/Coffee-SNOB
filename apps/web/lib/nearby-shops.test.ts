@@ -97,22 +97,41 @@ describe("toNearbyShop", () => {
 });
 
 describe("isChain", () => {
-  const blocklist = ["starbucks", "dunkin", "caribou coffee", "costa coffee"];
+  const chains = [
+    { name: "starbucks", wikidata: "Q37158" },
+    { name: "dunkin", wikidata: null },
+    { name: "caribou coffee", wikidata: null },
+    { name: "costa coffee", wikidata: "Q608845" },
+  ];
 
   it("matches names regardless of case, apostrophes, and trailing words", () => {
-    expect(isChain({ name: "Starbucks" }, blocklist)).toBe(true);
-    expect(isChain({ name: "Dunkin' Donuts" }, blocklist)).toBe(true);
-    expect(isChain({ name: "STARBUCKS RESERVE" }, blocklist)).toBe(true);
+    expect(isChain({ name: "Starbucks" }, chains)).toBe(true);
+    expect(isChain({ name: "Dunkin' Donuts" }, chains)).toBe(true);
+    expect(isChain({ name: "Dunkin Donuts Express" }, chains)).toBe(true);
   });
 
   it("matches on the brand tag when the name is a location", () => {
-    expect(isChain({ name: "Midtown Plaza", brand: "Caribou Coffee" }, blocklist)).toBe(true);
+    expect(isChain({ name: "Midtown Plaza", brand: "Caribou Coffee" }, chains)).toBe(true);
+  });
+
+  it("matches the brand ID in any language", () => {
+    expect(isChain({ name: "スターバックス", "brand:wikidata": "Q37158" }, chains)).toBe(true);
+    expect(isChain({ name: "Costa", brand: "Costa", "brand:wikidata": "Q608845" }, chains)).toBe(true);
+    expect(isChain({ name: "X", "brand:wikidata": "Q1;Q37158" }, chains)).toBe(true);
+  });
+
+  it("matches the English name/brand tags", () => {
+    expect(isChain({ name: "スターバックス", "brand:en": "Starbucks" }, chains)).toBe(true);
   });
 
   it("only matches whole words from the start", () => {
-    expect(isChain({ name: "Starbucksy Roasters" }, blocklist)).toBe(false);
-    expect(isChain({ name: "Not Starbucks" }, blocklist)).toBe(false);
-    expect(isChain({ name: "Costa Rica Café" }, blocklist)).toBe(false);
+    expect(isChain({ name: "Starbucksy Roasters" }, chains)).toBe(false);
+    expect(isChain({ name: "Not Starbucks" }, chains)).toBe(false);
+    expect(isChain({ name: "Costa Rica Café" }, chains)).toBe(false);
+    // ID-backed entries match names exactly, so a short chain name can't swallow local shops.
+    expect(isChain({ name: "Costa Rica Café" }, [{ name: "costa", wikidata: "Q608845" }])).toBe(false);
+    expect(isChain({ name: "Costa" }, [{ name: "costa", wikidata: "Q608845" }])).toBe(true);
+    expect(isChain({ name: "WatchHouse", "brand:wikidata": "Q121339538" }, chains)).toBe(false);
   });
 
   it("normalizes entries the same way as names", () => {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getChainBlocklist } from "@coffeesnob/supabase";
-import { buildOverpassQuery, isChain, tileKey, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
+import { buildOverpassQuery, isChain, tileKey, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
 import { getSupabase } from "@/lib/supabase";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
@@ -21,8 +21,8 @@ const cache = new Map<string, CacheEntry>();
 // (plus up to CACHE_TTL_MS for boxes already cached). If Supabase is down the
 // map still works: it serves the last list it had, or no filter at all.
 const BLOCKLIST_TTL_MS = 60 * 1000;
-let blocklist: { expiresAt: number; names: string[] } = { expiresAt: 0, names: [] };
-async function getBlocklist(): Promise<string[]> {
+let blocklist: { expiresAt: number; names: ChainEntry[] } = { expiresAt: 0, names: [] };
+async function getBlocklist(): Promise<ChainEntry[]> {
   if (blocklist.expiresAt > Date.now()) return blocklist.names;
   try {
     blocklist = { expiresAt: Date.now() + BLOCKLIST_TTL_MS, names: await getChainBlocklist(getSupabase()) };

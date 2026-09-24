@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getSupabaseServer } from "@/lib/supabase-server";
 import {
   getCities,
@@ -13,6 +14,7 @@ import {
   removeChainBlock,
 } from "@coffeesnob/supabase";
 import { normalizeChainName } from "@/lib/nearby-shops";
+import { lookupChain } from "@/lib/chain-lookup";
 
 async function saveAction(formData: FormData) {
   "use server";
@@ -61,10 +63,11 @@ async function rejectAction(formData: FormData) {
 async function addChainAction(formData: FormData) {
   "use server";
   const name = normalizeChainName(String(formData.get("chain") || ""));
+  const wikidata = String(formData.get("wikidata") || "") || null;
   if (!name) return;
   const supabase = await getSupabaseServer();
-  await addChainBlock(supabase, name);
-  revalidatePath("/admin/shops");
+  await addChainBlock(supabase, name, wikidata);
+  redirect("/admin/shops");
 }
 
 async function removeChainAction(formData: FormData) {
@@ -79,15 +82,16 @@ type Filter = "all" | "flagged";
 export default async function AdminShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; filter?: Filter; edit?: string }>;
+  searchParams: Promise<{ search?: string; filter?: Filter; edit?: string; chain?: string }>;
 }) {
-  const { search, filter = "all", edit } = await searchParams;
+  const { search, filter = "all", edit, chain: chainQuery } = await searchParams;
   const supabase = await getSupabaseServer();
   const [shops, cities, chains] = await Promise.all([
     getAdminShops(supabase, { search, filter }),
     getCities(supabase),
     getChainBlocklist(supabase),
   ]);
+  const chainMatches = chainQuery ? await lookupChain(chainQuery) : [];
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
 
   // Preserves the current search/filter across in-page navigation (Edit, filter chips,
@@ -151,25 +155,45 @@ export default async function AdminShopsPage({
       <section style={{ marginTop: 48, maxWidth: 720 }}>
         <h2 className="d3">Chains hidden from the map</h2>
         <p className="body" style={{ marginTop: 8 }}>
-          Cafés whose name or brand starts with one of these are left off the map and out of shop search. Changes show up within about ten minutes.
+          Hidden everywhere, in every country and language, by the chain&apos;s brand ID; cafés with no brand tag are caught by name. Hidden chains can&apos;t be logged either. Changes show up within about ten minutes.
         </p>
-        <form action={addChainAction} style={{ display: "flex", gap: 12, margin: "16px 0" }}>
-          <input name="chain" placeholder="Chain name, e.g. Starbucks" required style={{ ...inputStyle, flex: 1 }} />
+        <form style={{ display: "flex", gap: 12, margin: "16px 0" }}>
+          <input name="chain" defaultValue={chainQuery} placeholder="Look up a chain, e.g. Costa" required style={{ ...inputStyle, flex: 1 }} />
           <button type="submit" className="btn btn-line">
-            Hide chain
+            Look up
           </button>
         </form>
+        {chainQuery && (
+          <div style={{ border: "1px solid var(--rule)", padding: 16, marginBottom: 16, display: "grid", gap: 8 }}>
+            {chainMatches.map((m) => (
+              <form key={m.wikidata} action={addChainAction} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <input type="hidden" name="chain" value={m.name} />
+                <input type="hidden" name="wikidata" value={m.wikidata} />
+                <span className="body" style={{ flex: 1 }}>
+                  <strong>{m.label}</strong> · {m.where} · {m.wikidata}
+                </span>
+                <button type="submit" className="btn btn-ox">Hide</button>
+              </form>
+            ))}
+            {chainMatches.length === 0 && <p className="body-sm">No chain by that name in OpenStreetMap&apos;s brand list.</p>}
+            <form action={addChainAction} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <input type="hidden" name="chain" value={chainQuery} />
+              <span className="body-sm" style={{ flex: 1 }}>Or hide by name only (&ldquo;{normalizeChainName(chainQuery)}&rdquo;, no brand ID).</span>
+              <button type="submit" className="btn btn-line">Hide by name</button>
+            </form>
+          </div>
+        )}
         <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", gap: 8 }}>
           {chains.map((c) => (
-            <li key={c}>
+            <li key={c.name}>
               {/* Two-step remove: the chip only opens the confirm button, so a stray click can't unhide a chain. */}
               <details>
                 <summary className="chip" style={{ cursor: "pointer", listStyle: "none" }}>
-                  {c} ×
+                  {c.name}{c.wikidata ? "" : " (name only)"} ×
                 </summary>
                 <form action={removeChainAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
-                  <input type="hidden" name="chain" value={c} />
-                  <span className="body-sm">Show {c} on the map again?</span>
+                  <input type="hidden" name="chain" value={c.name} />
+                  <span className="body-sm">Show {c.name} on the map again?</span>
                   <button type="submit" className="chip ox" style={{ cursor: "pointer" }}>
                     Yes, unhide
                   </button>

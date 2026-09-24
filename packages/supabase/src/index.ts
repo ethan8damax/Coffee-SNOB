@@ -73,6 +73,6 @@ export type {
   CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
-export type { ShopFields, ShopCurationFields, AdminShopRow } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock } from "./queries";
 export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";

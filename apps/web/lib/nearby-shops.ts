@@ -96,10 +96,18 @@ export function normalizeChainName(name: string): string {
     .trim();
 }
 
-// A shop is a chain if its OSM name or brand tag equals a blocklist entry or
-// starts with it as whole words ("starbucks reserve" matches "starbucks";
-// "starbucksy" doesn't). Brand catches branches named after a location.
-export function isChain(tags: Record<string, string>, blocklist: string[]): boolean {
-  const names = [tags.name, tags.brand].filter(Boolean).map(normalizeChainName);
-  return names.some((n) => blocklist.some((b) => n === b || n.startsWith(b + " ")));
+// A shop is a chain if its OSM brand:wikidata ID is on the list (works in any
+// country or script), or by name/brand — including their English versions, so
+// "スターバックス" tagged brand:en=Starbucks still matches. Entries with an ID
+// match names exactly (the ID already covers tagged branches, and a loose match
+// on "costa" would hide "Costa Rica Café"); name-only entries also match as
+// leading whole words ("dunkin" catches "Dunkin' Donuts", not "Dunkinville").
+// Keep in step with public.is_chain_name (supabase/migrations/0024).
+export type ChainEntry = { name: string; wikidata: string | null };
+
+export function isChain(tags: Record<string, string>, chains: ChainEntry[]): boolean {
+  const ids = (tags["brand:wikidata"] ?? "").split(";").map((s) => s.trim());
+  if (chains.some((c) => c.wikidata && ids.includes(c.wikidata))) return true;
+  const names = [tags.name, tags.brand, tags["brand:en"], tags["name:en"]].filter(Boolean).map(normalizeChainName);
+  return names.some((n) => chains.some((c) => n === c.name || (!c.wikidata && n.startsWith(c.name + " "))));
 }

@@ -1004,14 +1004,19 @@ export async function getAdminShops(
 
 // Chain coffee shops hidden from the map's OSM layer. Names are stored
 // normalized — callers pass the normalized form (see apps/web/lib/nearby-shops.ts).
-export async function getChainBlocklist(client: Client): Promise<string[]> {
-  const { data, error } = await client.from("chain_blocklist").select("name").order("name");
+// wikidata is the chain's OSM brand:wikidata ID, when known.
+export type ChainBlock = { name: string; wikidata: string | null };
+
+export async function getChainBlocklist(client: Client): Promise<ChainBlock[]> {
+  const { data, error } = await client.from("chain_blocklist").select("name, wikidata").order("name");
   if (error) throw error;
-  return data.map((r) => r.name);
+  return data;
 }
 
-export async function addChainBlock(client: Client, name: string): Promise<void> {
-  const { error } = await client.from("chain_blocklist").upsert({ name }, { onConflict: "name", ignoreDuplicates: true });
+export async function addChainBlock(client: Client, name: string, wikidata?: string | null): Promise<void> {
+  const { error } = await client
+    .from("chain_blocklist")
+    .upsert({ name, wikidata: wikidata ?? null }, { onConflict: "name" });
   if (error) throw error;
 }
 

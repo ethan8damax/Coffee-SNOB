@@ -395,3 +395,4 @@ a:hover{color:var(--burnt)}
   .t-in,.t-dot,.t-pin,.t-heat i,.t-entry.new{animation:none!important}
   .t-card{transition:none}
 }
+summary::-webkit-details-marker{display:none}

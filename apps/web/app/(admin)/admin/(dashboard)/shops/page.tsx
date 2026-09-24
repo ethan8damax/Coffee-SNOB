@@ -1,7 +1,18 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { getSupabaseServer } from "@/lib/supabase-server";
-import { getCities, getAdminShops, createShop, updateShop, upsertShopCuration, rejectShopPromotion } from "@coffeesnob/supabase";
+import {
+  getCities,
+  getAdminShops,
+  createShop,
+  updateShop,
+  upsertShopCuration,
+  rejectShopPromotion,
+  getChainBlocklist,
+  addChainBlock,
+  removeChainBlock,
+} from "@coffeesnob/supabase";
+import { normalizeChainName } from "@/lib/nearby-shops";
 
 async function saveAction(formData: FormData) {
   "use server";
@@ -47,6 +58,22 @@ async function rejectAction(formData: FormData) {
   revalidatePath("/admin/shops");
 }
 
+async function addChainAction(formData: FormData) {
+  "use server";
+  const name = normalizeChainName(String(formData.get("chain") || ""));
+  if (!name) return;
+  const supabase = await getSupabaseServer();
+  await addChainBlock(supabase, name);
+  revalidatePath("/admin/shops");
+}
+
+async function removeChainAction(formData: FormData) {
+  "use server";
+  const supabase = await getSupabaseServer();
+  await removeChainBlock(supabase, String(formData.get("chain")));
+  revalidatePath("/admin/shops");
+}
+
 type Filter = "all" | "flagged";
 
 export default async function AdminShopsPage({
@@ -56,7 +83,11 @@ export default async function AdminShopsPage({
 }) {
   const { search, filter = "all", edit } = await searchParams;
   const supabase = await getSupabaseServer();
-  const [shops, cities] = await Promise.all([getAdminShops(supabase, { search, filter }), getCities(supabase)]);
+  const [shops, cities, chains] = await Promise.all([
+    getAdminShops(supabase, { search, filter }),
+    getCities(supabase),
+    getChainBlocklist(supabase),
+  ]);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
 
   // Preserves the current search/filter across in-page navigation (Edit, filter chips,
@@ -116,6 +147,39 @@ export default async function AdminShopsPage({
           ))}
         </tbody>
       </table>
+
+      <section style={{ marginTop: 48, maxWidth: 720 }}>
+        <h2 className="d3">Chains hidden from the map</h2>
+        <p className="body" style={{ marginTop: 8 }}>
+          Cafés whose name or brand starts with one of these are left off the map and out of shop search. Changes show up within about ten minutes.
+        </p>
+        <form action={addChainAction} style={{ display: "flex", gap: 12, margin: "16px 0" }}>
+          <input name="chain" placeholder="Chain name, e.g. Starbucks" required style={{ ...inputStyle, flex: 1 }} />
+          <button type="submit" className="btn btn-line">
+            Hide chain
+          </button>
+        </form>
+        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {chains.map((c) => (
+            <li key={c}>
+              {/* Two-step remove: the chip only opens the confirm button, so a stray click can't unhide a chain. */}
+              <details>
+                <summary className="chip" style={{ cursor: "pointer", listStyle: "none" }}>
+                  {c} ×
+                </summary>
+                <form action={removeChainAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
+                  <input type="hidden" name="chain" value={c} />
+                  <span className="body-sm">Show {c} on the map again?</span>
+                  <button type="submit" className="chip ox" style={{ cursor: "pointer" }}>
+                    Yes, unhide
+                  </button>
+                </form>
+              </details>
+            </li>
+          ))}
+          {chains.length === 0 && <li className="body-sm">No chains hidden.</li>}
+        </ul>
+      </section>
 
       {editing && (
         <aside key={editing.id || "new"} style={peekStyle}>

@@ -82,3 +82,24 @@ export function toNearbyShop(el: OverpassElement): NearbyShop | null {
     phone: tags["phone"] ?? tags["contact:phone"] ?? null,
   };
 }
+
+// Chain filter (chain_blocklist, managed at /admin/shops). Blocklist entries
+// and OSM names are compared in one normalized form so "Dunkin'", "DUNKIN"
+// and "Dunkin' Donuts" all reduce to something starting with "dunkin".
+export function normalizeChainName(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+// A shop is a chain if its OSM name or brand tag equals a blocklist entry or
+// starts with it as whole words ("starbucks reserve" matches "starbucks";
+// "starbucksy" doesn't). Brand catches branches named after a location.
+export function isChain(tags: Record<string, string>, blocklist: string[]): boolean {
+  const names = [tags.name, tags.brand].filter(Boolean).map(normalizeChainName);
+  return names.some((n) => blocklist.some((b) => n === b || n.startsWith(b + " ")));
+}

@@ -56,6 +56,9 @@ export {
   updateCityGuide,
   getCityGuideItems,
   setCityGuideItems,
+  getChainBlocklist,
+  addChainBlock,
+  removeChainBlock,
 } from "./queries";
 export { TIERS, snobStatus } from "./profile-status";
 export type {

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tileKey, toNearbyShop, buildOverpassQuery } from "./nearby-shops";
+import { tileKey, toNearbyShop, buildOverpassQuery, isChain, normalizeChainName } from "./nearby-shops";
 
 describe("tileKey", () => {
   it("rounds bounds to 2 decimal places so nearby pans share a key", () => {
@@ -93,5 +93,31 @@ describe("toNearbyShop", () => {
 
   it("returns null when there's no position", () => {
     expect(toNearbyShop({ type: "way", id: 1, tags: { name: "Ghost Cafe" } })).toBeNull();
+  });
+});
+
+describe("isChain", () => {
+  const blocklist = ["starbucks", "dunkin", "caribou coffee", "costa coffee"];
+
+  it("matches names regardless of case, apostrophes, and trailing words", () => {
+    expect(isChain({ name: "Starbucks" }, blocklist)).toBe(true);
+    expect(isChain({ name: "Dunkin' Donuts" }, blocklist)).toBe(true);
+    expect(isChain({ name: "STARBUCKS RESERVE" }, blocklist)).toBe(true);
+  });
+
+  it("matches on the brand tag when the name is a location", () => {
+    expect(isChain({ name: "Midtown Plaza", brand: "Caribou Coffee" }, blocklist)).toBe(true);
+  });
+
+  it("only matches whole words from the start", () => {
+    expect(isChain({ name: "Starbucksy Roasters" }, blocklist)).toBe(false);
+    expect(isChain({ name: "Not Starbucks" }, blocklist)).toBe(false);
+    expect(isChain({ name: "Costa Rica Café" }, blocklist)).toBe(false);
+  });
+
+  it("normalizes entries the same way as names", () => {
+    expect(normalizeChainName("Peet's Coffee")).toBe("peets coffee");
+    expect(normalizeChainName("The Coffee Bean & Tea Leaf")).toBe("the coffee bean tea leaf");
+    expect(normalizeChainName("McCafé")).toBe("mccafe");
   });
 });

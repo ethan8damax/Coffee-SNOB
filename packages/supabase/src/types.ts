@@ -14,6 +14,21 @@ export type Database = {
   }
   public: {
     Tables: {
+      chain_blocklist: {
+        Row: {
+          created_at: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          name?: string
+        }
+        Relationships: []
+      }
       cities: {
         Row: {
           country: string

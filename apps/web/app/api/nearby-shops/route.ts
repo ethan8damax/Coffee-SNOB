@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { buildOverpassQuery, tileKey, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
+import { getChainBlocklist } from "@coffeesnob/supabase";
+import { buildOverpassQuery, isChain, tileKey, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
+import { getSupabase } from "@/lib/supabase";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
 // 504s) — kumi.systems is Overpass's other well-known public mirror, same
@@ -14,6 +16,21 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 
 type CacheEntry = { expiresAt: number; body: { shops: ReturnType<typeof toNearbyShop>[] } };
 const cache = new Map<string, CacheEntry>();
+
+// The chain blocklist, cached briefly so admin edits land within a minute
+// (plus up to CACHE_TTL_MS for boxes already cached). If Supabase is down the
+// map still works: it serves the last list it had, or no filter at all.
+const BLOCKLIST_TTL_MS = 60 * 1000;
+let blocklist: { expiresAt: number; names: string[] } = { expiresAt: 0, names: [] };
+async function getBlocklist(): Promise<string[]> {
+  if (blocklist.expiresAt > Date.now()) return blocklist.names;
+  try {
+    blocklist = { expiresAt: Date.now() + BLOCKLIST_TTL_MS, names: await getChainBlocklist(getSupabase()) };
+  } catch {
+    blocklist = { ...blocklist, expiresAt: Date.now() + 5000 };
+  }
+  return blocklist.names;
+}
 
 // ponytail: wide-open CORS — this is a public, unauthenticated, read-only
 // proxy over public OSM data, and its only client (apps/app's web export)
@@ -72,7 +89,11 @@ export async function GET(request: Request) {
   }
 
   const raw = (await response.json()) as { elements: OverpassElement[] };
-  const shops = raw.elements.map(toNearbyShop).filter((s) => s !== null);
+  const chains = await getBlocklist();
+  const shops = raw.elements
+    .filter((el) => !isChain(el.tags ?? {}, chains))
+    .map(toNearbyShop)
+    .filter((s) => s !== null);
   const body = { shops };
 
   cache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, body });

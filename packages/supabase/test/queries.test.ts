@@ -267,7 +267,7 @@ describe("getRatedShopsInBounds", () => {
     const shops = await getRatedShopsInBounds(client, { minLat: 38.7, maxLat: 38.8, minLng: -9.2, maxLng: -9.1 });
 
     expect(shops).toEqual([{ id: "s1", name: "Noi Coffee" }]);
-    expect(selectSpy).toHaveBeenCalledWith("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count");
+    expect(selectSpy).toHaveBeenCalledWith("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id");
   });
 
   it("throws when the client returns an error", async () => {

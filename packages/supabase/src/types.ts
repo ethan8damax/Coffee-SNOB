@@ -528,6 +528,7 @@ export type Database = {
           price_tier: string | null
           rating: number | null
           log_count: number
+          external_id: string | null
         }
         Relationships: []
       }

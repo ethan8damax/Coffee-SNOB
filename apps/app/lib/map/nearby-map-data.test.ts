@@ -28,11 +28,11 @@ describe("toRatedShopPin", () => {
   it("maps a shop_ratings row to camelCase", () => {
     const pin = toRatedShopPin({
       id: "s1", name: "Noi Coffee", lat: 38.7, lng: -9.1, neighborhood: "Príncipe Real",
-      is_snob_approved: true, tag: "Espresso bar", price_tier: "€€", rating: 5, log_count: 12,
+      is_snob_approved: true, tag: "Espresso bar", price_tier: "€€", rating: 5, log_count: 12, external_id: null,
     });
     expect(pin).toEqual({
       id: "s1", name: "Noi Coffee", lat: 38.7, lng: -9.1, neighborhood: "Príncipe Real",
-      isSnobApproved: true, tag: "Espresso bar", priceTier: "€€", rating: 5, logCount: 12,
+      isSnobApproved: true, tag: "Espresso bar", priceTier: "€€", rating: 5, logCount: 12, externalId: null,
     });
   });
 
@@ -44,11 +44,19 @@ describe("toRatedShopPin", () => {
     // filter-then-map should drop null-rating rows before they ever reach
     // toRatedShopPin.
     const rows = [
-      { id: "s1", name: "Approved, unrated", lat: 38.7, lng: -9.1, neighborhood: null, is_snob_approved: true, tag: null, price_tier: null, rating: null, log_count: 0 },
-      { id: "s2", name: "Rated", lat: 38.71, lng: -9.14, neighborhood: null, is_snob_approved: false, tag: null, price_tier: null, rating: 4, log_count: 3 },
+      { id: "s1", name: "Approved, unrated", lat: 38.7, lng: -9.1, neighborhood: null, is_snob_approved: true, tag: null, price_tier: null, rating: null, log_count: 0, external_id: null },
+      { id: "s2", name: "Rated", lat: 38.71, lng: -9.14, neighborhood: null, is_snob_approved: false, tag: null, price_tier: null, rating: 4, log_count: 3, external_id: null },
     ];
     const pins = rows.filter((r) => r.rating != null).map(toRatedShopPin);
     expect(pins).toHaveLength(1);
     expect(pins[0].id).toBe("s2");
+  });
+
+  it("carries the OSM external id so the duplicate dot can be dropped", () => {
+    const pin = toRatedShopPin({
+      id: "s1", name: "Muchacho", lat: 33.75, lng: -84.36, neighborhood: null, is_snob_approved: false,
+      tag: null, price_tier: null, rating: 5, log_count: 1, external_id: "way/271015925",
+    });
+    expect(pin.externalId).toBe("way/271015925");
   });
 });

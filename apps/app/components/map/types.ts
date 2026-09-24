@@ -14,6 +14,9 @@ export type RatedShopPin = {
   priceTier: string | null;
   rating: number;
   logCount: number;
+  // The OSM id this shop was logged from (null for admin-created shops) —
+  // lets the map drop the matching unrated dot.
+  externalId: string | null;
 };
 
 // A live OpenStreetMap result — unrated, no shops row exists for it yet.

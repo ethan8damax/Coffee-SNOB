@@ -119,7 +119,7 @@ export async function getRatedShopsInBounds(
 ) {
   const { data, error } = await client
     .from("shop_ratings")
-    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id")
     .gte("lat", bounds.minLat)
     .lte("lat", bounds.maxLat)
     .gte("lng", bounds.minLng)
@@ -135,7 +135,7 @@ export async function searchRatedShops(client: Client, query: string, limit = 8)
   if (q.length < 2) return [];
   const { data, error } = await client
     .from("shop_ratings")
-    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id")
     .ilike("name", `%${q}%`)
     .not("rating", "is", null)
     .order("rating", { ascending: false })

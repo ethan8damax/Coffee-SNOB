@@ -31,6 +31,7 @@ type RatedShopRow = {
   price_tier: string | null;
   rating: number | null;
   log_count: number;
+  external_id: string | null;
 };
 
 export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
@@ -45,6 +46,7 @@ export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
     priceTier: row.price_tier,
     rating: row.rating!,
     logCount: row.log_count,
+    externalId: row.external_id,
   };
 }
 

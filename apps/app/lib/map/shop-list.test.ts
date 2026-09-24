@@ -3,7 +3,7 @@ import { applyFilter, buildRows, distanceKm, formatDistance, MAP_FILTERS, MAX_RO
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
-  id, name: `Rated ${id}`, lat, lng, neighborhood: null, isSnobApproved: false, tag: null, priceTier: null, rating, logCount: 1, ...extra,
+  id, name: `Rated ${id}`, lat, lng, neighborhood: null, isSnobApproved: false, tag: null, priceTier: null, rating, logCount: 1, externalId: null, ...extra,
 });
 const nearby = (externalId: string, lat: number, lng: number, extra: Partial<NearbyShopPin> = {}): NearbyShopPin => ({
   externalId, name: `Nearby ${externalId}`, lat, lng, address: null, hours: null, website: null, phone: null, ...extra,

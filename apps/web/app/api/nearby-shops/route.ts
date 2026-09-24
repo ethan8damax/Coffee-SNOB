@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getChainBlocklist } from "@coffeesnob/supabase";
-import { buildOverpassQuery, isChain, tileKey, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
+import { buildOverpassQuery, isChain, isCoffeePlace, tileKey, toNearbyShop, type ChainEntry, type OverpassElement } from "@/lib/nearby-shops";
 import { getSupabase } from "@/lib/supabase";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
@@ -39,6 +39,11 @@ async function getBlocklist(): Promise<ChainEntry[]> {
 // needed for data this open.
 const CORS_HEADERS = { "Access-Control-Allow-Origin": "*" };
 
+// Grid-snapped boxes (see apps/app/lib/map/bounds.ts snapToGrid) repeat across
+// viewers, so let Vercel's CDN serve them for 10 minutes and stale for a day
+// while it refreshes. Errors are never cached.
+const CACHE_HEADERS = { ...CORS_HEADERS, "Cache-Control": "public, s-maxage=600, stale-while-revalidate=86400" };
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const minLat = Number(url.searchParams.get("minLat"));
@@ -57,7 +62,7 @@ export async function GET(request: Request) {
   const key = `${tileKey(minLat, minLng, maxLat, maxLng)}|${name ?? ""}`;
   const cached = cache.get(key);
   if (cached && cached.expiresAt > Date.now()) {
-    return NextResponse.json(cached.body, { headers: CORS_HEADERS });
+    return NextResponse.json(cached.body, { headers: CACHE_HEADERS });
   }
 
   const query = buildOverpassQuery(bounds, name);
@@ -91,11 +96,11 @@ export async function GET(request: Request) {
   const raw = (await response.json()) as { elements: OverpassElement[] };
   const chains = await getBlocklist();
   const shops = raw.elements
-    .filter((el) => !isChain(el.tags ?? {}, chains))
+    .filter((el) => isCoffeePlace(el.tags ?? {}) && !isChain(el.tags ?? {}, chains))
     .map(toNearbyShop)
     .filter((s) => s !== null);
   const body = { shops };
 
   cache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, body });
-  return NextResponse.json(body, { headers: CORS_HEADERS });
+  return NextResponse.json(body, { headers: CACHE_HEADERS });
 }

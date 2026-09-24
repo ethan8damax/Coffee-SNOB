@@ -62,6 +62,20 @@ export function buildOverpassQuery(bounds: Bounds, name?: string): string {
   return `[out:json][timeout:25];(node["amenity"="cafe"]${nameFilter}(${bbox});way["amenity"="cafe"]${nameFilter}(${bbox});node["cuisine"~"coffee_shop"]${nameFilter}(${bbox});way["cuisine"~"coffee_shop"]${nameFilter}(${bbox}););out center;`;
 }
 
+// OSM files bubble tea shops, tea rooms and institutional cafeterias under
+// amenity=cafe too. Keep anything tagged coffee_shop; drop tea-only cuisines
+// and cafeteria-style names. Named case list (not a classifier): extend the
+// regex / cuisine set as new noise shows up in real areas.
+const NON_COFFEE_CUISINES = new Set(["bubble_tea", "tea"]);
+const NON_COFFEE_NAME = /\b(cafeteria|dining hall|food court)\b/i;
+
+export function isCoffeePlace(tags: Record<string, string>): boolean {
+  const cuisines = (tags.cuisine ?? "").split(";").map((c) => c.trim().toLowerCase()).filter(Boolean);
+  if (cuisines.includes("coffee_shop")) return true;
+  if (cuisines.length > 0 && cuisines.every((c) => NON_COFFEE_CUISINES.has(c))) return false;
+  return !NON_COFFEE_NAME.test(tags.name ?? "");
+}
+
 export function toNearbyShop(el: OverpassElement): NearbyShop | null {
   const lat = el.lat ?? el.center?.lat;
   const lng = el.lon ?? el.center?.lon;
@@ -69,14 +83,15 @@ export function toNearbyShop(el: OverpassElement): NearbyShop | null {
   if (lat === undefined || lng === undefined || !name) return null;
 
   const tags = el.tags ?? {};
-  const addressParts = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean);
+  const street = [tags["addr:housenumber"], tags["addr:street"]].filter(Boolean).join(" ");
+  const address = [street, tags["addr:city"]].filter(Boolean).join(", ");
 
   return {
     externalId: `${el.type}/${el.id}`,
     name,
     lat,
     lng,
-    address: addressParts.length ? addressParts.join(" ") : null,
+    address: address || null,
     hours: tags["opening_hours"] ?? null,
     website: tags["website"] ?? tags["contact:website"] ?? null,
     phone: tags["phone"] ?? tags["contact:phone"] ?? null,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { tileKey, toNearbyShop, buildOverpassQuery, isChain, normalizeChainName } from "./nearby-shops";
+import { tileKey, toNearbyShop, buildOverpassQuery, isChain, normalizeChainName, isCoffeePlace } from "./nearby-shops";
 
 describe("tileKey", () => {
   it("rounds bounds to 2 decimal places so nearby pans share a key", () => {
@@ -51,6 +51,7 @@ describe("toNearbyShop", () => {
         name: "Corner Cafe",
         "addr:housenumber": "12",
         "addr:street": "Rua do Ouro",
+        "addr:city": "Lisboa",
         opening_hours: "Mo-Fr 08:00-18:00",
         website: "https://cornercafe.pt",
         phone: "+351 21 000 0000",
@@ -61,7 +62,7 @@ describe("toNearbyShop", () => {
       name: "Corner Cafe",
       lat: 38.71,
       lng: -9.14,
-      address: "12 Rua do Ouro",
+      address: "12 Rua do Ouro, Lisboa",
       hours: "Mo-Fr 08:00-18:00",
       website: "https://cornercafe.pt",
       phone: "+351 21 000 0000",
@@ -93,6 +94,21 @@ describe("toNearbyShop", () => {
 
   it("returns null when there's no position", () => {
     expect(toNearbyShop({ type: "way", id: 1, tags: { name: "Ghost Cafe" } })).toBeNull();
+  });
+});
+
+describe("isCoffeePlace", () => {
+  it("keeps cafés and coffee-serving restaurants", () => {
+    expect(isCoffeePlace({ name: "Spiller Park Coffee", amenity: "cafe" })).toBe(true);
+    expect(isCoffeePlace({ name: "Muchacho", amenity: "restaurant", cuisine: "mexican;coffee_shop" })).toBe(true);
+    expect(isCoffeePlace({ name: "Tea Bar", amenity: "cafe", cuisine: "tea;coffee_shop" })).toBe(true);
+  });
+
+  it("drops bubble tea, tea-only cafés, and cafeterias", () => {
+    expect(isCoffeePlace({ name: "Kung Fu Tea", amenity: "cafe", cuisine: "bubble_tea" })).toBe(false);
+    expect(isCoffeePlace({ name: "Queen Tea", amenity: "cafe", cuisine: "tea" })).toBe(false);
+    expect(isCoffeePlace({ name: "Piedmont North Dining Hall", amenity: "cafe" })).toBe(false);
+    expect(isCoffeePlace({ name: "One Georgia Center Cafeteria", amenity: "cafe" })).toBe(false);
   });
 });
 

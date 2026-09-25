@@ -519,18 +519,31 @@ export default function CityScreen() {
 
 ---
 
-### Task 6: App — "Best in <city>" from search; map opens on a city
+### Task 6: App — "Best in <city>" from search (only for cities with verdicts)
 
-**Files:** Modify `apps/app/components/map/map-search.tsx`, `apps/app/app/(tabs)/map.tsx`, `apps/app/lib/map/geocode.ts` (Place type), `apps/web/lib/photon.ts` (+test), `apps/web/app/api/search/route.ts` (none needed if Place carries it)
+**Owner decision (2026-09-24):** a city with no rated shops has no page at all — no empty "No verdicts here yet" page, no link to one. The city page redirects to the map if its city has no rated shops (Task 5), and search only offers "Best in <city>" when that city has at least one.
 
-- [ ] **Step 1: Places carry their city key.** In `apps/web/lib/photon.ts` add `cityKey?: string | null` to `Place` and set it for city-level places: `cityKey: ["city", "town", "village", "hamlet"].includes(p.osm_value) ? cityKey(p.name, p.state, p.countrycode) : null` (import `cityKey` from "@coffeesnob/supabase"). Update the city test expectation in `photon.test.ts` to include `cityKey: "atlanta-georgia-us"` and the state/country ones to `cityKey: null`. In `apps/app/lib/map/geocode.ts` add `cityKey?: string | null` to `Place`.
-- [ ] **Step 2: Search row link.** In `map-search.tsx`, for `r.kind === "place"` rows with a `cityKey`, render a trailing pressable after the text:
+**Files:** Modify `apps/web/lib/photon.ts` (+test), `apps/web/app/api/search/route.ts`, `packages/supabase/src/queries.ts` (+test, + index export), `apps/app/lib/map/geocode.ts` (Place type), `apps/app/components/map/map-search.tsx`
+
+- [ ] **Step 1: Places carry a candidate city key.** In `apps/web/lib/photon.ts` add `cityKey?: string | null` to `Place`, set for city-level places: `cityKey: ["city", "town", "village", "hamlet"].includes(p.osm_value) ? cityKey(p.name, p.state, p.countrycode) : null` (import `cityKey` from "@coffeesnob/supabase"). Update `photon.test.ts`: the Atlanta city expectation gains `cityKey: "atlanta-georgia-us"`; state/country places get `cityKey: null`.
+- [ ] **Step 2: Only cities with verdicts keep their key.** Add to `packages/supabase/src/queries.ts` (export from index; test with a fake client asserting `.from("shop_ratings").select("city_key").in("city_key", keys).not("rating", "is", null)` and that it returns the distinct set):
+```ts
+// Which of these cities have at least one rated shop (i.e. have a page).
+export async function citiesWithVerdicts(client: Client, keys: string[]): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  const { data, error } = await client.from("shop_ratings").select("city_key").in("city_key", keys).not("rating", "is", null);
+  if (error) throw error;
+  return new Set(data.map((r) => r.city_key).filter((k): k is string => k !== null));
+}
+```
+In `apps/web/app/api/search/route.ts`, after building `places`: collect their non-null `cityKey`s, call `citiesWithVerdicts(getSupabase(), keys)` (import `getSupabase` from "@/lib/supabase"), and null out any `cityKey` not in the set. If that call throws, null them all (no links) and send `CORS_HEADERS` instead of `CACHE_HEADERS` so the degraded answer isn't cached. A newly rated city's link appears within the 1h CDN window — fine.
+- [ ] **Step 3: Search row link.** In `apps/app/lib/map/geocode.ts` add `cityKey?: string | null` to `Place`. In `map-search.tsx`, for `r.kind === "place"` rows with a `cityKey`, render a trailing pressable after the text:
 ```tsx
 {r.kind === "place" && r.place.cityKey ? (
   <Pressable
     onPress={() => {
       close();
-      router.push({ pathname: "/city/[slug]", params: { slug: r.place.cityKey!, name: r.place.primary, lat: String(r.place.lat), lng: String(r.place.lng) } });
+      router.push({ pathname: "/city/[slug]", params: { slug: r.place.cityKey!, name: r.place.primary } });
     }}
     accessibilityRole="link"
     accessibilityLabel={`Best in ${r.place.primary}`}
@@ -541,25 +554,13 @@ export default function CityScreen() {
 ) : null}
 ```
 Lay the row out as a row (`flexDirection: "row"`, text column `flex: 1`) so the link sits at the right; tapping the rest of the row still flies the map as today. Import `router` from "expo-router".
-- [ ] **Step 3: Map opens on a city.** In `map.tsx`, read `const params = useLocalSearchParams<{ lat?: string; lng?: string }>();` and add:
-```ts
-  // Opened from a city page ("See every café on the map"): fly there.
-  useEffect(() => {
-    const lat = Number(params.lat), lng = Number(params.lng);
-    if (!params.lat || !params.lng || !Number.isFinite(lat) || !Number.isFinite(lng)) return;
-    flewToFix.current = true;
-    flyTo(lat, lng, 13);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.lat, params.lng]);
-```
-(place it after `flewToFix` is declared).
-- [ ] **Step 4:** apps/web + apps/app: `npx tsc --noEmit -p . && npx vitest run` → clean/pass.
-- [ ] **Step 5: Commit** — `git add -A apps && git commit -m "Search links to city pages; map can open on a city"`
+- [ ] **Step 4:** packages/supabase, apps/web, apps/app: `npx tsc --noEmit -p . && npx vitest run` → clean/pass. Live: `/api/search?q=atlanta&lat=36.2&lng=-86.8` → Atlanta, GA has `cityKey: "atlanta-georgia-us"`; `/api/search?q=nashville` → Nashville's `cityKey` is null.
+- [ ] **Step 5: Commit** — `git add -A apps packages && git commit -m "Search links to city pages that have verdicts"`
 
 ---
 
 ### Task 7: Verify and ship (controller)
 
 - [ ] Full checks + both builds (web `next build`, app `expo export -p web`), packages tests.
-- [ ] Live: `/api/search?q=atlanta` place has `cityKey: "atlanta-georgia-us"`; `/api/locate` returns Atlanta for Muchacho's coordinates; headless Chrome on `http://localhost:8123/city/atlanta-georgia-us` (Expo web against the local API) shows Muchacho; `/city/nashville-tennessee-us` shows the empty state.
+- [ ] Live: `/api/search?q=atlanta` place has `cityKey: "atlanta-georgia-us"`, Nashville's is null; `/api/locate` returns Atlanta for Muchacho's coordinates; headless Chrome on `http://localhost:8123/city/atlanta-georgia-us` (Expo web against the local API) shows Muchacho; `/city/nashville-tennessee-us` redirects to the map.
 - [ ] Final whole-branch review (opus) → fix → tracker line → merge to main → push → confirm production `/api/locate` and the city page.

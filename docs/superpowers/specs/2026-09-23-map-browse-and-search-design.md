@@ -113,12 +113,12 @@ built on top of them once there's enough to choose from.
   the log already comes from. Backfill the existing shops once.
 - **City page** (`/city/[slug]` in the app): every rated shop in that city,
   ordered by verdict then log count, with each shop's consensus chip. A city
-  with no rated shops yet shows "No verdicts here yet — see every café on the
-  map".
+  with no rated shops has no page (owner decision 2026-09-24): no link to it
+  from search, and its URL redirects to the map.
 - **Later, not in this phase:** editorial "best in city" guides picked from
   the city page's shops (reusing the parked `lists`/city-guide tables).
-- **Search links to it.** A city result offers "Best in Atlanta" alongside
-  "Show on map".
+- **Search links to it.** A city result with at least one rated shop offers
+  "Best in Atlanta" alongside "Show on map".
 - **Faster rated pins.** Replace the bounds query on `shop_ratings` (which
   aggregates every shop before filtering) with an RPC that filters the box on
   `shops(lat, lng)` first, then aggregates.
@@ -127,7 +127,7 @@ built on top of them once there's enough to choose from.
 
 **Done when:** logging a shop records its city and it appears on that city's
 page right away; an Atlanta page lists rated Atlanta shops best-first; a city
-with no ratings shows the empty state; the
+with no ratings has no page or link; the
 rated-pins query plan filters on the index.
 
 ## Out of scope

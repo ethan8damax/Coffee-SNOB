@@ -11,8 +11,10 @@
 // point styleUrl at any other OpenMapTiles-schema style.
 export const BASEMAP = {
   styleUrl: "https://tiles.openfreemap.org/styles/positron",
+  // Short on purpose: ODbL and OpenMapTiles need a visible credit on the map;
+  // the full list lives on the site's Data sources page.
   attribution:
-    '<a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> ' +
-    '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">&copy; OpenMapTiles</a> ' +
-    'Data from <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>',
+    '<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">&copy; OpenStreetMap</a> · ' +
+    '<a href="https://www.openmaptiles.org/" target="_blank" rel="noopener">OpenMapTiles</a> · ' +
+    '<a href="https://coffeesnobproject.com/data-sources" target="_blank" rel="noopener">Sources</a>',
 } as const;

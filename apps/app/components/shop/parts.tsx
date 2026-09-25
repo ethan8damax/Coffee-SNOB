@@ -3,7 +3,7 @@ import { View, Text, Pressable, Linking, Platform } from "react-native";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
-import { Avatar, Body, BodySm, ButtonBu, ButtonLine, D1, IconBack, Label } from "../primitives";
+import { Avatar, Body, ButtonBu, ButtonLine, D1, IconBack, Label } from "../primitives";
 import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
@@ -192,7 +192,6 @@ export function HoursCard({ hours }: { hours: string | null }) {
           ))}
         </View>
       )}
-      <BodySm>Hours come from OpenStreetMap contributors.</BodySm>
     </Card>
   );
 }
@@ -220,7 +219,6 @@ export function WhereCard({ shop }: { shop: ShopDetail }) {
         <LinkRow label={shop.website.replace(/^https?:\/\//i, "")} hint="Open website" onPress={() => Linking.openURL(site)} />
       ) : null}
       {shop.phone ? <LinkRow label={shop.phone} hint={`Call ${shop.phone}`} onPress={() => Linking.openURL(telUrl(shop.phone as string))} /> : null}
-      <BodySm>Shop details © OpenStreetMap contributors.</BodySm>
     </Card>
   );
 }

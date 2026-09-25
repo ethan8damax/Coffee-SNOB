@@ -25,6 +25,7 @@ function ensureMapStyles() {
     ".snob-pin{background:none;border:none}",
     ".leaflet-container{background:#e6dec9;font-family:'Area',sans-serif}",
     ".leaflet-control-attribution{font-size:9px;background:rgba(240,236,223,.85)!important}",
+    ".leaflet-bottom{bottom:var(--snob-bottom-inset,0px)}",
   ].join("");
   document.head.appendChild(el);
 }
@@ -55,9 +56,10 @@ function Basemap() {
     loadBrandStyle()
       .then((style) => {
         if (cancelled) return;
-        // `attribution` is a standard Leaflet layer option that the plugin's
-        // typings don't list; it is read by Leaflet's attribution control.
-        layer = L.maplibreGL({ style, attribution: BASEMAP.attribution } as never).addTo(map);
+        // The plugin ignores Leaflet's `attribution` option and shows the
+        // style's own source credits unless `attributionControl.customAttribution`
+        // is set, so that's where our short credit goes.
+        layer = L.maplibreGL({ style, attributionControl: { customAttribution: BASEMAP.attribution } } as never).addTo(map);
         layer.getMaplibreMap().on("error", (event) => console.warn("basemap:", event.error?.message ?? event));
       })
       .catch(() => {});
@@ -131,6 +133,7 @@ export function MapView({
   selectedNearbyExternalId,
   onSelectRatedShop,
   onSelectNearbyShop,
+  bottomInset,
 }: MapViewProps) {
   ensureMapStyles();
 
@@ -145,7 +148,7 @@ export function MapView({
         zoom={DEFAULT_ZOOM}
         zoomControl={false}
         // isolation keeps Leaflet's internal z-indexes from covering the app's own overlays.
-        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate" }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, isolation: "isolate", ["--snob-bottom-inset" as string]: `${bottomInset ?? 0}px` }}
       >
         <Basemap />
         <ResizeHandler />

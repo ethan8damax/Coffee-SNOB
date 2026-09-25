@@ -183,8 +183,14 @@ export default function MapScreen() {
     flyTo(shop.lat, shop.lng, 16);
   };
 
+  const areaHeight = height - tabBarHeight;
+  // List mode takes the whole page — nothing useful shows through the sliver of map
+  // behind a partial sheet once you've chosen to browse the list instead of the pins.
+  const sheetHeight = mode === "List" ? areaHeight : Math.min(316, Math.round(areaHeight * 0.42));
+
   const map = (
     <MapView
+      bottomInset={desktop ? 0 : sheetHeight}
       ratedShops={visible.rated}
       nearbyShops={visible.nearby}
       initialCenter={center}
@@ -274,11 +280,6 @@ export default function MapScreen() {
       </View>
     );
   }
-
-  const areaHeight = height - tabBarHeight;
-  // List mode takes the whole page — nothing useful shows through the sliver of map
-  // behind a partial sheet once you've chosen to browse the list instead of the pins.
-  const sheetHeight = mode === "List" ? areaHeight : Math.min(316, Math.round(areaHeight * 0.42));
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>

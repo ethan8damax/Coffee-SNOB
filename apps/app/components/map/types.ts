@@ -48,4 +48,7 @@ export type MapViewProps = {
   selectedNearbyExternalId: string | null;
   onSelectRatedShop: (id: string | null) => void;
   onSelectNearbyShop: (externalId: string | null) => void;
+  // Height of whatever covers the map's bottom edge (the phone sheet), so the
+  // required map credit sits above it instead of underneath.
+  bottomInset?: number;
 };

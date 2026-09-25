@@ -10,4 +10,8 @@ describe("BASEMAP", () => {
     expect(BASEMAP.attribution).toContain("OpenStreetMap");
     expect(BASEMAP.attribution).toContain("OpenMapTiles");
   });
+
+  it("links the credit to the public Data sources page", () => {
+    expect(BASEMAP.attribution).toContain('href="https://coffeesnobproject.com/data-sources"');
+  });
 });

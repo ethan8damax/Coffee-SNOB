@@ -51,6 +51,7 @@ export function Doors() {
 export function WebFooter() {
   const cols: [string, [string, string][]][] = [
     ["The app", [["The map", APP_MAP_URL], ["Create an account", APP_SIGN_UP_URL], ["Sign in", APP_SIGN_IN_URL]]],
+    ["About", [["Data sources", "/data-sources"]]],
   ];
   return (
     <footer className="foot">

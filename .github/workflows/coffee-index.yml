@@ -25,9 +25,6 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
       PUBLIC_URL: ${{ vars.COFFEE_INDEX_PUBLIC_URL }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      AWS_DEFAULT_REGION: auto
       R2: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
       BUCKET: s3://${{ secrets.R2_BUCKET }}
     defaults:
@@ -66,6 +63,12 @@ jobs:
         run: pnpm build-index ${{ steps.prev.outputs.args }} --out out ${{ inputs.allow_big_change && '--allow-big-change' || '' }}
 
       - name: Publish to R2
+        # R2 keys only here: set for the build, DuckDB would send them to
+        # Overture's public AWS bucket and get a 403.
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
         run: |
           root=$(ls -d out/*/ | head -1)
           ver=$(jq -r .version "$root/manifest.json")
@@ -80,6 +83,10 @@ jobs:
             --content-type application/json --cache-control "public, max-age=300"
 
       - name: Keep only the two newest versions
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
         run: |
           aws s3 ls "$BUCKET/v/" --endpoint-url "$R2" | awk '{print $2}' | sort | head -n -2 | while read -r old; do
             aws s3 rm "$BUCKET/v/$old" --recursive --endpoint-url "$R2" --only-show-errors

@@ -6,7 +6,8 @@
 import { boundsAround } from "./bounds";
 import type { NearbyShopPin } from "../../components/map/types";
 
-export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number };
+// cityKey is set only for cities that have a city page (at least one rated shop).
+export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number; cityKey?: string | null };
 
 // Wide enough to cover a whole metro area (searching from one suburb for a
 // shop across town) without turning into a state/country-wide query. Cheap

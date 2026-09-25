@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops, getCityShops } from "../src/queries";
+import { citiesWithVerdicts, getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops, getCityShops } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
@@ -1423,5 +1423,28 @@ describe("getCityShops", () => {
       ["order", "rating", { ascending: false }],
       ["order", "log_count", { ascending: false }],
     ]);
+  });
+});
+
+describe("citiesWithVerdicts", () => {
+  it("returns the city keys that have at least one rated shop", async () => {
+    const calls: unknown[][] = [];
+    const builder: any = {
+      in: (...a: unknown[]) => { calls.push(["in", ...a]); return builder; },
+      not: (...a: unknown[]) => { calls.push(["not", ...a]); return Promise.resolve({ data: [{ city_key: "atlanta-georgia-us" }, { city_key: "atlanta-georgia-us" }, { city_key: null }], error: null }); },
+    };
+    const client = { from: (t: string) => ({ select: (c: string) => { calls.push(["from", t, c]); return builder; } }) } as any;
+    const found = await citiesWithVerdicts(client, ["atlanta-georgia-us", "nashville-tennessee-us"]);
+    expect([...found]).toEqual(["atlanta-georgia-us"]);
+    expect(calls).toEqual([
+      ["from", "shop_ratings", "city_key"],
+      ["in", "city_key", ["atlanta-georgia-us", "nashville-tennessee-us"]],
+      ["not", "rating", "is", null],
+    ]);
+  });
+
+  it("skips the query when there's nothing to check", async () => {
+    const client = { from: () => { throw new Error("should not query"); } } as any;
+    expect((await citiesWithVerdicts(client, [])).size).toBe(0);
   });
 });

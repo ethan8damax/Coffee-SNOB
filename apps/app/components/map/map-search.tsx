@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
@@ -189,14 +190,15 @@ export function MapSearch({
           <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 280 }}>
           {(results ?? []).map((r) => {
               const key = r.kind === "place" ? `p:${r.place.id}` : r.kind === "shop" ? `s:${r.shop.id}` : `n:${r.shop.externalId}`;
-              // Whatever the searcher actually matched — the shop name, or the finest
-              // place Nominatim resolved to (a city, a state, or just a country) — is
-              // the bold headline; the rest (if any) trails smaller beneath it.
+              // Whatever the searcher actually matched — the shop name, or the place
+              // (a city, a state, or a country) — is the bold headline; the rest (if
+              // any) trails smaller beneath it.
               const primary = r.kind === "place" ? r.place.primary : r.shop.name;
               const secondary = r.kind === "place" ? r.place.secondary : r.secondary;
+              const cityPage = r.kind === "place" ? r.place.cityKey : null;
               return (
+                <View key={key} style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.rule2 }}>
                 <Pressable
-                  key={key}
                   onPress={() => {
                     if (r.kind === "place") onSelectPlace(r.place);
                     else if (r.kind === "shop") onSelectShop(r.shop);
@@ -205,7 +207,7 @@ export function MapSearch({
                   }}
                   accessibilityRole="button"
                   accessibilityLabel={secondary ? `${primary}, ${secondary}` : primary}
-                  style={{ gap: 2, minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
+                  style={{ flex: 1, gap: 2, minHeight: 44, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8 }}
                 >
                   <Text numberOfLines={1} style={{ fontFamily: "Area-Bold", fontSize: 13.5, color: colors.ink }}>
                     {primary}
@@ -216,6 +218,22 @@ export function MapSearch({
                     </Text>
                   )}
                 </Pressable>
+                {/* Only cities with rated shops have a page (the server clears the key otherwise). */}
+                {cityPage && r.kind === "place" ? (
+                  <Pressable
+                    onPress={() => {
+                      close();
+                      router.push({ pathname: "/city/[slug]", params: { slug: cityPage, name: r.place.primary } });
+                    }}
+                    accessibilityRole="link"
+                    accessibilityLabel={`Best in ${r.place.primary}`}
+                    hitSlop={8}
+                    style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 12 }}
+                  >
+                    <Label style={{ color: colors.oxblood }}>{`Best in ${r.place.primary}`}</Label>
+                  </Pressable>
+                ) : null}
+                </View>
               );
             })}
           {pending ? (

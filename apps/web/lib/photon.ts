@@ -1,3 +1,4 @@
+import { cityKey } from "@coffeesnob/supabase";
 import { abbreviateCountry, abbreviateState, formatShopLocation } from "./geocode";
 import { isChain, isCoffeePlace, type ChainEntry } from "./nearby-shops";
 
@@ -33,12 +34,15 @@ export function toLocality(f: PhotonFeature | undefined): Locality {
   };
 }
 
-export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number };
+// cityKey: the city page this place would have (city-level places only); the
+// search route clears it unless that city has rated shops.
+export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number; cityKey: string | null };
 export type SearchHit =
   | { kind: "place"; place: Place }
   | { kind: "shop"; externalId: string; name: string; secondary: string; lat: number; lng: number };
 
 const OSM_TYPE = { N: "node", W: "way", R: "relation" } as const;
+const CITY_VALUES = new Set(["city", "town", "village", "hamlet"]);
 // Real places people search for — not OSM's "locality"/"isolated_dwelling"
 // noise ("Blue Bottle Terrace", a Colombian hamlet named "Muchacho").
 const PLACE_VALUES = new Set(["city", "town", "village", "hamlet", "suburb", "borough", "quarter", "neighbourhood", "state", "country"]);
@@ -53,7 +57,8 @@ export function toSearchHit(f: PhotonFeature, chains: ChainEntry[]): SearchHit |
       p.osm_value === "country" ? "" :
       p.osm_value === "state" ? country :
       [p.state ? abbreviateState(p.state, p.countrycode) : null, country].filter(Boolean).join(", ");
-    return { kind: "place", place: { id: `${p.osm_type}${p.osm_id}`, primary: p.name, secondary, lat, lng } };
+    const key = CITY_VALUES.has(p.osm_value) ? cityKey(p.name, p.state, p.countrycode) : null;
+    return { kind: "place", place: { id: `${p.osm_type}${p.osm_id}`, primary: p.name, secondary, lat, lng, cityKey: key } };
   }
   // Cafés only: Photon can't filter restaurants/bars by cuisine, so coffee-
   // serving restaurants come from the local Overpass search instead.

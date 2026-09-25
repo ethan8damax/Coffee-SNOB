@@ -144,6 +144,14 @@ export async function searchRatedShops(client: Client, query: string, limit = 8)
   return data;
 }
 
+// Which of these cities have at least one rated shop — only those get a page.
+export async function citiesWithVerdicts(client: Client, keys: string[]): Promise<Set<string>> {
+  if (keys.length === 0) return new Set();
+  const { data, error } = await client.from("shop_ratings").select("city_key").in("city_key", keys).not("rating", "is", null);
+  if (error) throw error;
+  return new Set(data.map((r) => r.city_key).filter((k): k is string => k !== null));
+}
+
 // A city page: every rated shop whose city_key matches, best verdict first,
 // then the most-logged. A shop joins the moment it's first rated.
 export async function getCityShops(client: Client, key: string) {

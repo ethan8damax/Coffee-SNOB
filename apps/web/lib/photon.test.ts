@@ -23,7 +23,7 @@ describe("toSearchHit", () => {
 
   it("maps a city to a place hit headlined by its name", () => {
     const hit = toSearchHit(feature({ osm_type: "R", osm_id: 119557, osm_key: "place", osm_value: "city", name: "Atlanta", state: "Georgia", countrycode: "US" }), chains);
-    expect(hit).toEqual({ kind: "place", place: { id: "R119557", primary: "Atlanta", secondary: "GA, USA", lat: 33.75, lng: -84.36 } });
+    expect(hit).toEqual({ kind: "place", place: { id: "R119557", primary: "Atlanta", secondary: "GA, USA", lat: 33.75, lng: -84.36, cityKey: "atlanta-georgia-us" } });
   });
 
   it("gives states just the country and countries nothing", () => {
@@ -31,6 +31,9 @@ describe("toSearchHit", () => {
     const country = toSearchHit(feature({ osm_type: "R", osm_id: 2, osm_key: "place", osm_value: "country", name: "Portugal", countrycode: "PT" }), chains);
     expect(state && state.kind === "place" && state.place.secondary).toBe("USA");
     expect(country && country.kind === "place" && country.place.secondary).toBe("");
+    // Only city-level places can have a city page.
+    expect(state && state.kind === "place" && state.place.cityKey).toBeNull();
+    expect(country && country.kind === "place" && country.place.cityKey).toBeNull();
   });
 
   it("drops chains, non-coffee cafés, stray place types, and anything unnamed", () => {

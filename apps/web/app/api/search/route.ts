@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
+import { citiesWithVerdicts } from "@coffeesnob/supabase";
 import { getBlocklist } from "@/lib/chain-blocklist";
+import { getSupabase } from "@/lib/supabase";
 import { toSearchHit, type PhotonFeature, type SearchHit } from "@/lib/photon";
 
 // The map's search box: cafés + places worldwide via Photon. Fair-use public
@@ -44,7 +46,18 @@ export async function GET(request: Request) {
   const hits = features.map((f) => toSearchHit(f, chains)).filter((h): h is SearchHit => h !== null);
   const places = hits.flatMap((h) => (h.kind === "place" ? [h.place] : []));
   const shops = hits.flatMap((h) => (h.kind === "shop" ? [{ externalId: h.externalId, name: h.name, secondary: h.secondary, lat: h.lat, lng: h.lng }] : []));
+  // A city only has a page once it has rated shops, so only those keep a
+  // "Best in <city>" link. If that check fails, drop every link and don't cache.
+  let cityCheckOk = true;
+  try {
+    const withVerdicts = await citiesWithVerdicts(getSupabase(), places.flatMap((p) => (p.cityKey ? [p.cityKey] : [])));
+    for (const p of places) if (p.cityKey && !withVerdicts.has(p.cityKey)) p.cityKey = null;
+  } catch {
+    cityCheckOk = false;
+    for (const p of places) p.cityKey = null;
+  }
   // If the chain list couldn't load (cold start + Supabase down), results are
   // unfiltered — serve them, but don't let the CDN keep them.
-  return NextResponse.json({ places, shops }, { headers: chains.length > 0 ? CACHE_HEADERS : CORS_HEADERS });
+  const cacheable = chains.length > 0 && cityCheckOk;
+  return NextResponse.json({ places, shops }, { headers: cacheable ? CACHE_HEADERS : CORS_HEADERS });
 }

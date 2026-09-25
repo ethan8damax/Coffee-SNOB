@@ -14,6 +14,7 @@ export type LogParams =
       website: string | null;
       phone: string | null;
       hours: string | null;
+      legacyIds?: string[];
     }
   | { kind: "none" };
 
@@ -53,7 +54,14 @@ export function parseLogParams(raw: Raw): LogParams {
     website: str(raw, "website"),
     phone: str(raw, "phone"),
     hours: str(raw, "hours"),
+    ...legacyIds(raw),
   };
+}
+
+// A coffee index place's OSM ids, comma-joined by the map ("node/7,way/8").
+function legacyIds(raw: Raw): { legacyIds?: string[] } {
+  const ids = str(raw, "legacyIds")?.split(",").map((s) => s.trim()).filter(Boolean) ?? [];
+  return ids.length ? { legacyIds: ids } : {};
 }
 
 export function normalizeNote(note: string): string | null {

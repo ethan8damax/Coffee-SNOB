@@ -459,7 +459,10 @@ export type LogVisitInput =
   | ({ kind: "existing"; shopId: string } & LogVisitCommon)
   | ({
       kind: "osm";
-      externalId: string; // e.g. "node/123456"
+      externalId: string; // e.g. "cs_1a2b3c4d5e6f" (coffee index) or "node/123456" (older OSM dots)
+      // A coffee index place's OSM ids ("node/123"): shops first logged before
+      // the index keep those as external_id, so logging checks them first.
+      legacyIds?: string[];
       name: string;
       lat: number;
       lng: number;
@@ -491,6 +494,18 @@ export async function logVisit(client: Client, userId: string, input: LogVisitIn
       .single();
     if (error) throw error;
     return { shopId: data.shop_id, logId: data.id };
+  }
+
+  // Already rated under an older OSM id? Log to that shop, not a second copy.
+  if (input.legacyIds?.length) {
+    const { data, error } = await client.from("shops").select("id").in("external_id", input.legacyIds).limit(1);
+    if (error) throw error;
+    const existing = data?.[0];
+    if (existing) {
+      return logVisit(client, userId, {
+        kind: "existing", shopId: existing.id, rating: input.rating, note: input.note, drink: input.drink, visitedAt: input.visitedAt,
+      });
+    }
   }
 
   // The RPC reads the user from auth.uid() itself (and trims/caps the text fields), so userId isn't sent.

@@ -135,6 +135,9 @@ export default function MapScreen() {
     if (website) params.website = website;
     if (phone) params.phone = phone;
     if (hours) params.hours = hours;
+    // Index dots: their OSM ids, so a shop first rated under one isn't duplicated.
+    const legacy = (row.shop.sourceIds ?? []).filter((s) => s.startsWith("osm:")).map((s) => s.slice(4));
+    if (legacy.length) params.legacyIds = legacy.join(",");
     router.push({ pathname: "/log", params });
   };
 

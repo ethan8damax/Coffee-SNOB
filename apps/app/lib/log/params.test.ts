@@ -23,6 +23,11 @@ describe("parseLogParams", () => {
       hours: "Mo-Fr 8-5",
     });
   });
+  it("carries a coffee index place's legacy OSM ids through to the log input", () => {
+    const p = parseLogParams({ externalId: "cs_1", name: "Perc", lat: "1", lng: "2", legacyIds: "node/7,way/8" });
+    expect(p).toMatchObject({ kind: "osm", externalId: "cs_1", legacyIds: ["node/7", "way/8"] });
+    expect(buildLogVisitInput(p, { rating: 4, drink: null, note: "" })).toMatchObject({ legacyIds: ["node/7", "way/8"] });
+  });
   it("takes first of array params and ignores blanks", () => {
     expect(parseLogParams({ shopId: ["a", "b"] })).toEqual({ kind: "existing", shopId: "a" });
     expect(parseLogParams({ shopId: "  " })).toEqual({ kind: "none" });

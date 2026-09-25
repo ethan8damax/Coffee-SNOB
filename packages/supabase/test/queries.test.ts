@@ -728,6 +728,30 @@ describe("logVisit", () => {
     await expect(logVisit(client, "u1", { kind: "existing", shopId: "s1", rating: 4 })).rejects.toThrow("rls");
   });
 
+  it("logs to the shop already rated under a legacy OSM id instead of creating a second one", async () => {
+    const inSpy = vi.fn(() => ({ limit: () => Promise.resolve({ data: [{ id: "s1" }], error: null }) }));
+    const insertSpy = vi.fn(() => ({ select: () => ({ single: () => Promise.resolve({ data: { id: "l1", shop_id: "s1" }, error: null }) }) }));
+    const rpcSpy = vi.fn();
+    const client = {
+      from: (table: string) => (table === "shops" ? { select: () => ({ in: inSpy }) } : { insert: insertSpy }),
+      rpc: rpcSpy,
+    } as any;
+
+    const result = await logVisit(client, "u1", { kind: "osm", externalId: "cs_abc", legacyIds: ["node/7"], name: "Perc", lat: 1, lng: 2, rating: 4 });
+
+    expect(result).toEqual({ shopId: "s1", logId: "l1" });
+    expect(inSpy).toHaveBeenCalledWith("external_id", ["node/7"]);
+    expect(rpcSpy).not.toHaveBeenCalled();
+  });
+
+  it("creates the shop under its cs_ id when no legacy id matches", async () => {
+    const rpcSpy = vi.fn(() => Promise.resolve({ data: [{ shop_id: "s2", log_id: "l2" }], error: null }));
+    const client = { from: () => ({ select: () => ({ in: () => ({ limit: () => Promise.resolve({ data: [], error: null }) }) }) }), rpc: rpcSpy } as any;
+    const result = await logVisit(client, "u1", { kind: "osm", externalId: "cs_abc", legacyIds: ["node/7"], name: "Perc", lat: 1, lng: 2, rating: 4 });
+    expect(result).toEqual({ shopId: "s2", logId: "l2" });
+    expect(rpcSpy).toHaveBeenCalledWith("log_shop_visit", expect.objectContaining({ p_external_id: "cs_abc" }));
+  });
+
   it("calls the log_shop_visit RPC for an OSM shop and unwraps the returned row", async () => {
     const rpcSpy = vi.fn(() => Promise.resolve({ data: [{ shop_id: "s9", log_id: "l9" }], error: null }));
     const client = { rpc: rpcSpy } as any;

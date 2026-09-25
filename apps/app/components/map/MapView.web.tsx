@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { View } from "react-native";
 import L from "leaflet";
+import { colors } from "@coffeesnob/design-tokens";
 import { MapContainer, Marker, useMap, useMapEvents } from "react-leaflet";
 import "@maplibre/maplibre-gl-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -24,7 +25,10 @@ function ensureMapStyles() {
   el.textContent = [
     ".snob-pin{background:none;border:none}",
     ".leaflet-container{background:#e6dec9;font-family:'Area',sans-serif}",
-    ".leaflet-control-attribution{font-size:9px;background:rgba(240,236,223,.85)!important}",
+    // The map credit wears the app's Label style (primitives.tsx), greyed out.
+    `.leaflet-control-attribution{font-family:'AreaExtended-Bold',sans-serif;font-size:8.5px;letter-spacing:1.19px;text-transform:uppercase;color:${colors.ink3};background:rgba(240,236,223,.85)!important;padding:2px 6px}`,
+    `.leaflet-control-attribution a{color:${colors.ink3};text-decoration:none}`,
+    ".leaflet-control-attribution a:hover{text-decoration:underline}",
     ".leaflet-bottom{bottom:var(--snob-bottom-inset,0px)}",
   ].join("");
   document.head.appendChild(el);
@@ -53,6 +57,8 @@ function Basemap() {
   useEffect(() => {
     let cancelled = false;
     let layer: L.MaplibreGL | null = null;
+    // Drops Leaflet's own "Leaflet" + flag prefix; its BSD licence doesn't ask for a map credit.
+    map.attributionControl?.setPrefix(false);
     loadBrandStyle()
       .then((style) => {
         if (cancelled) return;

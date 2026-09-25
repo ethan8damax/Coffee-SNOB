@@ -18,16 +18,22 @@ export type Database = {
         Row: {
           created_at: string
           name: string
+          prefix: boolean
+          status: string
           wikidata: string | null
         }
         Insert: {
           created_at?: string
           name: string
+          prefix?: boolean
+          status?: string
           wikidata?: string | null
         }
         Update: {
           created_at?: string
           name?: string
+          prefix?: boolean
+          status?: string
           wikidata?: string | null
         }
         Relationships: []
@@ -330,6 +336,66 @@ export type Database = {
           },
         ]
       }
+      place_flags: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          lat: number
+          lng: number
+          place_id: string
+          place_name: string
+          resolved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          lat: number
+          lng: number
+          place_id: string
+          place_name: string
+          resolved_at?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          lat?: number
+          lng?: number
+          place_id?: string
+          place_name?: string
+          resolved_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      place_overrides: {
+        Row: {
+          action: string
+          created_at: string
+          created_by: string | null
+          place_id: string
+          reason: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          created_by?: string | null
+          place_id: string
+          reason?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          created_by?: string | null
+          place_id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -562,6 +628,14 @@ export type Database = {
       }
     }
     Functions: {
+      active_place_hides: { Args: never; Returns: string[] }
+      place_flag_counts: {
+        Args: never
+        Returns: {
+          not_specialty: number
+          place_id: string
+        }[]
+      }
       log_shop_visit: {
         Args: {
           p_external_id: string

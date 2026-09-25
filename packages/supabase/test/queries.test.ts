@@ -1472,3 +1472,40 @@ describe("citiesWithVerdicts", () => {
     expect((await citiesWithVerdicts(client, [])).size).toBe(0);
   });
 });
+
+describe("coffee index controls", () => {
+  it("getChainBlocklist returns blocked chains only, with prefix", async () => {
+    const eqSpy = vi.fn(() => ({ order: () => Promise.resolve({ data: [{ name: "starbucks", wikidata: "Q37158", prefix: false }], error: null }) }));
+    const selectSpy = vi.fn(() => ({ eq: eqSpy }));
+    const client = { from: () => ({ select: selectSpy }) } as any;
+    const { getChainBlocklist } = await import("../src/queries");
+    expect(await getChainBlocklist(client)).toEqual([{ name: "starbucks", wikidata: "Q37158", prefix: false }]);
+    expect(selectSpy).toHaveBeenCalledWith("name, wikidata, prefix");
+    expect(eqSpy).toHaveBeenCalledWith("status", "blocked");
+  });
+
+  it("flagPlace ignores a repeat of the same report", async () => {
+    const upsertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ upsert: upsertSpy }) } as any;
+    const { flagPlace } = await import("../src/queries");
+    await flagPlace(client, { placeId: "cs_aaaaaaaaaaaa", placeName: "Perc", lat: 1, lng: 2, kind: "closed" });
+    expect(upsertSpy).toHaveBeenCalledWith(
+      { place_id: "cs_aaaaaaaaaaaa", place_name: "Perc", lat: 1, lng: 2, kind: "closed" },
+      { onConflict: "place_id,user_id,kind", ignoreDuplicates: true },
+    );
+  });
+
+  it("getActivePlaceHides and getPlaceFlagCounts unwrap the RPCs", async () => {
+    const client = {
+      rpc: (fn: string) =>
+        Promise.resolve(
+          fn === "active_place_hides"
+            ? { data: ["cs_aaaaaaaaaaaa"], error: null }
+            : { data: [{ place_id: "cs_bbbbbbbbbbbb", not_specialty: 2 }], error: null },
+        ),
+    } as any;
+    const { getActivePlaceHides, getPlaceFlagCounts } = await import("../src/queries");
+    expect(await getActivePlaceHides(client)).toEqual(["cs_aaaaaaaaaaaa"]);
+    expect(await getPlaceFlagCounts(client)).toEqual([{ placeId: "cs_bbbbbbbbbbbb", notSpecialty: 2 }]);
+  });
+});

@@ -1047,23 +1047,119 @@ export async function getAdminShops(
 
 // Chain coffee shops hidden from the map's OSM layer. Names are stored
 // normalized — callers pass the normalized form (see packages/coffee-index/src/index.ts).
-// wikidata is the chain's OSM brand:wikidata ID, when known.
-export type ChainBlock = { name: string; wikidata: string | null };
+// wikidata is the chain's OSM brand:wikidata ID, when known; prefix makes an
+// ID-backed entry also match leading words (an admin's call, per chain).
+export type ChainBlock = { name: string; wikidata: string | null; prefix: boolean };
+export type ChainDecision = ChainBlock & { status: "blocked" | "allowed" };
 
+// Blocked chains only: what the map, search and index build filter with.
 export async function getChainBlocklist(client: Client): Promise<ChainBlock[]> {
-  const { data, error } = await client.from("chain_blocklist").select("name, wikidata").order("name");
+  const { data, error } = await client.from("chain_blocklist").select("name, wikidata, prefix").eq("status", "blocked").order("name");
   if (error) throw error;
   return data;
+}
+
+// Every decision, blocked and allowed: what the admin and the build's
+// suggestions check so a decided name never comes back.
+export async function getChainDecisions(client: Client): Promise<ChainDecision[]> {
+  const { data, error } = await client.from("chain_blocklist").select("name, wikidata, prefix, status").order("name");
+  if (error) throw error;
+  return data as ChainDecision[];
 }
 
 export async function addChainBlock(client: Client, name: string, wikidata?: string | null): Promise<void> {
   const { error } = await client
     .from("chain_blocklist")
-    .upsert({ name, wikidata: wikidata ?? null }, { onConflict: "name" });
+    .upsert({ name, wikidata: wikidata ?? null, status: "blocked" }, { onConflict: "name" });
+  if (error) throw error;
+}
+
+// "Not a chain": remembered so the build stops suggesting it.
+export async function allowChain(client: Client, name: string, wikidata?: string | null): Promise<void> {
+  const { error } = await client
+    .from("chain_blocklist")
+    .upsert({ name, wikidata: wikidata ?? null, status: "allowed", prefix: false }, { onConflict: "name" });
+  if (error) throw error;
+}
+
+export async function setChainPrefix(client: Client, name: string, prefix: boolean): Promise<void> {
+  const { error } = await client.from("chain_blocklist").update({ prefix }).eq("name", name);
   if (error) throw error;
 }
 
 export async function removeChainBlock(client: Client, name: string): Promise<void> {
   const { error } = await client.from("chain_blocklist").delete().eq("name", name);
+  if (error) throw error;
+}
+
+// ── Coffee index controls (curation Phase 3) ────────────────────────
+export type PlaceOverride = { placeId: string; action: "show" | "hide"; reason: string | null };
+export type PlaceFlagKind = "closed" | "not_specialty" | "wrong_location";
+export type PlaceFlag = { placeId: string; placeName: string; lat: number; lng: number; kind: PlaceFlagKind; createdAt: string };
+
+export async function getPlaceOverrides(client: Client): Promise<PlaceOverride[]> {
+  const { data, error } = await client.from("place_overrides").select("place_id, action, reason");
+  if (error) throw error;
+  return data.map((r) => ({ placeId: r.place_id, action: r.action as PlaceOverride["action"], reason: r.reason }));
+}
+
+export async function setPlaceOverride(client: Client, placeId: string, action: PlaceOverride["action"], reason?: string | null): Promise<void> {
+  const { error } = await client.from("place_overrides").upsert({ place_id: placeId, action, reason: reason ?? null }, { onConflict: "place_id" });
+  if (error) throw error;
+}
+
+export async function removePlaceOverride(client: Client, placeId: string): Promise<void> {
+  const { error } = await client.from("place_overrides").delete().eq("place_id", placeId);
+  if (error) throw error;
+}
+
+// Index places hidden right now (hide overrides + places two users reported closed).
+export async function getActivePlaceHides(client: Client): Promise<string[]> {
+  const { data, error } = await client.rpc("active_place_hides");
+  if (error) throw error;
+  return (data ?? []) as string[];
+}
+
+export async function getPlaceFlagCounts(client: Client): Promise<{ placeId: string; notSpecialty: number }[]> {
+  const { data, error } = await client.rpc("place_flag_counts");
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ placeId: r.place_id, notSpecialty: r.not_specialty }));
+}
+
+// A signed-in user's report. Reporting the same thing twice is a no-op.
+export async function flagPlace(
+  client: Client,
+  flag: { placeId: string; placeName: string; lat: number; lng: number; kind: PlaceFlagKind },
+): Promise<void> {
+  const { error } = await client
+    .from("place_flags")
+    .upsert(
+      { place_id: flag.placeId, place_name: flag.placeName.slice(0, 200), lat: flag.lat, lng: flag.lng, kind: flag.kind },
+      { onConflict: "place_id,user_id,kind", ignoreDuplicates: true },
+    );
+  if (error) throw error;
+}
+
+// What the signed-in user already reported about one place (RLS: own rows).
+export async function getMyPlaceFlags(client: Client, placeId: string): Promise<PlaceFlagKind[]> {
+  const { data, error } = await client.from("place_flags").select("kind").eq("place_id", placeId);
+  if (error) throw error;
+  return data.map((r) => r.kind as PlaceFlagKind);
+}
+
+// Admin: open reports, newest first.
+export async function getOpenPlaceFlags(client: Client): Promise<PlaceFlag[]> {
+  const { data, error } = await client
+    .from("place_flags")
+    .select("place_id, place_name, lat, lng, kind, created_at")
+    .is("resolved_at", null)
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (error) throw error;
+  return data.map((r) => ({ placeId: r.place_id, placeName: r.place_name, lat: r.lat, lng: r.lng, kind: r.kind as PlaceFlagKind, createdAt: r.created_at }));
+}
+
+export async function resolvePlaceFlags(client: Client, placeId: string): Promise<void> {
+  const { error } = await client.from("place_flags").update({ resolved_at: new Date().toISOString() }).eq("place_id", placeId).is("resolved_at", null);
   if (error) throw error;
 }

@@ -38,7 +38,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          node-version: 22 # supabase-js needs Node 22+ (native WebSocket); .nvmrc still says 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
 

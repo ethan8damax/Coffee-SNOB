@@ -29,6 +29,10 @@ export type NearbyShopPin = {
   hours: string | null;
   website: string | null;
   phone: string | null;
+  // From the coffee index (externalId is then a cs_ id): every source's id,
+  // e.g. "osm:node/123", and how loudly to draw the dot.
+  sourceIds?: string[];
+  visibility?: "show" | "dim";
 };
 
 export type MapViewProps = {

@@ -176,10 +176,10 @@ importers:
   packages/coffee-index:
     dependencies:
       '@coffeesnob/supabase':
-        specifier: workspace:^
+        specifier: workspace:*
         version: link:../supabase
       '@duckdb/node-api':
-        specifier: 1.5.5-r.5
+        specifier: ^1.5.5-r.5
         version: 1.5.5-r.5
     devDependencies:
       '@electric-sql/pglite':

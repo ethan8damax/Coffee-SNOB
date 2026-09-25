@@ -27,6 +27,13 @@ const SOURCES: { name: string; href: string; what: string; licence: string; lice
     licenceHref: "https://www.openmaptiles.org/",
   },
   {
+    name: "Overture Maps Foundation",
+    href: "https://overturemaps.org",
+    what: "More cafés, with addresses, merged from Foursquare's open places and other sources.",
+    licence: "CDLA Permissive 2.0 (Foursquare OS Places: Apache 2.0)",
+    licenceHref: "https://docs.overturemaps.org/attribution/",
+  },
+  {
     name: "Photon by komoot",
     href: "https://photon.komoot.io",
     what: "The search box: cafés and cities by name, worldwide.",
@@ -35,7 +42,21 @@ const SOURCES: { name: string; href: string; what: string; licence: string; lice
   },
 ];
 
-export default function DataSourcesPage() {
+// The current index version, so the page can link its ODbL download.
+export const revalidate = 3600;
+async function indexVersion(): Promise<string | null> {
+  const origin = process.env.COFFEE_INDEX_ORIGIN;
+  if (!origin) return null;
+  try {
+    const res = await fetch(`${origin.replace(/\/$/, "")}/manifest.json`, { next: { revalidate } });
+    return res.ok ? ((await res.json()) as { version: string }).version : null;
+  } catch {
+    return null;
+  }
+}
+
+export default async function DataSourcesPage() {
+  const version = await indexVersion();
   return (
     <div className="snob-web">
       <WebNav />
@@ -52,14 +73,20 @@ export default function DataSourcesPage() {
           </div>
         </section>
         <section className="wrap" style={{ paddingBlock: 48, display: "grid", gap: 32, maxWidth: 720 }}>
-          {SOURCES.map((s) => (
+          {SOURCES.filter((s) => version || s.name !== "Overture Maps Foundation").map((s) => (
             <div key={s.name} style={{ display: "grid", gap: 8 }}>
               <h2 className="h3"><a href={s.href}>{s.name}</a></h2>
               <p className="body">{s.what}</p>
               <p className="body-sm"><a href={s.licenceHref}>{s.licence}</a></p>
             </div>
           ))}
-          <p className="body-sm">Something wrong with a café&apos;s details? Fix it on OpenStreetMap and the map picks it up.</p>
+          {version ? (
+            <p className="body-sm">
+              The map&apos;s café list is rebuilt monthly and published under the ODbL:{" "}
+              <a href={`/coffee-index/v/${version}/places.ndjson.gz`}>download this month&apos;s coffee index</a>.
+            </p>
+          ) : null}
+          <p className="body-sm">Something wrong with a café&apos;s details? Fix it on OpenStreetMap and the map picks it up{version ? " with the next monthly rebuild" : ""}.</p>
         </section>
       </main>
       <WebFooter />

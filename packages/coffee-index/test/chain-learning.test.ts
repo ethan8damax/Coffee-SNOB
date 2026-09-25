@@ -33,6 +33,23 @@ describe("learnChainSignals", () => {
     expect(keepPlace(m({ sourceId: "ov:e", name: "Starbucks in Hilton Hotel", lat: 7, lng: 7, website: "http://www.starbucks.com" }), both, l)).toBe(false);
   });
 
+  it("ignores a generic name one mis-tagged record gives a chain (Atlanta: 'Corner Cafe' tagged Starbucks)", () => {
+    const l = learnChainSignals([...branded, m({ sourceId: "osm:node/9", name: "Corner Cafe", lat: 8, lng: 8, brandWikidata: "Q37158" })], chains);
+    expect(keepPlace(m({ sourceId: "osm:node/10", name: "Corner Cafe", lat: 9, lng: 9 }), chains, l)).toBe(true);
+  });
+
+  it("learns a name without the chain's word once enough branded records share it", () => {
+    const jp = Array.from({ length: 5 }, (_, i) => m({ sourceId: `osm:node/${20 + i}`, name: "スターバックス", lat: 10 + i, lng: 10, brandWikidata: "Q37158" }));
+    const l = learnChainSignals(jp, chains);
+    expect(keepPlace(m({ sourceId: "ov:j", name: "スターバックス", lat: 30, lng: 30 }), chains, l)).toBe(false);
+  });
+
+  it("never blocks a café just because its name has no Latin letters", () => {
+    const jp = Array.from({ length: 5 }, (_, i) => m({ sourceId: `osm:node/${40 + i}`, name: "スターバックス", lat: 40 + i, lng: 10, brandWikidata: "Q37158" }));
+    const l = learnChainSignals(jp, chains);
+    expect(keepPlace(m({ sourceId: "osm:node/50", name: "珈琲店 ほのか", lat: 50, lng: 50 }), chains, l)).toBe(true);
+  });
+
   it("never learns shared platform domains, and never loosens name matching", () => {
     expect(keepPlace(m({ sourceId: "ov:c", name: "Neighbourhood Coffee", lat: 5, lng: 5, website: "https://facebook.com/nbhd" }), chains, learned)).toBe(true);
     expect(keepPlace(m({ sourceId: "ov:d", name: "Costa Rica Café", lat: 5, lng: 5 }), chains, learned)).toBe(true);

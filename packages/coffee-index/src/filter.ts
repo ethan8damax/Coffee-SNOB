@@ -30,24 +30,40 @@ const tagsOf = (p: MergedPlace): Record<string, string> => {
 // than a worldwide build. Upgrade path: persist learned signals if pilots matter.
 export function learnChainSignals(places: MergedPlace[], chains: ChainEntry[]): ChainSignals {
   const chainByWikidata = new Map(chains.filter((c) => c.wikidata).map((c) => [c.wikidata!, c.name]));
-  const names = new Set<string>();
-  const owners = new Map<string, Set<string>>();
+  const nameCounts = new Map<string, number>();
   const named = new Set<string>();
+  const owners = new Map<string, Set<string>>();
+  const namedDomains = new Set<string>();
   for (const p of places) {
     if (!p.brandWikidata || !isChain(tagsOf(p), chains)) continue;
-    names.add(normalizeChainName(p.name));
+    const word = longestWord(chainByWikidata.get(p.brandWikidata) ?? "");
+    const key = learnKey(p.name);
+    nameCounts.set(key, (nameCounts.get(key) ?? 0) + 1);
+    if (word && key.replace(/ /g, "").includes(word)) named.add(key);
     const d = websiteDomain(p.website);
     if (!d || PLATFORMS.has(d)) continue;
     (owners.get(d) ?? owners.set(d, new Set()).get(d)!).add(p.brandWikidata);
-    const chainName = chainByWikidata.get(p.brandWikidata) ?? "";
-    const word = chainName.split(" ").reduce((a, b) => (b.length > a.length ? b : a), "");
-    if (word.length >= 4 && d.replace(/[^a-z0-9]/g, "").includes(word)) named.add(d);
+    if (word && d.replace(/[^a-z0-9]/g, "").includes(word)) namedDomains.add(d);
   }
+  // A name carrying the chain's own word ("Starbucks Coffee"), or one many
+  // branded records share ("スターバックス"). One mis-tagged record can't teach
+  // a generic name: an Atlanta "Corner Cafe" tagged as Starbucks once hid
+  // every Corner Cafe in the world.
+  const names = new Set([...nameCounts].filter(([k, n]) => named.has(k) || n >= 5).map(([k]) => k));
   // A domain only one chain uses (mcdonalds.com for McCafé), or one carrying
   // the chain's name even if two entries share it (starbucks.com).
-  const domains = new Set([...owners].filter(([d, o]) => o.size === 1 || named.has(d)).map(([d]) => d));
+  const domains = new Set([...owners].filter(([d, o]) => o.size === 1 || namedDomains.has(d)).map(([d]) => d));
   return { names, domains };
 }
+
+const longestWord = (name: string) => {
+  const w = name.split(" ").reduce((a, b) => (b.length > a.length ? b : a), "");
+  return w.length >= 4 ? w : "";
+};
+
+// normalizeChainName keeps only a-z and digits, so "スターバックス" would become
+// "" and match every non-Latin name. Keep the original script instead.
+const learnKey = (name: string) => normalizeChainName(name) || name.normalize("NFKC").toLowerCase().trim();
 
 // Same rules as the live map (isCoffeePlace, isChain), applied to the merged
 // place, plus the learned chain signals. Overrides and flags join in Phase 3.
@@ -57,5 +73,5 @@ export function keepPlace(p: MergedPlace, chains: ChainEntry[], learned?: ChainS
   if (isChain(tagsOf(p), chains)) return false;
   if (!learned) return true;
   const d = websiteDomain(p.website);
-  return !learned.names.has(normalizeChainName(p.name)) && !(d && learned.domains.has(d));
+  return !learned.names.has(learnKey(p.name)) && !(d && learned.domains.has(d));
 }

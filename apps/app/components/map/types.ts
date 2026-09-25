@@ -33,6 +33,7 @@ export type NearbyShopPin = {
   // e.g. "osm:node/123", and how loudly to draw the dot.
   sourceIds?: string[];
   visibility?: "show" | "dim";
+  why?: string[]; // the build's reasons it's on the map ("in 3 sources")
 };
 
 export type MapViewProps = {

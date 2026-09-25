@@ -4,9 +4,11 @@ import { colors } from "@coffeesnob/design-tokens";
 import type { ListRow } from "../../lib/map/shop-list";
 import { formatDistance, rowSubtitle } from "../../lib/map/shop-list";
 import { Detour } from "../detour";
-import { D2, D4, Label } from "../primitives";
+import { BodySm, D2, D4, Label } from "../primitives";
 import { ArrowIcon, CloseIcon, PlusIcon } from "./map-icons";
 import { ShopTile } from "./shop-row";
+import { ReportPlace } from "./report-place";
+import { whyLine } from "../../lib/map/coffee-index";
 
 function ActionButton({ title, icon, solid, onPress, label }: { title: string; icon?: ReactNode; solid?: boolean; onPress: () => void; label: string }) {
   return (
@@ -97,10 +99,20 @@ export function PreviewCard({
         <CloseButton onPress={onDismiss} />
       </View>
       {row.shop.address ? <Label numberOfLines={1} style={{ marginTop: 6 }}>{row.shop.address}</Label> : null}
+      {whyLine(row.shop.why) ? (
+        <BodySm numberOfLines={2} style={{ marginTop: 6, color: colors.ink2 }}>
+          {whyLine(row.shop.why)}
+        </BodySm>
+      ) : null}
       <View style={{ flexDirection: "row", gap: 7, marginTop: 11 }}>
         <ActionButton solid title="Log a visit" icon={<PlusIcon size={13} color={colors.cream} />} onPress={onLog} label={`Log a visit to ${row.shop.name}`} />
         <ActionButton title="Directions" onPress={onDirections} label={`Directions to ${row.shop.name}`} />
       </View>
+      {row.shop.externalId.startsWith("cs_") ? (
+        <View style={{ marginTop: 8 }}>
+          <ReportPlace shop={row.shop} />
+        </View>
+      ) : null}
     </View>
   );
 }

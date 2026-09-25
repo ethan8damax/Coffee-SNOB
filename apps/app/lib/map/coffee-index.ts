@@ -94,7 +94,14 @@ export function toPin(e: IndexEntry): NearbyShopPin {
     website: e.website ?? null,
     phone: e.phone ?? null,
     visibility: e.visibility,
+    why: e.why ?? [],
   };
+}
+
+// Places hidden since the last build (admin hides, two "closed" reports),
+// from active_place_hides() once per session.
+export function dropHidden<T extends { externalId: string }>(pins: T[], hidden: Set<string>): T[] {
+  return hidden.size ? pins.filter((p) => !hidden.has(p.externalId)) : pins;
 }
 
 // ponytail: in-memory caches for the session; files are immutable per
@@ -165,4 +172,9 @@ export function dropNearDuplicates(index: NearbyShopPin[], others: { name: strin
     Math.hypot(a.lat - b.lat, (a.lng - b.lng) * Math.cos((a.lat * Math.PI) / 180)) < 0.00135;
   const core = (n: string) => fold(n).replace(/\b(the|co|company|coffee|cafe|caffe|roasters|shop|bar)\b/g, "").replace(/\s+/g, " ").trim() || fold(n);
   return index.filter((p) => !others.some((o) => near(p, o) && core(o.name) === core(p.name)));
+}
+
+// "In 3 sources · Listed as a coffee shop": the build's reasons for a dot.
+export function whyLine(why: string[] | undefined): string | null {
+  return why?.length ? why.map((w) => w[0].toUpperCase() + w.slice(1)).join(" · ") : null;
 }

@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
 import { containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
-import { fetchIndexShops } from "./coffee-index";
+import { dropHidden, fetchIndexShops } from "./coffee-index";
+import { usePlaceHides } from "./place-hides";
 import { dropRatedDuplicates, visibleNearby } from "./shop-list";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
@@ -142,10 +143,13 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
     () => (bounds ? fetchedRated.filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
     [fetchedRated, bounds]
   );
+  const hidden = usePlaceHides(Boolean(COFFEE_INDEX_URL));
   const nearbyShops = useMemo(
     () =>
-      bounds ? visibleNearby(dropRatedDuplicates(fetchedNearby, fetchedRated), bounds).filter((s) => withinBounds(bounds, s.lat, s.lng)) : [],
-    [fetchedNearby, fetchedRated, bounds]
+      bounds
+        ? visibleNearby(dropHidden(dropRatedDuplicates(fetchedNearby, fetchedRated), hidden), bounds).filter((s) => withinBounds(bounds, s.lat, s.lng))
+        : [],
+    [fetchedNearby, fetchedRated, bounds, hidden]
   );
 
   return { ratedShops, nearbyShops, status, reload: () => {

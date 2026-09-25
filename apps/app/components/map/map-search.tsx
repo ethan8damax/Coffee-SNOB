@@ -4,7 +4,8 @@ import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
-import { dropNearDuplicates, searchIndex } from "../../lib/map/coffee-index";
+import { dropHidden, dropNearDuplicates, searchIndex } from "../../lib/map/coffee-index";
+import { usePlaceHides } from "../../lib/map/place-hides";
 import { searchEverywhere, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { mergeResults, rankResults, type SearchResult } from "../../lib/map/search-sort";
@@ -40,6 +41,7 @@ export function MapSearch({
   onSelectNearbyShop: (shop: NearbyShopPin) => void;
 }) {
   const [active, setActive] = useState(false);
+  const hidden = usePlaceHides(Boolean(COFFEE_INDEX_URL));
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [pending, setPending] = useState(false);
@@ -97,7 +99,7 @@ export function MapSearch({
             add([
               ...places.map((place): SearchResult => ({ kind: "place", place })),
               ...shops.map(({ shop, secondary }): SearchResult => ({ kind: "nearby", shop, secondary })),
-              ...dropNearDuplicates(local, found).map((shop): SearchResult => ({ kind: "nearby", shop, secondary: null })),
+              ...dropHidden(dropNearDuplicates(local, found), hidden).map((shop): SearchResult => ({ kind: "nearby", shop, secondary: null })),
             ]);
           })
         : searchEverywhere(q, near, webAppUrl)
@@ -119,7 +121,7 @@ export function MapSearch({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [active, query, webAppUrl, near]);
+  }, [active, query, webAppUrl, near, hidden]);
 
   function open() {
     setActive(true);

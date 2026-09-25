@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { dropNearDuplicates, fetchIndexShops, matchesQuery, searchCellsAround, tileKeysFor, toPin, type IndexManifest } from "./coffee-index";
+import { whyLine, dropHidden, dropNearDuplicates, fetchIndexShops, matchesQuery, searchCellsAround, tileKeysFor, toPin, type IndexManifest } from "./coffee-index";
 
 const manifest: IndexManifest = { version: "v1", tileStep: 0.1, splitStep: 0.025, searchStep: 1, split: ["10.7_106.6"] };
 
@@ -46,7 +46,7 @@ describe("toPin", () => {
       }),
     ).toEqual({
       externalId: "cs_1", sourceIds: ["ov:a", "osm:node/7"], name: "Perc", lat: 33.78, lng: -84.35,
-      address: "1046 N Highland Ave NE", hours: "Mo-Su 07:00-17:00", website: null, phone: null, visibility: "dim",
+      address: "1046 N Highland Ave NE", hours: "Mo-Su 07:00-17:00", website: null, phone: null, visibility: "dim", why: [],
     });
   });
 });
@@ -77,5 +77,21 @@ describe("dropNearDuplicates", () => {
     const index = [pin("cs_1", "East Pole Coffee Co.", 33.8109, -84.3789), pin("cs_2", "Muchacho", 33.75, -84.35)];
     const others = [{ name: "East Pole Coffee Co", lat: 33.8107, lng: -84.3785 }, { name: "Muchacho", lat: 33.8, lng: -84.35 }];
     expect(dropNearDuplicates(index, others).map((p) => p.externalId)).toEqual(["cs_2"]);
+  });
+});
+
+describe("dropHidden", () => {
+  it("drops places hidden since the last build", () => {
+    const pins = [{ externalId: "cs_a" }, { externalId: "cs_b" }];
+    expect(dropHidden(pins, new Set(["cs_b"]))).toEqual([{ externalId: "cs_a" }]);
+    expect(dropHidden(pins, new Set())).toBe(pins);
+  });
+});
+
+describe("whyLine", () => {
+  it("reads the build's reasons as one line", () => {
+    expect(whyLine(["in 3 sources", "listed as a coffee shop"])).toBe("In 3 sources · Listed as a coffee shop");
+    expect(whyLine([])).toBeNull();
+    expect(whyLine(undefined)).toBeNull();
   });
 });

@@ -7,5 +7,8 @@
   "visibility": { "multiSourceMin": 2, "multiSource": 1, "coffeeShopCategory": 1, "hoursOrWebsite": 1, "showAt": 2 },
   "chainSuggestMin": 10,
   "changeAlarm": 0.1,
-  "tileStep": 0.1
+  "tileStep": 0.1,
+  "splitAbove": 1000,
+  "splitStep": 0.025,
+  "searchStep": 1
 }

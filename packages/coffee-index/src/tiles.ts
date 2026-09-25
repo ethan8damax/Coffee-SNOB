@@ -17,3 +17,37 @@ export function toTiles<T extends { lat: number; lng: number }>(places: T[], ste
   }
   return tiles;
 }
+
+// Dense cells (Ho Chi Minh City has 10k cafés in one 0.1° cell) are written
+// as finer cells instead, so no single download gets big. The app learns
+// which cells are split from the version manifest.
+export function layoutTiles<T extends { lat: number; lng: number }>(
+  places: T[],
+  cfg: { tileStep: number; splitStep: number; splitAbove: number },
+): { coarse: Map<string, T[]>; fine: Map<string, T[]>; split: string[] } {
+  const coarse = toTiles(places, cfg.tileStep);
+  const fine = new Map<string, T[]>();
+  const split: string[] = [];
+  for (const [key, ps] of coarse) {
+    if (ps.length <= cfg.splitAbove) continue;
+    coarse.delete(key);
+    split.push(key);
+    for (const [k, f] of toTiles(ps, cfg.splitStep)) fine.set(k, f);
+  }
+  return { coarse, fine, split: split.sort() };
+}
+
+// Name search files: compact [id, name, lat, lng] rows per cell.
+export type SearchRow = [string, string, number, number];
+export function searchRows(places: { id: string; name: string; lat: number; lng: number }[], step: number): Map<string, SearchRow[]> {
+  const rows = new Map<string, SearchRow[]>();
+  const r5 = (n: number) => Math.round(n * 1e5) / 1e5;
+  for (const p of places) {
+    const k = tileKey(p.lat, p.lng, step);
+    const row: SearchRow = [p.id, p.name, r5(p.lat), r5(p.lng)];
+    const list = rows.get(k);
+    if (list) list.push(row);
+    else rows.set(k, [row]);
+  }
+  return rows;
+}

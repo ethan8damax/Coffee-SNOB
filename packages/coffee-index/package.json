@@ -7,7 +7,8 @@
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "build-index": "tsx src/build.ts"
+    "build-index": "tsx src/build.ts",
+    "serve": "tsx src/serve.ts"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

@@ -10,11 +10,14 @@ import { extractOsm, extractOverture, sourceVersions, type BBox } from "./extrac
 import { buildIndex } from "./pipeline";
 import type { IndexPlace } from "./place";
 import { reportMarkdown } from "./report";
-import { toTiles } from "./tiles";
+import { layoutTiles, searchRows } from "./tiles";
 
 // pnpm --filter @coffeesnob/coffee-index build-index
-//   [--bbox=minLng,minLat,maxLng,maxLat] (with "=": western longitudes start with "-") [--prev out/<earlier build>] [--out out]
-//   [--first-run] [--allow-big-change]
+//   [--bbox=minLng,minLat,maxLng,maxLat] (with "=": western longitudes start with "-")
+//   [--prev <earlier build>/v/<version>] [--out out] [--first-run] [--allow-big-change]
+// Writes <out>/<version>/ exactly as it is uploaded: manifest.json (the root
+// pointer, uploaded last) and v/<version>/ (tiles, tiles-fine, search, the
+// full index, id_map, report).
 // Needs SUPABASE_URL + SUPABASE_ANON_KEY (or the NEXT_PUBLIC_ pair) for the
 // public chain blocklist; a chain-less index must never publish.
 const { values } = parseArgs({
@@ -74,8 +77,10 @@ async function main() {
 
   const { places, idMap, report } = buildIndex({ osm, overture, chains, prevIdMap, prevIds });
   const builtAt = new Date().toISOString();
-  const outDir = resolve(values.out!, builtAt.slice(0, 10) + (bbox ? "-bbox" : ""));
-  mkdirSync(join(outDir, "tiles"), { recursive: true });
+  const version = builtAt.slice(0, 16).replace(/:/g, "") + (bbox ? "-bbox" : "");
+  const rootDir = resolve(values.out!, version);
+  const outDir = join(rootDir, "v", version);
+  for (const d of ["tiles", "tiles-fine", "search"]) mkdirSync(join(outDir, d), { recursive: true });
 
   writeFileSync(join(outDir, "report.json"), JSON.stringify(report, null, 2));
   writeFileSync(join(outDir, "report.md"), reportMarkdown(report, { builtAt, sources: versions }));
@@ -83,16 +88,22 @@ async function main() {
     fail(`ALARM: ${report.alarm}. Tiles not written. Check ${join(outDir, "report.md")}, then rerun with --allow-big-change if it's real.`, 2);
   }
 
+  const r6 = (n: number) => Math.round(n * 1e6) / 1e6; // ~10 cm, drops float noise
   // What the map needs per dot (parent spec 4.3).
   const entry = (p: IndexPlace) => ({
-    id: p.id, sourceIds: p.sourceIds, name: p.name, lat: p.lat, lng: p.lng,
+    id: p.id, sourceIds: p.sourceIds, name: p.name, lat: r6(p.lat), lng: r6(p.lng),
     address: p.address, locality: p.locality, region: p.region, countryCode: p.countryCode,
     website: p.website, phone: p.phone, hours: p.hours, visibility: p.visibility, why: p.why,
   });
-  const tiles = toTiles(places, config.tileStep);
-  for (const [k, ps] of tiles) {
-    writeFileSync(join(outDir, "tiles", `${k}.json.gz`), gzipSync(JSON.stringify(ps.map(entry))));
-  }
+  // Tile and search files are gzip bytes named .json: the host sends them
+  // with Content-Encoding: gzip, so fetch() decodes them for free.
+  const write = (dir: string, groups: Map<string, unknown[]>) => {
+    for (const [k, rows] of groups) writeFileSync(join(outDir, dir, `${k}.json`), gzipSync(JSON.stringify(rows)));
+  };
+  const { coarse, fine, split } = layoutTiles(places.map(entry), config);
+  write("tiles", coarse);
+  write("tiles-fine", fine);
+  write("search", searchRows(places, config.searchStep));
   await pipeline(
     (function* () {
       for (const p of places) yield JSON.stringify(p) + "\n";
@@ -103,9 +114,13 @@ async function main() {
   writeFileSync(join(outDir, "id_map.json"), JSON.stringify(idMap));
   writeFileSync(
     join(outDir, "manifest.json"),
-    JSON.stringify({ version: builtAt.slice(0, 10), builtAt, configVersion: config.version, sources: versions, bbox: bbox ?? null, count: places.length, tiles: tiles.size }, null, 2),
+    JSON.stringify({
+      version, builtAt, configVersion: config.version, sources: versions, bbox: bbox ?? null, count: places.length,
+      tileStep: config.tileStep, splitStep: config.splitStep, searchStep: config.searchStep, split,
+    }, null, 2),
   );
-  console.log(`built ${places.length} places in ${tiles.size} tiles → ${outDir} (${secs()}s)`);
+  writeFileSync(join(rootDir, "manifest.json"), JSON.stringify({ version }));
+  console.log(`built ${places.length} places in ${coarse.size} tiles + ${fine.size} fine (${split.length} split) → ${rootDir} (${secs()}s)`);
 }
 
 main().catch((error) => fail(String(error?.stack ?? error)));

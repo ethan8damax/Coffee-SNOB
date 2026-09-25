@@ -31,6 +31,16 @@
     {
       "name": "кофе лайк",
       "wikidata": null
+    },
+    {
+      "name": "tim hortons",
+      "wikidata": "Q175106",
+      "prefix": true
+    },
+    {
+      "name": "joes coffee",
+      "wikidata": null,
+      "status": "allowed"
     }
   ],
   "cases": [
@@ -124,6 +134,26 @@
     },
     {
       "name": "Café Tamarind",
+      "isChain": false
+    },
+    {
+      "name": "Tim Hortons Cafe and Bake Shop",
+      "isChain": true
+    },
+    {
+      "name": "Tim Hortons",
+      "isChain": true
+    },
+    {
+      "name": "Tim Hortonsville",
+      "isChain": false
+    },
+    {
+      "name": "Joe's Coffee Midtown",
+      "isChain": false
+    },
+    {
+      "name": "Joe's Coffee",
       "isChain": false
     }
   ]

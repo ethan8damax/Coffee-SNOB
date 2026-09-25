@@ -50,11 +50,13 @@ export function normalizeChainName(name: string): string {
 // leading whole words ("dunkin" catches "Dunkin' Donuts", not "Dunkinville").
 // Keep in step with public.is_chain_name (supabase/migrations/0024);
 // test/chain-twins.test.ts enforces it.
-export type ChainEntry = { name: string; wikidata: string | null };
+// prefix: an entry with a brand ID that an admin chose to also match leading
+// words ("tim hortons" → "Tim Hortons Cafe and Bake Shop"). Never automatic.
+export type ChainEntry = { name: string; wikidata: string | null; prefix?: boolean };
 
 export function isChain(tags: Record<string, string>, chains: ChainEntry[]): boolean {
   const ids = (tags["brand:wikidata"] ?? "").split(";").map((s) => s.trim());
   if (chains.some((c) => c.wikidata && ids.includes(c.wikidata))) return true;
   const names = [tags.name, tags.brand, tags["brand:en"], tags["name:en"]].filter(Boolean).map(normalizeChainName);
-  return names.some((n) => chains.some((c) => n === c.name || (!c.wikidata && n.startsWith(c.name + " "))));
+  return names.some((n) => chains.some((c) => n === c.name || ((!c.wikidata || c.prefix) && n.startsWith(c.name + " "))));
 }

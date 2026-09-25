@@ -9,7 +9,10 @@ import fixture from "./fixtures/chains.json";
 // one, log_shop_visit and shop_ratings with the other. Same fixture, both
 // sides, so a rule change to one without the other fails here. Names only:
 // the SQL side never sees OSM brand tags.
-const blocklist = fixture.blocklist as ChainEntry[];
+type Row = ChainEntry & { status?: "blocked" | "allowed" };
+const rows = fixture.blocklist as Row[];
+// Like getChainBlocklist: the TS side only ever sees blocked entries.
+const blocklist: ChainEntry[] = rows.filter((c) => (c.status ?? "blocked") === "blocked");
 const MIGRATIONS = join(__dirname, "../../../supabase/migrations");
 
 // The newest definition is the one live in production, so test that one.
@@ -26,10 +29,14 @@ function latestIsChainName(): string {
 describe("chain matcher twins", () => {
   const db = new PGlite();
   beforeAll(async () => {
-    await db.exec("create table public.chain_blocklist (name text primary key, wikidata text);");
+    await db.exec(
+      "create table public.chain_blocklist (name text primary key, wikidata text, status text not null default 'blocked', prefix boolean not null default false);",
+    );
     await db.exec(latestIsChainName());
-    for (const c of blocklist) {
-      await db.query("insert into public.chain_blocklist (name, wikidata) values ($1, $2)", [c.name, c.wikidata]);
+    for (const c of rows) {
+      await db.query("insert into public.chain_blocklist (name, wikidata, status, prefix) values ($1, $2, $3, $4)", [
+        c.name, c.wikidata, c.status ?? "blocked", c.prefix ?? false,
+      ]);
     }
   });
 

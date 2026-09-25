@@ -1,26 +1,130 @@
 {
   "blocklist": [
-    { "name": "starbucks", "wikidata": "Q37158" },
-    { "name": "costa", "wikidata": "Q608845" },
-    { "name": "dunkin", "wikidata": null },
-    { "name": "caribou coffee", "wikidata": null },
-    { "name": "the coffee bean tea leaf", "wikidata": null }
+    {
+      "name": "starbucks",
+      "wikidata": "Q37158"
+    },
+    {
+      "name": "costa",
+      "wikidata": "Q608845"
+    },
+    {
+      "name": "dunkin",
+      "wikidata": null
+    },
+    {
+      "name": "caribou coffee",
+      "wikidata": null
+    },
+    {
+      "name": "the coffee bean tea leaf",
+      "wikidata": null
+    },
+    {
+      "name": "スターバックス",
+      "wikidata": null
+    },
+    {
+      "name": "กอกล้วย coffee",
+      "wikidata": null
+    },
+    {
+      "name": "кофе лайк",
+      "wikidata": null
+    }
   ],
   "cases": [
-    { "name": "Starbucks", "isChain": true },
-    { "name": "STARBUCKS", "isChain": true },
-    { "name": "Starbucks Reserve", "isChain": false },
-    { "name": "Starbucksy Roasters", "isChain": false },
-    { "name": "Not Starbucks", "isChain": false },
-    { "name": "Costa", "isChain": true },
-    { "name": "Costa Rica Café", "isChain": false },
-    { "name": "Dunkin'", "isChain": true },
-    { "name": "Dunkin' Donuts", "isChain": true },
-    { "name": "Dunkin Donuts Express", "isChain": true },
-    { "name": "Dunkinville Coffee", "isChain": false },
-    { "name": "Caribou Coffee", "isChain": true },
-    { "name": "The Coffee Bean & Tea Leaf", "isChain": true },
-    { "name": "Spiller Park Coffee", "isChain": false },
-    { "name": "", "isChain": false }
+    {
+      "name": "Starbucks",
+      "isChain": true
+    },
+    {
+      "name": "STARBUCKS",
+      "isChain": true
+    },
+    {
+      "name": "Starbucks Reserve",
+      "isChain": false
+    },
+    {
+      "name": "Starbucksy Roasters",
+      "isChain": false
+    },
+    {
+      "name": "Not Starbucks",
+      "isChain": false
+    },
+    {
+      "name": "Costa",
+      "isChain": true
+    },
+    {
+      "name": "Costa Rica Café",
+      "isChain": false
+    },
+    {
+      "name": "Dunkin'",
+      "isChain": true
+    },
+    {
+      "name": "Dunkin' Donuts",
+      "isChain": true
+    },
+    {
+      "name": "Dunkin Donuts Express",
+      "isChain": true
+    },
+    {
+      "name": "Dunkinville Coffee",
+      "isChain": false
+    },
+    {
+      "name": "Caribou Coffee",
+      "isChain": true
+    },
+    {
+      "name": "The Coffee Bean & Tea Leaf",
+      "isChain": true
+    },
+    {
+      "name": "Spiller Park Coffee",
+      "isChain": false
+    },
+    {
+      "name": "",
+      "isChain": false
+    },
+    {
+      "name": "スターバックス 南京復興",
+      "isChain": true
+    },
+    {
+      "name": "スターバックス",
+      "isChain": true
+    },
+    {
+      "name": "珈琲店 ほのか",
+      "isChain": false
+    },
+    {
+      "name": "สตาร์บัคส์",
+      "isChain": false
+    },
+    {
+      "name": "กอกล้วย Coffee ท่าบือ",
+      "isChain": true
+    },
+    {
+      "name": "кофе лайк москва",
+      "isChain": true
+    },
+    {
+      "name": "кофейня",
+      "isChain": false
+    },
+    {
+      "name": "Café Tamarind",
+      "isChain": false
+    }
   ]
 }

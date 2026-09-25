@@ -73,5 +73,9 @@ describe("isChain", () => {
     expect(normalizeChainName("Peet's Coffee")).toBe("peets coffee");
     expect(normalizeChainName("The Coffee Bean & Tea Leaf")).toBe("the coffee bean tea leaf");
     expect(normalizeChainName("McCafé")).toBe("mccafe");
+    // Other scripts keep their letters; only spaces and punctuation separate words.
+    expect(normalizeChainName("スターバックス・南京")).toBe("スターバックス 南京");
+    expect(normalizeChainName("กอกล้วย Coffee")).toBe("กอกล้วย coffee");
+    expect(normalizeChainName("Кофе Лайк!")).toBe("кофе лайк");
   });
 });

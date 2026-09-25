@@ -26,13 +26,19 @@ export function isCoffeePlace(tags: Record<string, string>): boolean {
 // Chain filter (chain_blocklist, managed at /admin/shops). Blocklist entries
 // and OSM names are compared in one normalized form so "Dunkin'", "DUNKIN"
 // and "Dunkin' Donuts" all reduce to something starting with "dunkin".
+// Letters in every script survive ("スターバックス 南京"); only whitespace and
+// punctuation separate words. The separator list is spelled out, not a
+// locale class, so the SQL twin (is_chain_name) matches it in any locale.
+export const NAME_SEPARATORS = "\\s!-/:-@\\[-`{-~\\u00a0\\u00b7\\u2010-\\u2027\\u3000-\\u303f\\u30fb\\uff01-\\uff0f\\uff1a-\\uff20";
+const SEPARATORS = new RegExp(`[${NAME_SEPARATORS}]+`, "g");
 export function normalizeChainName(name: string): string {
   return name
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/([a-z])[\u0300-\u036f]+/g, "$1") // accents on Latin letters only (й stays й); NFC recomposes the rest
+    .normalize("NFC")
     .replace(/['’]/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(SEPARATORS, " ")
     .trim();
 }
 

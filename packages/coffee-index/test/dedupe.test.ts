@@ -73,6 +73,13 @@ describe("clusterPlaces", () => {
     ], 50, 0.5)).toHaveLength(2);
   });
 
+  it("never merges two different non-Latin names", () => {
+    expect(clusterPlaces([
+      sp({ sourceId: "osm:node/1", name: "珈琲店 ほのか", lat: 35.68, lng: 139.76 }),
+      sp({ sourceId: "osm:node/2", name: "喫茶 ルノアール", lat: 35.68, lng: 139.76 }),
+    ], 50, 0.5)).toHaveLength(2);
+  });
+
   it("finds neighbours across a cell edge at high latitude", () => {
     const c = clusterPlaces([
       sp({ sourceId: "osm:node/1", name: "Kaffebrenneriet", lat: 69.649, lng: 18.955 }),

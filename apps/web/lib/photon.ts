@@ -23,12 +23,15 @@ export type PhotonFeature = {
 
 export type Locality = { locality: string | null; region: string | null; countryCode: string | null };
 
-// A shop's city for its city page (/api/locate). Unincorporated areas have no
-// city in OSM, so fall back to the county rather than leave the shop off every page.
+// A shop's city for its city page (/api/locate). Near a town's center the
+// nearest feature is often the town's own place node, which has no `city` —
+// use its name. Unincorporated spots get no city (no county pages: search
+// never links to them).
 export function toLocality(f: PhotonFeature | undefined): Locality {
   const p = f?.properties;
+  const town = p && p.osm_key === "place" && CITY_VALUES.has(p.osm_value) ? p.name : undefined;
   return {
-    locality: p?.city ?? p?.county ?? null,
+    locality: p?.city ?? town ?? null,
     region: p?.state ?? null,
     countryCode: p?.countrycode ? p.countrycode.toUpperCase() : null,
   };

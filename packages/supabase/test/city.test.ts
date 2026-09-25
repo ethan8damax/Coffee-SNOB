@@ -13,5 +13,7 @@ describe("cityKey", () => {
   it("is null without a locality", () => {
     expect(cityKey(null, "Georgia", "US")).toBeNull();
     expect(cityKey("  ", "Georgia", "US")).toBeNull();
+    // A name with no Latin letters would slug to just the country — one page per country.
+    expect(cityKey("東京", "東京都", "JP")).toBeNull();
   });
 });

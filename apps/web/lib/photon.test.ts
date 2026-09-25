@@ -58,9 +58,15 @@ describe("toLocality", () => {
     expect(toLocality(feature({ osm_type: "W", osm_id: 1, osm_key: "amenity", osm_value: "restaurant", city: "Atlanta", state: "Georgia", countrycode: "US" })))
       .toEqual({ locality: "Atlanta", region: "Georgia", countryCode: "US" });
   });
-  it("falls back to the county where there's no city, and to nulls with nothing", () => {
+  it("uses the town itself when the nearest feature is the town's place node", () => {
+    // Real case: reverse near downtown Roswell GA returns the city node, with no `city` field.
+    expect(toLocality(feature({ osm_type: "N", osm_id: 3, osm_key: "place", osm_value: "city", name: "Roswell", county: "Fulton", state: "Georgia", countrycode: "us" })))
+      .toEqual({ locality: "Roswell", region: "Georgia", countryCode: "US" });
+  });
+
+  it("leaves unincorporated spots without a city (no county pages), and nulls with nothing", () => {
     expect(toLocality(feature({ osm_type: "W", osm_id: 2, osm_key: "highway", osm_value: "secondary", county: "Cobb", state: "Georgia", countrycode: "us" })))
-      .toEqual({ locality: "Cobb", region: "Georgia", countryCode: "US" });
+      .toEqual({ locality: null, region: "Georgia", countryCode: "US" });
     expect(toLocality(undefined)).toEqual({ locality: null, region: null, countryCode: null });
   });
 });

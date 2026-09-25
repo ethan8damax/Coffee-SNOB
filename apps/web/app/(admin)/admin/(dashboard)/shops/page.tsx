@@ -9,12 +9,14 @@ import {
   updateShop,
   upsertShopCuration,
   rejectShopPromotion,
-  getChainBlocklist,
-  addChainBlock,
-  removeChainBlock,
+  getChainDecisions,
+  getOpenPlaceFlags,
+  getPlaceOverrides,
 } from "@coffeesnob/supabase";
-import { normalizeChainName } from "@coffeesnob/coffee-index";
-import { lookupChain } from "@/lib/chain-lookup";
+import { BuildTab } from "./build-tab";
+import { ChainsTab, pendingChainCount } from "./chains-tab";
+import { FlagsTab, groupFlags } from "./flags-tab";
+import { getLiveIndex } from "./live-index";
 
 async function saveAction(formData: FormData) {
   "use server";
@@ -60,39 +62,37 @@ async function rejectAction(formData: FormData) {
   revalidatePath("/admin/shops");
 }
 
-async function addChainAction(formData: FormData) {
-  "use server";
-  const name = normalizeChainName(String(formData.get("chain") || ""));
-  const wikidata = String(formData.get("wikidata") || "") || null;
-  if (!name) return;
-  const supabase = await getSupabaseServer();
-  await addChainBlock(supabase, name, wikidata);
-  redirect("/admin/shops");
-}
-
-async function removeChainAction(formData: FormData) {
-  "use server";
-  const supabase = await getSupabaseServer();
-  await removeChainBlock(supabase, String(formData.get("chain")));
-  revalidatePath("/admin/shops");
-}
-
 type Filter = "all" | "flagged";
+type Tab = "shops" | "chains" | "flags" | "build";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "shops", label: "Shops" },
+  { id: "chains", label: "Chains" },
+  { id: "flags", label: "Flags" },
+  { id: "build", label: "Build" },
+];
 
 export default async function AdminShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ search?: string; filter?: Filter; edit?: string; chain?: string }>;
+  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string }>;
 }) {
-  const { search, filter = "all", edit, chain: chainQuery } = await searchParams;
+  const { tab = "shops", search, filter = "all", edit, chain: chainQuery } = await searchParams;
   const supabase = await getSupabaseServer();
-  const [shops, cities, chains] = await Promise.all([
+  const [shops, cities, decisions, flags, overrides, live] = await Promise.all([
     getAdminShops(supabase, { search, filter }),
     getCities(supabase),
-    getChainBlocklist(supabase),
+    getChainDecisions(supabase),
+    getOpenPlaceFlags(supabase),
+    getPlaceOverrides(supabase),
+    getLiveIndex(),
   ]);
-  const chainMatches = chainQuery ? await lookupChain(chainQuery) : [];
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
+  const counts: Record<Tab, number> = {
+    shops: shops.filter((s) => s.promotionStatus === "flagged" && !s.curation).length,
+    chains: pendingChainCount(live, decisions),
+    flags: groupFlags(flags).length,
+    build: typeof live !== "string" && live.report.alarm ? 1 : 0,
+  };
 
   // Preserves the current search/filter across in-page navigation (Edit, filter chips,
   // Close) — matches /admin/users' hrefWith; without this, every click after searching
@@ -100,110 +100,91 @@ export default async function AdminShopsPage({
   const hrefWith = (overrides: { filter?: Filter; edit?: string }) => {
     const params = new URLSearchParams();
     if (search) params.set("search", search);
+    params.set("tab", "shops");
     params.set("filter", overrides.filter ?? filter);
     if (overrides.edit) params.set("edit", overrides.edit);
     return `/admin/shops?${params.toString()}`;
   };
 
   return (
-    <div>
-      <h1 className="d2">Shops</h1>
-
-      <form style={{ display: "flex", gap: 12, margin: "16px 0", alignItems: "center" }}>
-        <input type="hidden" name="filter" value={filter} />
-        <input name="search" defaultValue={search} placeholder="Search name" style={inputStyle} />
-        <button type="submit" className="btn btn-line">
-          Search
-        </button>
-        {(["all", "flagged"] as const).map((f) => (
-          <Link key={f} href={hrefWith({ filter: f })} className={`chip ${filter === f ? "on" : ""}`}>
-            {f}
+    <div className="adm">
+      <header className="adm-head">
+        <h1 className="d2">Shops</h1>
+        <p className="body">Rated shops and approvals, plus what the map shows before anyone rates a place.</p>
+      </header>
+      <nav className="adm-tabs" aria-label="Shops sections">
+        {TABS.map((t) => (
+          <Link key={t.id} href={`/admin/shops?tab=${t.id}`} className="adm-tab" aria-current={tab === t.id ? "page" : undefined}>
+            {t.label}
+            {counts[t.id] ? <span className="adm-count" aria-label={`${counts[t.id]} waiting`}>{counts[t.id]}</span> : null}
           </Link>
         ))}
-        <Link href={hrefWith({ edit: "new" })} className="btn btn-line">
-          + Add shop
+      </nav>
+
+      {tab === "chains" ? <ChainsTab live={live} decisions={decisions} lookup={chainQuery} /> : null}
+      {tab === "flags" ? <FlagsTab flags={flags} overrides={overrides} /> : null}
+      {tab === "build" ? <BuildTab live={live} /> : null}
+      {tab === "shops" ? (
+      <>
+
+      <form className="adm-row" style={{ flexWrap: "wrap", gap: 10 }}>
+        <input type="hidden" name="tab" value="shops" />
+        <input type="hidden" name="filter" value={filter} />
+        <label htmlFor="shop-search" className="visually-hidden">Search shops</label>
+        <input id="shop-search" name="search" defaultValue={search} placeholder="Search by name" className="adm-input" style={{ flex: "1 1 220px", maxWidth: 360 }} />
+        <button type="submit" className="btn btn-sm btn-line">Search</button>
+        {(["all", "flagged"] as const).map((f) => (
+          <Link key={f} href={hrefWith({ filter: f })} className={`chip ${filter === f ? "on" : ""}`} aria-current={filter === f ? "true" : undefined}>
+            {f === "all" ? "All" : "Worth a visit"}
+          </Link>
+        ))}
+        <Link href={hrefWith({ edit: "new" })} className="btn btn-sm btn-ox" style={{ marginLeft: "auto" }}>
+          Add shop
         </Link>
       </form>
 
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ textAlign: "left", borderBottom: "1px solid var(--rule)" }}>
-            <th>Name</th>
-            <th>City</th>
-            <th>Approved</th>
-            <th>Status</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {shops.map((s) => (
-            <tr key={s.id} style={{ borderBottom: "1px solid var(--rule)" }}>
-              <td>{s.name}</td>
-              <td>{cities.find((c) => c.id === s.cityId)?.name ?? "—"}</td>
-              <td>{s.curation ? "Yes" : "No"}</td>
-              <td>{s.promotionStatus}</td>
-              <td>
-                <Link href={hrefWith({ edit: s.id })} className="label">
-                  Edit
-                </Link>
-              </td>
+      {shops.length === 0 ? (
+        <div className="adm-empty">
+          <p className="body">
+            {filter === "flagged"
+              ? "No shops waiting on a visit. Shops land here once enough people rate them well."
+              : search
+                ? `No shop matches “${search}”.`
+                : "No rated shops yet. A shop appears here the first time someone logs a visit."}
+          </p>
+        </div>
+      ) : (
+        <table className="adm-table">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">City</th>
+              <th scope="col">Snob-Approved</th>
+              <th scope="col">Status</th>
+              <th scope="col"><span className="visually-hidden">Edit</span></th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <section style={{ marginTop: 48, maxWidth: 720 }}>
-        <h2 className="d3">Chains hidden from the map</h2>
-        <p className="body" style={{ marginTop: 8 }}>
-          Hidden everywhere, in every country and language, by the chain&apos;s brand ID; cafés with no brand tag are caught by name. Hidden chains can&apos;t be logged either. Changes show up within about ten minutes.
-        </p>
-        <form style={{ display: "flex", gap: 12, margin: "16px 0" }}>
-          <input name="chain" defaultValue={chainQuery} placeholder="Look up a chain, e.g. Costa" required style={{ ...inputStyle, flex: 1 }} />
-          <button type="submit" className="btn btn-line">
-            Look up
-          </button>
-        </form>
-        {chainQuery && (
-          <div style={{ border: "1px solid var(--rule)", padding: 16, marginBottom: 16, display: "grid", gap: 8 }}>
-            {chainMatches.map((m) => (
-              <form key={m.wikidata} action={addChainAction} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                <input type="hidden" name="chain" value={m.name} />
-                <input type="hidden" name="wikidata" value={m.wikidata} />
-                <span className="body" style={{ flex: 1 }}>
-                  <strong>{m.label}</strong> · {m.where} · {m.wikidata}
-                </span>
-                <button type="submit" className="btn btn-ox">Hide</button>
-              </form>
+          </thead>
+          <tbody>
+            {shops.map((s) => (
+              <tr key={s.id}>
+                <td className="adm-name">{s.name}</td>
+                <td>{cities.find((c) => c.id === s.cityId)?.name ?? "—"}</td>
+                <td>{s.curation ? "Yes" : "—"}</td>
+                <td>
+                  {s.promotionStatus === "flagged" ? <span className="chip bu">Worth a visit</span> : s.promotionStatus === "rejected" ? <span className="chip">Not a fit</span> : "—"}
+                </td>
+                <td>
+                  <div className="adm-actions">
+                    <Link href={hrefWith({ edit: s.id })} className="btn btn-sm btn-quiet" aria-label={`Edit ${s.name}`}>
+                      Edit
+                    </Link>
+                  </div>
+                </td>
+              </tr>
             ))}
-            {chainMatches.length === 0 && <p className="body-sm">No chain by that name in OpenStreetMap&apos;s brand list.</p>}
-            <form action={addChainAction} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-              <input type="hidden" name="chain" value={chainQuery} />
-              <span className="body-sm" style={{ flex: 1 }}>Or hide by name only (&ldquo;{normalizeChainName(chainQuery)}&rdquo;, no brand ID).</span>
-              <button type="submit" className="btn btn-line">Hide by name</button>
-            </form>
-          </div>
-        )}
-        <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {chains.map((c) => (
-            <li key={c.name}>
-              {/* Two-step remove: the chip only opens the confirm button, so a stray click can't unhide a chain. */}
-              <details>
-                <summary className="chip" style={{ cursor: "pointer", listStyle: "none" }}>
-                  {c.name}{c.wikidata ? "" : " (name only)"} ×
-                </summary>
-                <form action={removeChainAction} style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
-                  <input type="hidden" name="chain" value={c.name} />
-                  <span className="body-sm">Show {c.name} on the map again?</span>
-                  <button type="submit" className="chip ox" style={{ cursor: "pointer" }}>
-                    Yes, unhide
-                  </button>
-                </form>
-              </details>
-            </li>
-          ))}
-          {chains.length === 0 && <li className="body-sm">No chains hidden.</li>}
-        </ul>
-      </section>
+          </tbody>
+        </table>
+      )}
 
       {editing && (
         <aside key={editing.id || "new"} style={peekStyle}>
@@ -271,6 +252,8 @@ export default async function AdminShopsPage({
           )}
         </aside>
       )}
+      </>
+      ) : null}
     </div>
   );
 }

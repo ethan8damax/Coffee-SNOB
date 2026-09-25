@@ -156,3 +156,13 @@ export async function searchIndex(query: string, origin: { lat: number; lng: num
     .filter(([, name]) => matchesQuery(name, query))
     .map(([id, name, lat, lng]) => ({ externalId: id, name, lat, lng, address: null, hours: null, website: null, phone: null }));
 }
+
+// Search can find one café twice: from Photon or our rated shops (OSM ids)
+// and from the index (cs_ ids). Keep the other source's result and drop the
+// index copy when the names match and they're within ~150 m.
+export function dropNearDuplicates(index: NearbyShopPin[], others: { name: string; lat: number; lng: number }[]): NearbyShopPin[] {
+  const near = (a: { lat: number; lng: number }, b: { lat: number; lng: number }) =>
+    Math.hypot(a.lat - b.lat, (a.lng - b.lng) * Math.cos((a.lat * Math.PI) / 180)) < 0.00135;
+  const core = (n: string) => fold(n).replace(/\b(the|co|company|coffee|cafe|caffe|roasters|shop|bar)\b/g, "").replace(/\s+/g, " ").trim() || fold(n);
+  return index.filter((p) => !others.some((o) => near(p, o) && core(o.name) === core(p.name)));
+}

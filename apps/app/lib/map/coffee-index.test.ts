@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchIndexShops, matchesQuery, searchCellsAround, tileKeysFor, toPin, type IndexManifest } from "./coffee-index";
+import { dropNearDuplicates, fetchIndexShops, matchesQuery, searchCellsAround, tileKeysFor, toPin, type IndexManifest } from "./coffee-index";
 
 const manifest: IndexManifest = { version: "v1", tileStep: 0.1, splitStep: 0.025, searchStep: 1, split: ["10.7_106.6"] };
 
@@ -67,5 +67,15 @@ describe("fetchIndexShops", () => {
     const shops = await fetchIndexShops({ minLat: 33.7, minLng: -84.4, maxLat: 33.9, maxLng: -84.3 }, "https://idx.test");
     expect(shops.map((s) => s.externalId)).toEqual(["cs_1"]);
     expect(fetchSpy).toHaveBeenCalledWith("https://idx.test/v/v1/tiles/33.8_-84.4.json");
+  });
+});
+
+describe("dropNearDuplicates", () => {
+  const pin = (externalId: string, name: string, lat: number, lng: number) =>
+    ({ externalId, name, lat, lng, address: null, hours: null, website: null, phone: null });
+  it("drops index results another source already found (same name, within 150 m)", () => {
+    const index = [pin("cs_1", "East Pole Coffee Co.", 33.8109, -84.3789), pin("cs_2", "Muchacho", 33.75, -84.35)];
+    const others = [{ name: "East Pole Coffee Co", lat: 33.8107, lng: -84.3785 }, { name: "Muchacho", lat: 33.8, lng: -84.35 }];
+    expect(dropNearDuplicates(index, others).map((p) => p.externalId)).toEqual(["cs_2"]);
   });
 });

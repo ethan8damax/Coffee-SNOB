@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { searchRatedShops } from "@coffeesnob/supabase";
 import { Label } from "../primitives";
+import { dropNearDuplicates, searchIndex } from "../../lib/map/coffee-index";
 import { searchEverywhere, searchNearbyShops, type Place } from "../../lib/map/geocode";
 import { toRatedShopPin } from "../../lib/map/nearby-map-data";
 import { mergeResults, rankResults, type SearchResult } from "../../lib/map/search-sort";
@@ -11,6 +12,7 @@ import { CloseIcon, PinIcon } from "./map-icons";
 import type { NearbyShopPin, RatedShopPin } from "./types";
 
 const DEBOUNCE_MS = 350;
+const COFFEE_INDEX_URL = process.env.EXPO_PUBLIC_COFFEE_INDEX_URL;
 const DEFAULT_LABEL = "Search a city or a shop";
 
 // The map's area pill doubles as a search box: tap it, type a city or a shop name, pick
@@ -81,9 +83,24 @@ export function MapSearch({
         .catch((): Awaited<ReturnType<typeof searchRatedShops>> => [])
         .then((rows) => add(rows.map((row): SearchResult => ({ kind: "shop", shop: toRatedShopPin(row), secondary: row.neighborhood }))));
       // 2. Cafés and places worldwide (Photon) — ~1s.
-      // 3. Only if that found few cafés: the local OSM name search, which also
-      //    catches coffee-serving restaurants/bars Photon can't filter for.
-      const wide = searchEverywhere(q, near, webAppUrl)
+      // 3. With the coffee index: every indexed café in the metro around you,
+      //    from cached static files, minus ones Photon or our rated shops
+      //    already found. Without it: only if Photon found few cafés, the
+      //    local OSM name search (catches coffee-serving restaurants/bars).
+      const wide = COFFEE_INDEX_URL
+        ? Promise.all([
+            searchEverywhere(q, near, webAppUrl).catch((): Awaited<ReturnType<typeof searchEverywhere>> => ({ places: [], shops: [] })),
+            near ? searchIndex(q, near, COFFEE_INDEX_URL).catch((): NearbyShopPin[] => []) : Promise.resolve([] as NearbyShopPin[]),
+            rated,
+          ]).then(([{ places, shops }, local]) => {
+            const found = [...shops.map(({ shop }) => shop), ...merged.flatMap((r) => (r.kind === "place" ? [] : [r.shop]))];
+            add([
+              ...places.map((place): SearchResult => ({ kind: "place", place })),
+              ...shops.map(({ shop, secondary }): SearchResult => ({ kind: "nearby", shop, secondary })),
+              ...dropNearDuplicates(local, found).map((shop): SearchResult => ({ kind: "nearby", shop, secondary: null })),
+            ]);
+          })
+        : searchEverywhere(q, near, webAppUrl)
         .catch((): Awaited<ReturnType<typeof searchEverywhere>> => ({ places: [], shops: [] }))
         .then(async ({ places, shops }) => {
           add([

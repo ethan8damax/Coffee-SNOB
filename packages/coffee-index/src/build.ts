@@ -1,7 +1,9 @@
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createReadStream, createWriteStream, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
+import { createInterface } from "node:readline";
+import { pipeline } from "node:stream/promises";
 import { parseArgs } from "node:util";
-import { gunzipSync, gzipSync } from "node:zlib";
+import { createGunzip, createGzip, gzipSync } from "node:zlib";
 import { createSupabaseClient, getChainBlocklist } from "@coffeesnob/supabase";
 import { config } from "./config";
 import { extractOsm, extractOverture, sourceVersions, type BBox } from "./extract";
@@ -42,6 +44,16 @@ const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? 
 const key = process.env.SUPABASE_ANON_KEY ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 if (!url || !key) fail("SUPABASE_URL and SUPABASE_ANON_KEY are required (the chain blocklist is public-read).");
 
+// The worldwide place list is bigger than the largest string V8 allows, so it
+// is written and read one line at a time.
+async function readIds(path: string): Promise<Set<string>> {
+  const ids = new Set<string>();
+  for await (const line of createInterface({ input: createReadStream(path).pipe(createGunzip()) })) {
+    if (line) ids.add((JSON.parse(line) as IndexPlace).id);
+  }
+  return ids;
+}
+
 async function main() {
   const started = Date.now();
   const secs = () => Math.round((Date.now() - started) / 1000);
@@ -58,15 +70,7 @@ async function main() {
 
   const prevDir = values.prev ? resolve(values.prev) : null;
   const prevIdMap: Record<string, string> = prevDir ? JSON.parse(readFileSync(join(prevDir, "id_map.json"), "utf8")) : {};
-  const prevIds = prevDir
-    ? new Set(
-        gunzipSync(readFileSync(join(prevDir, "places.ndjson.gz")))
-          .toString("utf8")
-          .split("\n")
-          .filter(Boolean)
-          .map((line) => (JSON.parse(line) as IndexPlace).id),
-      )
-    : null;
+  const prevIds = prevDir ? await readIds(join(prevDir, "places.ndjson.gz")) : null;
 
   const { places, idMap, report } = buildIndex({ osm, overture, chains, prevIdMap, prevIds });
   const builtAt = new Date().toISOString();
@@ -89,7 +93,13 @@ async function main() {
   for (const [k, ps] of tiles) {
     writeFileSync(join(outDir, "tiles", `${k}.json.gz`), gzipSync(JSON.stringify(ps.map(entry))));
   }
-  writeFileSync(join(outDir, "places.ndjson.gz"), gzipSync(places.map((p) => JSON.stringify(p)).join("\n")));
+  await pipeline(
+    (function* () {
+      for (const p of places) yield JSON.stringify(p) + "\n";
+    })(),
+    createGzip(),
+    createWriteStream(join(outDir, "places.ndjson.gz")),
+  );
   writeFileSync(join(outDir, "id_map.json"), JSON.stringify(idMap));
   writeFileSync(
     join(outDir, "manifest.json"),

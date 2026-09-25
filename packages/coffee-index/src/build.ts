@@ -48,11 +48,12 @@ async function main() {
   const versions = await sourceVersions();
   console.log("sources", versions);
   const cacheDir = resolve(".cache");
-  const [osm, overture, chains] = await Promise.all([
-    extractOsm(versions.layercake, cacheDir, bbox),
-    extractOverture(versions.overture, cacheDir, bbox),
-    getChainBlocklist(createSupabaseClient(url, key)),
-  ]);
+  // One source at a time: the download is the bottleneck, and two worldwide
+  // scans side by side doubled memory without finishing any sooner.
+  const chains = await getChainBlocklist(createSupabaseClient(url, key));
+  const osm = await extractOsm(versions.layercake, cacheDir, bbox);
+  console.log(`osm ${osm.length} (${secs()}s)`);
+  const overture = await extractOverture(versions.overture, cacheDir, bbox);
   console.log(`extracted osm=${osm.length} overture=${overture.length} chains=${chains.length} (${secs()}s)`);
 
   const prevDir = values.prev ? resolve(values.prev) : null;

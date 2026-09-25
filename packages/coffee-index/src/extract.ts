@@ -31,7 +31,9 @@ async function cached<T>(cacheDir: string, file: string, query: string): Promise
   const path = join(cacheDir, file);
   const db = await DuckDBInstance.create(":memory:");
   const c = await db.connect();
-  await c.run("install httpfs; load httpfs; set s3_region='us-west-2';");
+  // Worldwide copies are big: don't buffer rows just to keep their order,
+  // and cap memory so the build fits on a laptop or a CI runner.
+  await c.run("install httpfs; load httpfs; set s3_region='us-west-2'; set preserve_insertion_order=false; set memory_limit='3GB';");
   if (!existsSync(path)) {
     const tmp = `${path}.tmp`;
     await c.run(`copy (${query}) to '${tmp}' (format parquet)`);

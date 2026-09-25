@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@coffeesnob/coffee-index": "workspace:*",
     "@coffeesnob/design-tokens": "workspace:*",
     "@coffeesnob/supabase": "workspace:*",
     "@supabase/ssr": "^0.12.7",

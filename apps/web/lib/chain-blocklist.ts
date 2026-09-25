@@ -1,5 +1,5 @@
 import { getChainBlocklist } from "@coffeesnob/supabase";
-import type { ChainEntry } from "./nearby-shops";
+import type { ChainEntry } from "@coffeesnob/coffee-index";
 import { getSupabase } from "./supabase";
 
 // The chain blocklist, cached briefly so admin edits land within a minute

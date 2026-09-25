@@ -13,7 +13,7 @@ import {
   addChainBlock,
   removeChainBlock,
 } from "@coffeesnob/supabase";
-import { normalizeChainName } from "@/lib/nearby-shops";
+import { normalizeChainName } from "@coffeesnob/coffee-index";
 import { lookupChain } from "@/lib/chain-lookup";
 
 async function saveAction(formData: FormData) {

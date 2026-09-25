@@ -1,6 +1,6 @@
 import { cityKey } from "@coffeesnob/supabase";
 import { abbreviateCountry, abbreviateState, formatShopLocation } from "./geocode";
-import { isChain, isCoffeePlace, type ChainEntry } from "./nearby-shops";
+import { isChain, isCoffeePlace, type ChainEntry } from "@coffeesnob/coffee-index";
 
 // Photon (komoot's OpenStreetMap geocoder, photon.komoot.io) powers the map's
 // search box: cafés and places worldwide in one fast, typo-tolerant call, with

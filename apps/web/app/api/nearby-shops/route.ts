@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getBlocklist } from "@/lib/chain-blocklist";
-import { buildOverpassQuery, isChain, isCoffeePlace, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
+import { isChain, isCoffeePlace } from "@coffeesnob/coffee-index";
+import { buildOverpassQuery, toNearbyShop, type OverpassElement } from "@/lib/nearby-shops";
 
 // The main public instance has flaked repeatedly (outages, "server too busy"
 // 504s) — kumi.systems is Overpass's other well-known public mirror, same

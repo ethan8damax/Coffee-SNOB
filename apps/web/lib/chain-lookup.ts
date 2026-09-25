@@ -1,4 +1,4 @@
-import { normalizeChainName } from "./nearby-shops";
+import { normalizeChainName } from "@coffeesnob/coffee-index";
 
 // Looks a chain up in OSM's Name Suggestion Index — the public list of brands
 // (with their brand:wikidata IDs) that OSM mappers tag chain locations with.

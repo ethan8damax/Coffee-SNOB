@@ -1031,7 +1031,7 @@ export async function getAdminShops(
 }
 
 // Chain coffee shops hidden from the map's OSM layer. Names are stored
-// normalized — callers pass the normalized form (see apps/web/lib/nearby-shops.ts).
+// normalized — callers pass the normalized form (see packages/coffee-index/src/index.ts).
 // wikidata is the chain's OSM brand:wikidata ID, when known.
 export type ChainBlock = { name: string; wikidata: string | null };
 

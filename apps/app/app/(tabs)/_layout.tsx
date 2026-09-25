@@ -34,6 +34,7 @@ export default function TabsLayout() {
             <Tabs.Screen name="profile" options={{ title: "You" }} />
             {/* Detail pages keep the tab bar / rail but are not tabs themselves. */}
             <Tabs.Screen name="shop/[id]" options={{ href: null }} />
+            <Tabs.Screen name="city/[slug]" options={{ href: null }} />
             <Tabs.Screen name="u/[username]" options={{ href: null }} />
             <Tabs.Screen name="people" options={{ href: null }} />
           </Tabs>

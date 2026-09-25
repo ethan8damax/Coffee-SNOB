@@ -48,6 +48,31 @@ describe("clusterPlaces", () => {
     ], 50, 0.5)).toHaveLength(2);
   });
 
+  it("ignores filler words when matching names (pilot: East Pole, PERC)", () => {
+    expect(clusterPlaces([
+      sp({ sourceId: "ov:a", name: "East Pole Coffee Co.", lat: 33.81086, lng: -84.37889 }),
+      sp({ sourceId: "osm:node/1", name: "East Pole Coffee Company", lat: 33.8107, lng: -84.3785 }),
+    ], 50, 0.5)).toHaveLength(1);
+    expect(clusterPlaces([
+      sp({ sourceId: "ov:b", name: "Perc Coffee", lat: 33.78319, lng: -84.35472 }),
+      sp({ sourceId: "osm:way/2", name: "PERC Atlanta Highlands", lat: 33.78321, lng: -84.35474 }),
+    ], 50, 0.5)).toHaveLength(1);
+  });
+
+  it("treats & and 'and' alike (pilot: Press and Grind)", () => {
+    expect(clusterPlaces([
+      sp({ sourceId: "ov:a", name: "Press and Grind", lat: 1, lng: 1 }),
+      sp({ sourceId: "osm:node/1", name: "Press & Grind", lat: 1, lng: 1 + 0.00002 }),
+    ], 50, 0.5)).toHaveLength(1);
+  });
+
+  it("does not merge two names that are only filler words", () => {
+    expect(clusterPlaces([
+      sp({ sourceId: "osm:node/1", name: "The Coffee Bar", lat: 1, lng: 1 }),
+      sp({ sourceId: "osm:node/2", name: "Coffee Shop", lat: 1, lng: 1 }),
+    ], 50, 0.5)).toHaveLength(2);
+  });
+
   it("finds neighbours across a cell edge at high latitude", () => {
     const c = clusterPlaces([
       sp({ sourceId: "osm:node/1", name: "Kaffebrenneriet", lat: 69.649, lng: 18.955 }),

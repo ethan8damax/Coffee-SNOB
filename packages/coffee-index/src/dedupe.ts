@@ -13,10 +13,20 @@ export function similarity(a: string, b: string): number {
   return [...wa].filter((w) => wb.has(w)).length / Math.max(wa.size, wb.size);
 }
 
-// Same name, or one is the other plus trailing words ("Spiller Park Coffee SP1").
+// Words that say "this is a café" rather than which one. Ignored when
+// comparing names, so "East Pole Coffee Co." meets "East Pole Coffee Company".
+const FILLER = new Set(["the", "and", "co", "company", "coffee", "coffeehouse", "house", "cafe", "caffe", "roasters", "roastery", "roasting", "shop", "bar", "espresso", "llc", "inc"]);
+
+function coreKey(name: string): string {
+  const key = nameKey(name);
+  const core = key.split(" ").filter((w) => !FILLER.has(w)).join(" ");
+  return core || key; // a name that is all filler ("The Coffee Bar") keeps its words
+}
+
+// Same core name, or one is the other plus trailing words ("Spiller Park SP1").
 function nearIdentical(a: string, b: string): boolean {
-  const ka = nameKey(a);
-  const kb = nameKey(b);
+  const ka = coreKey(a);
+  const kb = coreKey(b);
   return ka === kb || ka.startsWith(kb + " ") || kb.startsWith(ka + " ");
 }
 

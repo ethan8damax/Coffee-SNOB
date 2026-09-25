@@ -27,6 +27,11 @@ describe("buildIndex", () => {
     expect(report.count).toBe(1);
   });
 
+  it("gives OSM-only places the nearest known country", () => {
+    const { places } = buildIndex({ ...input, osm: [...input.osm, osm(3, "Chrome Yellow", 33.76, -84.37)] });
+    expect(places.find((p) => p.name === "Chrome Yellow")?.countryCode).toBe("US");
+  });
+
   it("keeps ids stable across two builds", () => {
     const one = buildIndex(input);
     const two = buildIndex({ ...input, prevIdMap: one.idMap, prevIds: new Set(one.places.map((p) => p.id)) });

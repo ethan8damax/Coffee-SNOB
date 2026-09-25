@@ -4,7 +4,7 @@
   "coffeeShopCategories": ["coffee_shop", "coffee_roastery"],
   "dedupeRadiusM": 50,
   "similarNameMin": 0.5,
-  "visibility": { "multiSourceMin": 2, "multiSource": 1, "coffeeShopCategory": 1, "hoursOrWebsite": 1, "showAt": 2 },
+  "visibility": { "multiSourceMin": 2, "multiSource": 1, "coffeeShopCategory": 1, "hoursOrWebsite": 1, "showAt": 2, "notSpecialtyCap": 3 },
   "chainSuggestMin": 10,
   "changeAlarm": 0.1,
   "tileStep": 0.1,

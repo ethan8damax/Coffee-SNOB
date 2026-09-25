@@ -12,7 +12,7 @@ export type Report = {
   alarm: string | null;
 };
 
-export function buildReport(places: Reportable[], prevIds: Set<string> | null, chains: ChainEntry[]): Report {
+export function buildReport(places: Reportable[], prevIds: Set<string> | null, chains: ChainEntry[], decided: ChainEntry[] = chains): Report {
   const byCountry: Record<string, number> = {};
   for (const p of places) byCountry[p.countryCode ?? "??"] = (byCountry[p.countryCode ?? "??"] ?? 0) + 1;
 
@@ -46,7 +46,14 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
     groups.set(`${p.countryCode}|${key}`, g);
   }
   const suggestedChains = [...groups.values()]
-    .filter((g) => g.count > config.chainSuggestMin && (idChains.includes(g.key) || !isChain({ name: g.name }, chains)))
+    .filter((g) => g.count > config.chainSuggestMin)
+    // Prefix groups ("starbucks …") are leftovers of a blocked chain, so they
+    // stay unless that chain already matches by prefix.
+    .filter((g) =>
+      idChains.includes(g.key)
+        ? !chains.some((c) => c.name === g.key && c.prefix)
+        : !isChain({ name: g.name }, decided) && !decided.some((c) => c.wikidata && c.wikidata === g.key),
+    )
     .sort((a, b) => b.count - a.count);
 
   return { count: places.length, byCountry, added, removed, suggestedChains, alarm };

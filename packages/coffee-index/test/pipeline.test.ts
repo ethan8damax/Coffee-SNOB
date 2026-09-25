@@ -32,6 +32,23 @@ describe("buildIndex", () => {
     expect(places.find((p) => p.name === "Chrome Yellow")?.countryCode).toBe("US");
   });
 
+  it("applies admin overrides and 'not specialty' reports", () => {
+    const base = buildIndex(input);
+    const id = base.places[0].id;
+    expect(buildIndex({ ...input, prevIdMap: base.idMap, overrides: [{ placeId: id, action: "hide" }] }).places).toHaveLength(0);
+    const flagged = buildIndex({ ...input, prevIdMap: base.idMap, notSpecialty: { [id]: 5 } }).places[0];
+    expect(flagged.visibility).toBe("dim");
+    const picked = buildIndex({ ...input, prevIdMap: base.idMap, notSpecialty: { [id]: 5 }, overrides: [{ placeId: id, action: "show" }] }).places[0];
+    expect(picked).toMatchObject({ visibility: "show", why: ["picked by Coffee Snob"] });
+  });
+
+  it("keeps a hidden place's id in the map, so unhiding brings the same id back", () => {
+    const base = buildIndex(input);
+    const id = base.places[0].id;
+    const hidden = buildIndex({ ...input, prevIdMap: base.idMap, overrides: [{ placeId: id, action: "hide" }] });
+    expect(Object.values(hidden.idMap)).toContain(id);
+  });
+
   it("keeps ids stable across two builds", () => {
     const one = buildIndex(input);
     const two = buildIndex({ ...input, prevIdMap: one.idMap, prevIds: new Set(one.places.map((p) => p.id)) });

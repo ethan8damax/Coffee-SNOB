@@ -4,10 +4,11 @@ import type { MergedPlace } from "./place";
 // How loudly an unrated place shows (parent spec 5.1). Never hides: hiding is
 // for filters, overrides and flags. Roaster and flag signals arrive in later
 // phases. `why` stays empty for dim places: nothing worth explaining.
-export function scorePlace(p: MergedPlace): { visibility: "show" | "dim"; why: string[] } {
+export function scorePlace(p: MergedPlace, notSpecialty = 0): { visibility: "show" | "dim"; why: string[] } {
   const v = config.visibility;
   const why: string[] = [];
-  let points = 0;
+  // Each person who reported it "not specialty" costs a point, up to the cap.
+  let points = -Math.min(notSpecialty, v.notSpecialtyCap);
   if (p.datasets.length >= v.multiSourceMin) {
     points += v.multiSource;
     why.push(`in ${p.datasets.length} sources`);

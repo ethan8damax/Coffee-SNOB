@@ -20,6 +20,11 @@ describe("buildReport", () => {
     ]);
   });
 
+  it("never suggests a chain someone already decided on", () => {
+    const many = Array.from({ length: 11 }, (_, i) => place(`p${i}`, "US", "Joe's Coffee"));
+    expect(buildReport(many, null, [], [{ name: "joes coffee", wikidata: null }]).suggestedChains).toEqual([]);
+  });
+
   it("suggests names with more than 10 places in one country, unless already blocked", () => {
     const many = Array.from({ length: 11 }, (_, i) => place(`p${i}`, "US", "Joe's Coffee"));
     expect(buildReport(many, null, []).suggestedChains).toEqual([{ key: "joes coffee", name: "Joe's Coffee", countryCode: "US", count: 11 }]);

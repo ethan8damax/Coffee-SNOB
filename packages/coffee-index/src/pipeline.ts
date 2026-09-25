@@ -13,6 +13,12 @@ export type BuildInput = {
   chains: ChainEntry[];
   prevIdMap: Record<string, string>;
   prevIds: Set<string> | null;
+  // Curation controls (Phase 3): admin show/hide calls, per-place count of
+  // people who reported "not specialty", and every chain decision (so
+  // suggestions skip allowed names too).
+  overrides?: { placeId: string; action: "show" | "hide" }[];
+  notSpecialty?: Record<string, number>;
+  decided?: ChainEntry[];
 };
 
 // The whole index build minus I/O: normalise → dedupe → filter → score → ids.
@@ -22,9 +28,21 @@ export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Re
   const all = clusterPlaces(sources, config.dedupeRadiusM, config.similarNameMin).map(mergeCluster);
   const learned = learnChainSignals(all, input.chains);
   const merged = fillCountries(all.filter((p) => keepPlace(p, input.chains, learned)));
+  // Ids before hides: a hidden place keeps its id in the map, so unhiding it
+  // brings the same id back.
   const { ids, idMap } = assignIds(merged.map((p) => p.sourceIds), input.prevIdMap);
-  const places = merged.map((p, i) => ({ ...p, id: ids[i], ...scorePlace(p) }));
-  return { places, idMap, report: buildReport(places, input.prevIds, input.chains) };
+  const override = new Map((input.overrides ?? []).map((o) => [o.placeId, o.action]));
+  const places = merged
+    .map((p, i) => ({ p, id: ids[i] }))
+    .filter(({ id }) => override.get(id) !== "hide")
+    .map(({ p, id }) => ({
+      ...p,
+      id,
+      ...(override.get(id) === "show"
+        ? { visibility: "show" as const, why: ["picked by Coffee Snob"] }
+        : scorePlace(p, input.notSpecialty?.[id] ?? 0)),
+    }));
+  return { places, idMap, report: buildReport(places, input.prevIds, input.chains, input.decided) };
 }
 
 // OSM-only places carry no address. Borrow the country of the nearest place

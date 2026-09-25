@@ -55,6 +55,7 @@ describe("isPublicTabPath", () => {
   it("treats every tab route as public", () => {
     expect(isPublicTabPath("/")).toBe(true);
     expect(isPublicTabPath("/map")).toBe(true);
+    expect(isPublicTabPath("/city/atlanta-georgia-us")).toBe(true);
     expect(isPublicTabPath("/log")).toBe(true);
     expect(isPublicTabPath("/lists")).toBe(true);
     expect(isPublicTabPath("/profile")).toBe(true);

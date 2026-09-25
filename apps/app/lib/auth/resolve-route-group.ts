@@ -14,7 +14,7 @@ export function resolveRouteGroup(params: {
 export const PUBLIC_TAB_PATHS = ["/", "/map", "/log", "/lists", "/profile", "/people"];
 
 // Detail pages that live inside (tabs) so they keep the tab bar / rail.
-export const PUBLIC_TAB_PREFIXES = ["/shop/", "/u/"];
+export const PUBLIC_TAB_PREFIXES = ["/shop/", "/city/", "/u/"];
 
 export function isPublicTabPath(pathname: string): boolean {
   return PUBLIC_TAB_PATHS.includes(pathname) || PUBLIC_TAB_PREFIXES.some((prefix) => pathname.startsWith(prefix));

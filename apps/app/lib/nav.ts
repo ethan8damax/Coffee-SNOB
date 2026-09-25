@@ -31,9 +31,10 @@ export function isNavRoute(name: string): name is NavRoute {
 }
 
 // Detail pages nested under a tab keep that tab highlighted (shop pages live
-// under Map, other people's profiles under You).
+// and city pages live under Map, other people's profiles under You).
 const PATH_PREFIX_ROUTES: { prefix: string; route: NavRoute }[] = [
   { prefix: "/shop/", route: "map" },
+  { prefix: "/city/", route: "map" },
   { prefix: "/u/", route: "profile" },
   { prefix: "/people", route: "profile" },
 ];

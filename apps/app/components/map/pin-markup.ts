@@ -50,12 +50,12 @@ export function ratedPinHtml(opts: { name: string; rating: number; selected: boo
 
 // The "any shop nearby" layer: small muted dots, 6px of invisible padding so
 // they're tappable.
-export function nearbyDotHtml(opts: { selected: boolean }): string {
-  const { selected } = opts;
-  const size = selected ? 11 : 7;
+export function nearbyDotHtml(opts: { selected: boolean; dim?: boolean }): string {
+  const { selected, dim = false } = opts;
+  const size = selected ? 11 : dim ? 5 : 7;
   return (
     `<div style="position:absolute;left:0;top:0;transform:translate(-50%,-50%);padding:6px;cursor:pointer">` +
-    `<div style="width:${size}px;height:${size}px;border-radius:50%;box-sizing:border-box;background:${selected ? colors.ink : colors.card};border:1.4px solid ${selected ? colors.ink : colors.ink3};opacity:${selected ? "1" : ".7"}"></div>` +
+    `<div style="width:${size}px;height:${size}px;border-radius:50%;box-sizing:border-box;background:${selected ? colors.ink : colors.card};border:1.4px solid ${selected ? colors.ink : colors.ink3};opacity:${selected ? "1" : dim ? ".45" : ".7"}"></div>` +
     `</div>`
   );
 }

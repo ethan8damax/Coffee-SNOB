@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle, withPinned } from "./shop-list";
+import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, visibleNearby, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle, withPinned } from "./shop-list";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
@@ -84,6 +84,20 @@ describe("dropRatedDuplicates", () => {
     const rated = [{ externalId: "way/1" }, { externalId: null }];
     const dots = [nearby("way/1", 0, 0), nearby("node/2", 0, 0)];
     expect(dropRatedDuplicates(dots, rated).map((d) => d.externalId)).toEqual(["node/2"]);
+  });
+
+  it("matches a rated shop's OSM id against an index dot's source ids", () => {
+    const dots = [nearby("cs_a", 0, 0, { sourceIds: ["ov:x", "osm:node/1"] }), nearby("cs_b", 0, 0, { sourceIds: ["osm:node/2"] })];
+    expect(dropRatedDuplicates(dots, [{ externalId: "node/1" }]).map((d) => d.externalId)).toEqual(["cs_b"]);
+    expect(dropRatedDuplicates(dots, [{ externalId: "cs_b" }]).map((d) => d.externalId)).toEqual(["cs_a"]);
+  });
+});
+
+describe("visibleNearby", () => {
+  const dots = [nearby("cs_show", 0, 0, { visibility: "show" }), nearby("cs_dim", 0, 0, { visibility: "dim" }), nearby("node/3", 0, 0)];
+  it("keeps dim dots only when zoomed in to a neighbourhood", () => {
+    expect(visibleNearby(dots, { minLat: 0, maxLat: 0.04, minLng: 0, maxLng: 0.04 })).toHaveLength(3);
+    expect(visibleNearby(dots, { minLat: 0, maxLat: 0.1, minLng: 0, maxLng: 0.1 }).map((d) => d.externalId)).toEqual(["cs_show", "node/3"]);
   });
 });
 

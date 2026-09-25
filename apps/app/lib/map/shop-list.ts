@@ -1,4 +1,4 @@
-import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
+import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 type Point = { lat: number; lng: number };
 
@@ -66,9 +66,21 @@ export function withPinned(nearby: NearbyShopPin[], pinned: NearbyShopPin | null
 }
 
 // A rated shop logged from OSM is also in the live OSM layer; show it once, as the rated pin.
+// A rated shop keeps the id it was first logged under: an OSM id ("node/123")
+// from before the coffee index, or a cs_ id since. Index dots list every
+// source id ("osm:node/123"), so either scheme finds its dot.
 export function dropRatedDuplicates(nearby: NearbyShopPin[], rated: { externalId: string | null }[]): NearbyShopPin[] {
   const ratedIds = new Set(rated.map((r) => r.externalId).filter(Boolean));
-  return nearby.filter((n) => !ratedIds.has(n.externalId));
+  const osmId = (s: string) => (s.startsWith("osm:") ? s.slice(4) : s);
+  return nearby.filter((n) => !ratedIds.has(n.externalId) && !(n.sourceIds ?? []).some((s) => ratedIds.has(osmId(s))));
+}
+
+// Dim index dots (cafés we have no reason to vouch for yet) only appear
+// once the view is down to about a neighbourhood, so they never crowd out
+// rated pins and the likelier specialty spots.
+export const DIM_MAX_SPAN = 0.05;
+export function visibleNearby(nearby: NearbyShopPin[], view: MapBounds): NearbyShopPin[] {
+  return view.maxLat - view.minLat < DIM_MAX_SPAN ? nearby : nearby.filter((n) => n.visibility !== "dim");
 }
 
 export function rowSubtitle(row: ListRow): string {

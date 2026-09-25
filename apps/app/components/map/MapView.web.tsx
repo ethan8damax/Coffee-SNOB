@@ -173,7 +173,7 @@ export function MapView({
             <Marker
               key={shop.externalId}
               position={[shop.lat, shop.lng]}
-              icon={pinIcon(nearbyDotHtml({ selected }))}
+              icon={pinIcon(nearbyDotHtml({ selected, dim: shop.visibility === "dim" }))}
               title={shop.name}
               zIndexOffset={selected ? 500 : 0}
               eventHandlers={{ click: () => onSelectNearbyShop(shop.externalId) }}

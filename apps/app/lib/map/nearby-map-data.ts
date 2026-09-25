@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { getRatedShopsInBounds } from "@coffeesnob/supabase";
 import { containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
-import { dropRatedDuplicates } from "./shop-list";
+import { fetchIndexShops } from "./coffee-index";
+import { dropRatedDuplicates, visibleNearby } from "./shop-list";
 import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const DEBOUNCE_MS = 400;
@@ -13,6 +14,9 @@ const GRID_STEP = 0.1;
 // OSM request is huge and times out — show rated pins only and ask for a zoom-in.
 const MAX_NEARBY_VIEW_SPAN = 0.2;
 const MAX_NEARBY_VIEW_WIDTH = 0.4;
+// The coffee index switch: set → unrated dots come from the index's static
+// tiles; unset → the live Overpass proxy, as before.
+const COFFEE_INDEX_URL = process.env.EXPO_PUBLIC_COFFEE_INDEX_URL;
 
 export async function fetchNearbyOsmShops(bounds: MapBounds, webAppUrl: string): Promise<NearbyShopPin[]> {
   const params = new URLSearchParams({
@@ -111,7 +115,7 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
         setStatus("zoomed-out");
         return;
       }
-      fetchNearbyOsmShops(box, webAppUrl)
+      (COFFEE_INDEX_URL ? fetchIndexShops(box, COFFEE_INDEX_URL) : fetchNearbyOsmShops(box, webAppUrl))
         .then((shops) => {
           if (requestIdRef.current !== requestId) return;
           fetchedRef.current = box;
@@ -139,7 +143,8 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
     [fetchedRated, bounds]
   );
   const nearbyShops = useMemo(
-    () => (bounds ? dropRatedDuplicates(fetchedNearby, fetchedRated).filter((s) => withinBounds(bounds, s.lat, s.lng)) : []),
+    () =>
+      bounds ? visibleNearby(dropRatedDuplicates(fetchedNearby, fetchedRated), bounds).filter((s) => withinBounds(bounds, s.lat, s.lng)) : [],
     [fetchedNearby, fetchedRated, bounds]
   );
 

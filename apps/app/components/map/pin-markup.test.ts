@@ -56,6 +56,9 @@ describe("nearbyDotHtml", () => {
     const idle = nearbyDotHtml({ selected: false });
     expect(idle).toContain("width:7px");
     expect(idle).toContain(colors.card);
+    const dim = nearbyDotHtml({ selected: false, dim: true });
+    expect(dim).toContain("width:5px");
+    expect(dim).toContain("opacity:.45");
     const on = nearbyDotHtml({ selected: true });
     expect(on).toContain("width:11px");
     expect(on).toContain(colors.ink);

@@ -1,0 +1,90 @@
+# Monthly coffee index build (docs/superpowers/specs/2026-09-25-curation-phase-2-serve-index-design.md).
+# Builds from Overture + OSM, then publishes to Cloudflare R2: the version
+# folder first, the root manifest last, so the live map never sees half a build.
+# The build alarm (>10% churn) fails the job before anything is uploaded;
+# rerun by hand with allow_big_change once the report looks right.
+name: Coffee index
+
+on:
+  schedule:
+    - cron: "0 6 25 * *" # after Overture's monthly release
+  workflow_dispatch:
+    inputs:
+      allow_big_change:
+        description: "Publish even if more than 10% of places changed"
+        type: boolean
+        default: false
+
+concurrency: coffee-index
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      PUBLIC_URL: ${{ vars.COFFEE_INDEX_PUBLIC_URL }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: auto
+      R2: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
+      BUCKET: s3://${{ secrets.R2_BUCKET }}
+    defaults:
+      run:
+        working-directory: packages/coffee-index
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Fetch the live build's ids
+        id: prev
+        # Only a real 404 means "first run". Any other failure stops the job:
+        # building without the old id map would give every shop a new id.
+        run: |
+          test -n "$PUBLIC_URL" || { echo "Set the COFFEE_INDEX_PUBLIC_URL repo variable"; exit 1; }
+          code=$(curl -sS -o manifest.json -w '%{http_code}' "$PUBLIC_URL/manifest.json")
+          if [ "$code" = 404 ]; then
+            echo "No live build yet: first run."
+            echo "args=--first-run" >> "$GITHUB_OUTPUT"
+          elif [ "$code" = 200 ]; then
+            ver=$(jq -r .version manifest.json)
+            mkdir -p "prev/v/$ver"
+            curl -fsS "$PUBLIC_URL/v/$ver/id_map.json" -o "prev/v/$ver/id_map.json"
+            curl -fsS "$PUBLIC_URL/v/$ver/places.ndjson.gz" -o "prev/v/$ver/places.ndjson.gz"
+            echo "args=--prev prev/v/$ver" >> "$GITHUB_OUTPUT"
+          else
+            echo "Live manifest returned $code"; exit 1
+          fi
+
+      - name: Build
+        run: pnpm build-index ${{ steps.prev.outputs.args }} --out out ${{ inputs.allow_big_change && '--allow-big-change' || '' }}
+
+      - name: Publish to R2
+        run: |
+          root=$(ls -d out/*/ | head -1)
+          ver=$(jq -r .version "$root/manifest.json")
+          immutable="public, max-age=31536000, immutable"
+          # Tiles and search files are gzip bytes; the header lets fetch() decode them.
+          aws s3 sync "$root/v/$ver" "$BUCKET/v/$ver" --endpoint-url "$R2" --only-show-errors \
+            --exclude "*" --include "tiles/*" --include "tiles-fine/*" --include "search/*" \
+            --content-type application/json --content-encoding gzip --cache-control "$immutable"
+          aws s3 sync "$root/v/$ver" "$BUCKET/v/$ver" --endpoint-url "$R2" --only-show-errors \
+            --exclude "tiles/*" --exclude "tiles-fine/*" --exclude "search/*" --cache-control "$immutable"
+          aws s3 cp "$root/manifest.json" "$BUCKET/manifest.json" --endpoint-url "$R2" \
+            --content-type application/json --cache-control "public, max-age=300"
+
+      - name: Keep only the two newest versions
+        run: |
+          aws s3 ls "$BUCKET/v/" --endpoint-url "$R2" | awk '{print $2}' | sort | head -n -2 | while read -r old; do
+            aws s3 rm "$BUCKET/v/$old" --recursive --endpoint-url "$R2" --only-show-errors
+          done
+
+      - name: Report
+        if: always()
+        run: cat out/*/v/*/report.md >> "$GITHUB_STEP_SUMMARY" || true

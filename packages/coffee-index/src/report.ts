@@ -31,16 +31,22 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
 
   // Candidate chains: the same brand ID or name more than N times in one
   // country, not already blocked. The admin decides (Phase 3).
+  // Names like "Starbucks Gig Harbor" start with an ID-backed chain's name but
+  // can't be blocked by name alone (that rule would also hide "Costa Rica
+  // Café"), so they're grouped under the chain for a person to decide.
+  const idChains = chains.filter((c) => c.wikidata).map((c) => c.name);
   const groups = new Map<string, Report["suggestedChains"][number]>();
   for (const p of places) {
     if (!p.countryCode) continue;
-    const key = p.brandWikidata ?? normalizeChainName(p.name);
-    const g = groups.get(`${p.countryCode}|${key}`) ?? { key, name: p.name, countryCode: p.countryCode, count: 0 };
+    const n = normalizeChainName(p.name);
+    const prefix = idChains.find((c) => n.startsWith(c + " "));
+    const key = prefix ?? p.brandWikidata ?? n;
+    const g = groups.get(`${p.countryCode}|${key}`) ?? { key, name: prefix ? `${prefix} …` : p.name, countryCode: p.countryCode, count: 0 };
     g.count++;
     groups.set(`${p.countryCode}|${key}`, g);
   }
   const suggestedChains = [...groups.values()]
-    .filter((g) => g.count > config.chainSuggestMin && !isChain({ name: g.name }, chains))
+    .filter((g) => g.count > config.chainSuggestMin && (idChains.includes(g.key) || !isChain({ name: g.name }, chains)))
     .sort((a, b) => b.count - a.count);
 
   return { count: places.length, byCountry, added, removed, suggestedChains, alarm };

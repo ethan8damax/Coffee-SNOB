@@ -23,6 +23,16 @@ describe("learnChainSignals", () => {
     expect(keepPlace(m({ sourceId: "ov:b", name: "Starbucks (Century Marriott)", lat: 5, lng: 5, website: "http://www.starbucks.com" }), chains, learned)).toBe(false);
   });
 
+  it("learns a domain shared by two entries of the same chain (Starbucks, Starbucks Reserve)", () => {
+    const withReserve = [
+      ...branded,
+      m({ sourceId: "osm:node/5", name: "Starbucks Reserve", lat: 6, lng: 6, brandWikidata: "Q71150001", website: "https://starbucks.com/reserve" }),
+    ];
+    const both = [...chains, { name: "starbucks reserve", wikidata: "Q71150001" }];
+    const l = learnChainSignals(withReserve, both);
+    expect(keepPlace(m({ sourceId: "ov:e", name: "Starbucks in Hilton Hotel", lat: 7, lng: 7, website: "http://www.starbucks.com" }), both, l)).toBe(false);
+  });
+
   it("never learns shared platform domains, and never loosens name matching", () => {
     expect(keepPlace(m({ sourceId: "ov:c", name: "Neighbourhood Coffee", lat: 5, lng: 5, website: "https://facebook.com/nbhd" }), chains, learned)).toBe(true);
     expect(keepPlace(m({ sourceId: "ov:d", name: "Costa Rica Café", lat: 5, lng: 5 }), chains, learned)).toBe(true);

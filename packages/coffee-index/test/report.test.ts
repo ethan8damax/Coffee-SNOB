@@ -13,6 +13,13 @@ describe("buildReport", () => {
     expect(buildReport([place("a", "US"), place("b", "US")], new Set(["a"]), []).alarm).toMatch(/added/);
     expect(buildReport([place("a", "US")], null, []).alarm).toBeNull();
   });
+  it("groups names that start with an ID-backed chain's name, for one-click review", () => {
+    const leaks = Array.from({ length: 11 }, (_, i) => place(`s${i}`, "US", `Starbucks Branch ${i}`));
+    expect(buildReport(leaks, null, [{ name: "starbucks", wikidata: "Q37158" }]).suggestedChains).toEqual([
+      { key: "starbucks", name: "starbucks …", countryCode: "US", count: 11 },
+    ]);
+  });
+
   it("suggests names with more than 10 places in one country, unless already blocked", () => {
     const many = Array.from({ length: 11 }, (_, i) => place(`p${i}`, "US", "Joe's Coffee"));
     expect(buildReport(many, null, []).suggestedChains).toEqual([{ key: "joes coffee", name: "Joe's Coffee", countryCode: "US", count: 11 }]);

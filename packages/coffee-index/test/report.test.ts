@@ -20,6 +20,18 @@ describe("buildReport", () => {
     ]);
   });
 
+  it("labels brand-ID groups with the brand, not a branch", () => {
+    const many = Array.from({ length: 11 }, (_, i) => ({ id: `t${i}`, countryCode: "DE", name: `Tchibo Filiale ${i}`, brand: "Tchibo", brandWikidata: "Q564213" }));
+    expect(buildReport(many, null, []).suggestedChains).toEqual([{ key: "Q564213", name: "Tchibo", countryCode: "DE", count: 11 }]);
+  });
+
+  it("drops a chain's leftover group once it matches by prefix or was allowed", () => {
+    const leaks = Array.from({ length: 11 }, (_, i) => place(`s${i}`, "US", `Starbucks Branch ${i}`));
+    const sb = { name: "starbucks", wikidata: "Q37158" };
+    expect(buildReport(leaks, null, [{ ...sb, prefix: true }]).suggestedChains).toEqual([]);
+    expect(buildReport(leaks, null, [sb], [sb, { name: "starbucks …", wikidata: null }]).suggestedChains).toEqual([]);
+  });
+
   it("never suggests a chain someone already decided on", () => {
     const many = Array.from({ length: 11 }, (_, i) => place(`p${i}`, "US", "Joe's Coffee"));
     expect(buildReport(many, null, [], [{ name: "joes coffee", wikidata: null }]).suggestedChains).toEqual([]);

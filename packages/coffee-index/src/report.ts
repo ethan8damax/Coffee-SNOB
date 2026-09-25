@@ -1,7 +1,7 @@
 import { config } from "./config";
 import { isChain, normalizeChainName, type ChainEntry } from "./index";
 
-type Reportable = { id: string; countryCode: string | null; name: string; brandWikidata: string | null };
+type Reportable = { id: string; countryCode: string | null; name: string; brand?: string | null; brandWikidata: string | null };
 
 export type Report = {
   count: number;
@@ -41,7 +41,9 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
     const n = normalizeChainName(p.name);
     const prefix = idChains.find((c) => n.startsWith(c + " "));
     const key = prefix ?? p.brandWikidata ?? n;
-    const g = groups.get(`${p.countryCode}|${key}`) ?? { key, name: prefix ? `${prefix} …` : p.name, countryCode: p.countryCode, count: 0 };
+    // Brand-ID groups show the brand ("Tchibo"), not one branch's name.
+    const label = prefix ? `${prefix} …` : p.brandWikidata && p.brand ? p.brand : p.name;
+    const g = groups.get(`${p.countryCode}|${key}`) ?? { key, name: label, countryCode: p.countryCode, count: 0 };
     g.count++;
     groups.set(`${p.countryCode}|${key}`, g);
   }
@@ -51,7 +53,7 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
     // stay unless that chain already matches by prefix.
     .filter((g) =>
       idChains.includes(g.key)
-        ? !chains.some((c) => c.name === g.key && c.prefix)
+        ? !chains.some((c) => c.name === g.key && c.prefix) && !decided.some((c) => c.name === `${g.key} …`)
         : !isChain({ name: g.name }, decided) && !decided.some((c) => c.wikidata && c.wikidata === g.key),
     )
     .sort((a, b) => b.count - a.count);

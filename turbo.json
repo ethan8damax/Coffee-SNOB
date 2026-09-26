@@ -4,7 +4,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": ["RESEND_API_KEY", "RESEND_AUDIENCE_ID"]
+      "env": ["RESEND_API_KEY", "RESEND_AUDIENCE_ID", "COFFEE_INDEX_ORIGIN", "EXPO_PUBLIC_COFFEE_INDEX_URL"]
     },
     "dev": { "cache": false, "persistent": true },
     "lint": { "dependsOn": ["^build"] },

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   addChainBlock,
+  addCurationVisit,
+  rejectShopPromotion,
+  removeCurationVisit,
   allowChain,
   removeChainBlock,
   removePlaceOverride,
@@ -70,5 +73,23 @@ export async function dismissFlagsAction(formData: FormData) {
 
 export async function removeOverrideAction(formData: FormData) {
   await removePlaceOverride(await getSupabaseServer(), str(formData, "placeId"));
+  revalidatePath("/admin/shops");
+}
+
+export async function addVisitAction(formData: FormData) {
+  const visitedOn = str(formData, "visitedOn");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(visitedOn)) return;
+  await addCurationVisit(await getSupabaseServer(), str(formData, "shopId"), visitedOn, str(formData, "notes") || null);
+  revalidatePath("/admin/shops");
+}
+
+export async function removeVisitAction(formData: FormData) {
+  await removeCurationVisit(await getSupabaseServer(), str(formData, "visitId"));
+  revalidatePath("/admin/shops");
+}
+
+// "Not a fit": the clout trigger never flags this shop again.
+export async function rejectLeadAction(formData: FormData) {
+  await rejectShopPromotion(await getSupabaseServer(), str(formData, "id"));
   revalidatePath("/admin/shops");
 }

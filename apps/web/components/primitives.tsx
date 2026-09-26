@@ -55,7 +55,8 @@ export function Detour({ value = 4, short = false }: { value?: number; short?: b
     <span className={["chip", fill].filter(Boolean).join(" ")}>
       <span className="detour" style={{ gap: 1.5 }}>
         {[1, 2, 3, 4, 5].map((i) => (
-          <svg key={i} width="5.5" height="7" viewBox="0 0 9 11" fill="none" stroke="var(--burnt)"
+          // On the burnt "Make the trip" chip, burnt chevrons would vanish: use ink there.
+          <svg key={i} width="5.5" height="7" viewBox="0 0 9 11" fill="none" stroke={fill === "bu" ? "var(--ink)" : "var(--burnt)"}
             strokeOpacity={i <= v ? 1 : 0.32} strokeWidth="2.6" style={{ display: "block" }}>
             <path d="M1.5 1.5 6 5.5l-4.5 4" />
           </svg>

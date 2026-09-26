@@ -1163,3 +1163,52 @@ export async function resolvePlaceFlags(client: Client, placeId: string): Promis
   const { error } = await client.from("place_flags").update({ resolved_at: new Date().toISOString() }).eq("place_id", placeId).is("resolved_at", null);
   if (error) throw error;
 }
+
+// ── Leads: shops worth a visit for Snob-Approval (curation Phase 4) ──
+// Admin-only signal (shop_clout and curation_visits are admin-read under RLS).
+export type CurationVisit = { id: string; visitedOn: string; notes: string | null };
+export type Lead = {
+  id: string;
+  name: string;
+  locality: string | null;
+  region: string | null;
+  loggers: number;
+  adjusted: number;
+  firstLogAt: string;
+  visits: CurationVisit[];
+};
+
+// Flagged by the clout trigger and not yet approved; best-rated first, then
+// by how many different people rated it.
+export async function getLeads(client: Client): Promise<Lead[]> {
+  const { data, error } = await client
+    .from("shops")
+    .select("id, name, locality, region, shop_clout(loggers, adjusted, first_log_at), shop_curations(shop_id), curation_visits(id, visited_on, notes)")
+    .eq("promotion_status", "flagged");
+  if (error) throw error;
+  return data
+    .filter((r) => !r.shop_curations && r.shop_clout)
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      locality: r.locality,
+      region: r.region,
+      loggers: r.shop_clout!.loggers,
+      adjusted: Number(r.shop_clout!.adjusted),
+      firstLogAt: r.shop_clout!.first_log_at,
+      visits: [...(r.curation_visits ?? [])]
+        .sort((a, b) => a.visited_on.localeCompare(b.visited_on))
+        .map((v) => ({ id: v.id, visitedOn: v.visited_on, notes: v.notes })),
+    }))
+    .sort((a, b) => b.adjusted - a.adjusted || b.loggers - a.loggers);
+}
+
+export async function addCurationVisit(client: Client, shopId: string, visitedOn: string, notes: string | null): Promise<void> {
+  const { error } = await client.from("curation_visits").insert({ shop_id: shopId, visited_on: visitedOn, notes: notes?.trim() || null });
+  if (error) throw error;
+}
+
+export async function removeCurationVisit(client: Client, visitId: string): Promise<void> {
+  const { error } = await client.from("curation_visits").delete().eq("id", visitId);
+  if (error) throw error;
+}

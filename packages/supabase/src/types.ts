@@ -136,6 +136,41 @@ export type Database = {
           },
         ]
       }
+      curation_visits: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          shop_id: string
+          visited_by: string | null
+          visited_on: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shop_id: string
+          visited_by?: string | null
+          visited_on?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          shop_id?: string
+          visited_by?: string | null
+          visited_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "curation_visits_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -547,6 +582,41 @@ export type Database = {
             columns: ["city_id"]
             isOneToOne: false
             referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shop_clout: {
+        Row: {
+          adjusted: number
+          first_log_at: string
+          last_log_at: string
+          loggers: number
+          shop_id: string
+          updated_at: string
+        }
+        Insert: {
+          adjusted: number
+          first_log_at: string
+          last_log_at: string
+          loggers: number
+          shop_id: string
+          updated_at?: string
+        }
+        Update: {
+          adjusted?: number
+          first_log_at?: string
+          last_log_at?: string
+          loggers?: number
+          shop_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_clout_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: true
+            referencedRelation: "shops"
             referencedColumns: ["id"]
           },
         ]

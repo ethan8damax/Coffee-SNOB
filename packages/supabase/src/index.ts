@@ -73,6 +73,9 @@ export {
   getMyPlaceFlags,
   getOpenPlaceFlags,
   resolvePlaceFlags,
+  getLeads,
+  addCurationVisit,
+  removeCurationVisit,
 } from "./queries";
 export { cityKey } from "./city";
 export { TIERS, snobStatus } from "./profile-status";
@@ -88,6 +91,6 @@ export type {
   CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
-export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, Lead, CurationVisit } from "./queries";
 export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";

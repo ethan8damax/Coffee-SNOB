@@ -1509,3 +1509,30 @@ describe("coffee index controls", () => {
     expect(await getPlaceFlagCounts(client)).toEqual([{ placeId: "cs_bbbbbbbbbbbb", notSpecialty: 2 }]);
   });
 });
+
+describe("leads", () => {
+  it("getLeads maps flagged, uncurated shops with clout and visits, best first", async () => {
+    const rows = [
+      {
+        id: "s1", name: "Perc", locality: "Atlanta", region: "GA",
+        shop_clout: { loggers: 6, adjusted: 4.3, first_log_at: "2026-05-01T00:00:00Z" },
+        shop_curations: null,
+        curation_visits: [{ id: "v1", visited_on: "2026-09-01", notes: "Dialed." }],
+      },
+      {
+        id: "s2", name: "Muchacho", locality: "Atlanta", region: "GA",
+        shop_clout: { loggers: 9, adjusted: 4.6, first_log_at: "2026-09-20T00:00:00Z" },
+        shop_curations: null,
+        curation_visits: [],
+      },
+      { id: "s3", name: "Approved", locality: null, region: null, shop_clout: { loggers: 9, adjusted: 4.9, first_log_at: "2026-01-01T00:00:00Z" }, shop_curations: { shop_id: "s3" }, curation_visits: [] },
+    ];
+    const eqSpy = vi.fn(() => Promise.resolve({ data: rows, error: null }));
+    const client = { from: () => ({ select: () => ({ eq: eqSpy }) }) } as any;
+    const { getLeads } = await import("../src/queries");
+    const leads = await getLeads(client);
+    expect(eqSpy).toHaveBeenCalledWith("promotion_status", "flagged");
+    expect(leads.map((l) => l.id)).toEqual(["s2", "s1"]);
+    expect(leads[1]).toMatchObject({ loggers: 6, adjusted: 4.3, firstLogAt: "2026-05-01T00:00:00Z", visits: [{ id: "v1", visitedOn: "2026-09-01", notes: "Dialed." }] });
+  });
+});

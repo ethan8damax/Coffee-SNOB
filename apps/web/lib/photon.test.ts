@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { toSearchHit, toLocality, type PhotonFeature } from "./photon";
+import { matchesQuery, placeTails, toSearchHit, toLocality, type PhotonFeature } from "./photon";
 
 const feature = (properties: PhotonFeature["properties"], lon = -84.36, lat = 33.75): PhotonFeature => ({
   geometry: { coordinates: [lon, lat] },
@@ -68,5 +68,25 @@ describe("toLocality", () => {
     expect(toLocality(feature({ osm_type: "W", osm_id: 2, osm_key: "highway", osm_value: "secondary", county: "Cobb", state: "Georgia", countrycode: "us" })))
       .toEqual({ locality: null, region: "Georgia", countryCode: "US" });
     expect(toLocality(undefined)).toEqual({ locality: null, region: null, countryCode: null });
+  });
+});
+
+describe("matchesQuery", () => {
+  it("needs every word to start a word in some field", () => {
+    expect(matchesQuery("muchacho atlanta", ["Muchacho", "Atlanta", "Georgia"])).toBe(true);
+    expect(matchesQuery("george how", ["George Howell Coffee", "Boston"])).toBe(true);
+    expect(matchesQuery("portland maine", ["Portland", undefined, "Maine"])).toBe(true);
+    expect(matchesQuery("cafe", ["Café Kitsuné"])).toBe(true);
+    expect(matchesQuery("wuz here", ["武安市", undefined, "河北省"])).toBe(false);
+    expect(matchesQuery("wuz here", ["Herbertingen", undefined, "Baden-Württemberg"])).toBe(false);
+    expect(matchesQuery("東京", ["東京都"])).toBe(true);
+  });
+});
+
+describe("placeTails", () => {
+  it("splits the last one or two words off as a place, longest first", () => {
+    expect(placeTails("joe coffee new york")).toEqual([{ name: "joe coffee", place: "new york" }, { name: "joe coffee new", place: "york" }]);
+    expect(placeTails("muchacho atlanta")).toEqual([{ name: "muchacho", place: "atlanta" }]);
+    expect(placeTails("muchacho")).toEqual([]);
   });
 });

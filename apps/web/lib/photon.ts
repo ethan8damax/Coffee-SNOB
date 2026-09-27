@@ -37,9 +37,9 @@ export function toLocality(f: PhotonFeature | undefined): Locality {
   };
 }
 
-// cityKey: the city page this place would have (city-level places only); the
-// search route clears it unless that city has rated shops.
-export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number; cityKey: string | null };
+// cityKey: the city this place is (city-level places only), for the route's
+// guide lookup. guideSlug: set by the route when a curated guide exists.
+export type Place = { id: string; primary: string; secondary: string; lat: number; lng: number; cityKey: string | null; guideSlug?: string | null };
 export type SearchHit =
   | { kind: "place"; place: Place }
   | { kind: "shop"; externalId: string; name: string; secondary: string; lat: number; lng: number };
@@ -80,4 +80,22 @@ export function toSearchHit(f: PhotonFeature, chains: ChainEntry[]): SearchHit |
     lat,
     lng,
   };
+}
+
+const fold = (s: string) =>
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/['’]/g, "").replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+
+// Every query word has to start a word in one of the fields (name, city,
+// state). Photon is typo-tolerant; this drops its guesses ("wuz here" → Wu'an).
+export function matchesQuery(query: string, fields: (string | null | undefined)[]): boolean {
+  const hay = ` ${fold(fields.filter(Boolean).join(" "))}`;
+  const words = fold(query).split(" ").filter(Boolean);
+  return words.length > 0 && words.every((w) => hay.includes(` ${w}`));
+}
+
+// "muchacho atlanta" → try "atlanta" as the place and "muchacho" as the name.
+// Two-word places first so "new york" wins over "york".
+export function placeTails(query: string): { name: string; place: string }[] {
+  const words = query.trim().split(/\s+/);
+  return [2, 1].filter((n) => words.length > n).map((n) => ({ name: words.slice(0, -n).join(" "), place: words.slice(-n).join(" ") }));
 }

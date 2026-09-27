@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { citiesWithVerdicts, getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops, getCityShops } from "../src/queries";
+import { citiesWithGuides, getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
@@ -1403,73 +1403,52 @@ describe("setCityGuideItems", () => {
 
 describe("searchRatedShops", () => {
   function recordingClient() {
-    const ilikes: [string, string][] = [];
+    const ors: string[] = [];
     const builder: any = {
-      ilike: (col: string, pattern: string) => { ilikes.push([col, pattern]); return builder; },
+      or: (filter: string) => { ors.push(filter); return builder; },
       not: () => builder,
       order: () => builder,
       limit: () => Promise.resolve({ data: [{ id: "s1", name: "Dancing Goats Coffee" }], error: null }),
     };
-    return { ilikes, client: { from: () => ({ select: () => builder }) } as any };
+    return { ors, client: { from: () => ({ select: () => builder }) } as any };
   }
 
-  it("matches every word, in any order", async () => {
-    const { ilikes, client } = recordingClient();
-    const rows = await searchRatedShops(client, "  goats   dancing ");
-    expect(ilikes).toEqual([["name", "%goats%"], ["name", "%dancing%"]]);
+  it("matches every word against the name or the city, in any order", async () => {
+    const { ors, client } = recordingClient();
+    const rows = await searchRatedShops(client, "  goats   atlanta ");
+    expect(ors).toEqual(["name.ilike.%goats%,locality.ilike.%goats%", "name.ilike.%atlanta%,locality.ilike.%atlanta%"]);
     expect(rows).toEqual([{ id: "s1", name: "Dancing Goats Coffee" }]);
   });
 
-  it("strips wildcard characters and skips too-short queries", async () => {
-    const { ilikes, client } = recordingClient();
-    await searchRatedShops(client, "50%_off\\");
-    expect(ilikes).toEqual([["name", "%50off%"]]);
+  it("strips wildcard and filter-syntax characters and skips too-short queries", async () => {
+    const { ors, client } = recordingClient();
+    await searchRatedShops(client, "50%_o,f(f)\\");
+    expect(ors).toEqual(["name.ilike.%50off%,locality.ilike.%50off%"]);
     expect(await searchRatedShops(recordingClient().client, "a")).toEqual([]);
   });
 });
 
-describe("getCityShops", () => {
-  it("reads rated shops for a city key, best verdict then most logs first", async () => {
-    const calls: unknown[][] = [];
-    const builder: any = {
-      eq: (...a: unknown[]) => { calls.push(["eq", ...a]); return builder; },
-      not: (...a: unknown[]) => { calls.push(["not", ...a]); return builder; },
-      order: (...a: unknown[]) => { calls.push(["order", ...a]); return builder; },
-      then: (resolve: (v: unknown) => void) => resolve({ data: [{ id: "s1", name: "Muchacho" }], error: null }),
-    };
-    const client = { from: (t: string) => { calls.push(["from", t]); return { select: () => builder }; } } as any;
-    const rows = await getCityShops(client, "atlanta-georgia-us");
-    expect(rows).toEqual([{ id: "s1", name: "Muchacho" }]);
-    expect(calls).toEqual([
-      ["from", "shop_ratings"],
-      ["eq", "city_key", "atlanta-georgia-us"],
-      ["not", "rating", "is", null],
-      ["order", "rating", { ascending: false }],
-      ["order", "log_count", { ascending: false }],
-    ]);
-  });
-});
-
-describe("citiesWithVerdicts", () => {
-  it("returns the city keys that have at least one rated shop", async () => {
+describe("citiesWithGuides", () => {
+  it("maps searched city keys to the slug of a live editorial guide", async () => {
     const calls: unknown[][] = [];
     const builder: any = {
       in: (...a: unknown[]) => { calls.push(["in", ...a]); return builder; },
-      not: (...a: unknown[]) => { calls.push(["not", ...a]); return Promise.resolve({ data: [{ city_key: "atlanta-georgia-us" }, { city_key: "atlanta-georgia-us" }, { city_key: null }], error: null }); },
+      eq: (...a: unknown[]) => { calls.push(["eq", ...a]); return Promise.resolve({ data: [{ slug: "tampa", city_key: "tampa-florida-us" }], error: null }); },
     };
     const client = { from: (t: string) => ({ select: (c: string) => { calls.push(["from", t, c]); return builder; } }) } as any;
-    const found = await citiesWithVerdicts(client, ["atlanta-georgia-us", "nashville-tennessee-us"]);
-    expect([...found]).toEqual(["atlanta-georgia-us"]);
+    const found = await citiesWithGuides(client, ["tampa-florida-us", "atlanta-georgia-us"]);
+    expect([...found]).toEqual([["tampa-florida-us", "tampa"]]);
     expect(calls).toEqual([
-      ["from", "shop_ratings", "city_key"],
-      ["in", "city_key", ["atlanta-georgia-us", "nashville-tennessee-us"]],
-      ["not", "rating", "is", null],
+      ["from", "cities", "slug, city_key, lists!inner(id)"],
+      ["in", "city_key", ["tampa-florida-us", "atlanta-georgia-us"]],
+      ["in", "status", ["live", "demo"]],
+      ["eq", "lists.type", "city_guide"],
     ]);
   });
 
   it("skips the query when there's nothing to check", async () => {
     const client = { from: () => { throw new Error("should not query"); } } as any;
-    expect((await citiesWithVerdicts(client, [])).size).toBe(0);
+    expect((await citiesWithGuides(client, [])).size).toBe(0);
   });
 });
 

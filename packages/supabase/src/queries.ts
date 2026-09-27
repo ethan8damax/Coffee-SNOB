@@ -131,39 +131,31 @@ export async function getRatedShopsInBounds(
 // Global (not bounded to the current viewport) name search over rated shops, for the
 // map's search bar. `%` `_` `\` are stripped so a query can't act as a wildcard.
 export async function searchRatedShops(client: Client, query: string, limit = 8) {
-  const q = query.trim().replace(/[%_\\]/g, "");
+  const q = query.trim().replace(/[%_\\,()]/g, "");
   if (q.length < 2) return [];
-  // Every word must appear in the name, in any order ("goats dancing" finds
-  // "Dancing Goats Coffee").
+  // Every word must appear in the name or the city, in any order ("goats
+  // dancing" finds "Dancing Goats Coffee"; "muchacho atlanta" finds Muchacho).
   let request = client
     .from("shop_ratings")
-    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id");
-  for (const word of q.split(/\s+/)) request = request.ilike("name", `%${word}%`);
+    .select("id, name, lat, lng, neighborhood, locality, is_snob_approved, tag, price_tier, rating, log_count, external_id");
+  for (const word of q.split(/\s+/)) request = request.or(`name.ilike.%${word}%,locality.ilike.%${word}%`);
   const { data, error } = await request.not("rating", "is", null).order("rating", { ascending: false }).limit(limit);
   if (error) throw error;
   return data;
 }
 
-// Which of these cities have at least one rated shop — only those get a page.
-export async function citiesWithVerdicts(client: Client, keys: string[]): Promise<Set<string>> {
-  if (keys.length === 0) return new Set();
-  const { data, error } = await client.from("shop_ratings").select("city_key").in("city_key", keys).not("rating", "is", null);
-  if (error) throw error;
-  return new Set(data.map((r) => r.city_key).filter((k): k is string => k !== null));
-}
-
-// A city page: every rated shop whose city_key matches, best verdict first,
-// then the most-logged. A shop joins the moment it's first rated.
-export async function getCityShops(client: Client, key: string) {
+// Searched cities with a published editorial guide → that guide's city slug.
+// Keys come from cityKey(); cities.city_key (0033) holds the same rule.
+export async function citiesWithGuides(client: Client, keys: string[]): Promise<Map<string, string>> {
+  if (keys.length === 0) return new Map();
   const { data, error } = await client
-    .from("shop_ratings")
-    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id, locality, region, country_code")
-    .eq("city_key", key)
-    .not("rating", "is", null)
-    .order("rating", { ascending: false })
-    .order("log_count", { ascending: false });
+    .from("cities")
+    .select("slug, city_key, lists!inner(id)")
+    .in("city_key", keys)
+    .in("status", ["live", "demo"])
+    .eq("lists.type", "city_guide");
   if (error) throw error;
-  return data;
+  return new Map(data.flatMap((c) => (c.city_key ? [[c.city_key, c.slug] as const] : [])));
 }
 
 // Superseded by logVisit. Since 0015 the RPC returns [{ shop_id, log_id }] rather than the logs row.

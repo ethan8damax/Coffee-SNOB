@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { Linking, View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
@@ -11,6 +11,7 @@ import { PreviewCard } from "../../components/map/preview-card";
 import { AddShopBar, Crosshair } from "../../components/map/add-shop";
 import { newShopId } from "../../lib/log/new-shop";
 import { ShopListView } from "../../components/map/shop-list-view";
+import { SearchResults } from "../../components/map/search-results";
 import { Label } from "../../components/primitives";
 import type { MapBounds, MapViewProps, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
@@ -20,6 +21,8 @@ import { boundsAround } from "../../lib/map/bounds";
 import { FALLBACK_CITY, readLastLocation, saveLastLocation } from "../../lib/map/fallback";
 import type { Place } from "../../lib/map/geocode";
 import { applyFilter, buildRows, withPinned, type ListRow, type MapFilter } from "../../lib/map/shop-list";
+import { buildSearchSections, type ShopResult } from "../../lib/map/search-sort";
+import { useMapSearch } from "../../lib/map/use-map-search";
 import { openDirections } from "../../lib/directions";
 import { isDesktopWidth } from "@/lib/nav";
 
@@ -59,6 +62,12 @@ export default function MapScreen() {
   // null = automatic ("Near you" / the fallback city); set once someone searches a
   // place or a shop, cleared back to automatic by Locate.
   const [searchedAreaLabel, setSearchedAreaLabel] = useState<string | null>(null);
+  // Typing in the search bar swaps the shop list for search results (2+ chars).
+  const [query, setQuery] = useState("");
+  const searching = query.trim().length >= 2;
+  // The curated guide for the place last searched, if it has one — the list
+  // header links to it once the map has flown there.
+  const [guide, setGuide] = useState<{ slug: string; name: string } | null>(null);
   const [selectedRatedShopId, setSelectedRatedShopId] = useState<string | null>(null);
   const [selectedNearbyExternalId, setSelectedNearbyExternalId] = useState<string | null>(null);
   // A café picked from search shows (and stays selected) before its own area's
@@ -113,6 +122,8 @@ export default function MapScreen() {
   // Search ranks near-first from what's actually on screen, not your real location —
   // if you've flown somewhere else to browse, that's "near" for search purposes.
   const searchOrigin = bounds ? boundsCenter(bounds) : userCenter;
+  const search = useMapSearch(searching ? query : "", searchOrigin, WEB_APP_URL);
+  const sections = useMemo(() => buildSearchSections(search.results ?? [], filter), [search.results, filter]);
 
   const activeKey = selectedRatedShopId ? `r:${selectedRatedShopId}` : selectedNearbyExternalId ? `n:${selectedNearbyExternalId}` : null;
   // Looked up in everything shown, not the capped list, so a far-away pick or a
@@ -171,6 +182,7 @@ export default function MapScreen() {
   const locate = () => {
     if (!userCenter) return;
     setSearchedAreaLabel(null);
+    setGuide(null);
     setPinnedShop(null);
     flyTo(userCenter.lat, userCenter.lng);
   };
@@ -179,6 +191,9 @@ export default function MapScreen() {
   const searchPlace = (place: Place) => {
     flewToFix.current = true;
     setSearchedAreaLabel(place.primary);
+    setGuide(place.guideSlug ? { slug: place.guideSlug, name: place.primary } : null);
+    setQuery("");
+    setMode("Map");
     setPinnedShop(null);
     selectRated(null);
     selectNearby(null);
@@ -187,6 +202,7 @@ export default function MapScreen() {
   const searchShop = (shop: RatedShopPin) => {
     flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
+    setMode("Map");
     setPinnedShop(null);
     selectRated(shop.id);
     flyTo(shop.lat, shop.lng, 16);
@@ -194,12 +210,17 @@ export default function MapScreen() {
   const searchNearbyShop = (shop: NearbyShopPin) => {
     flewToFix.current = true;
     setSearchedAreaLabel(shop.name);
+    setMode("Map");
     setPinnedShop(shop);
     selectNearby(shop.externalId);
     flyTo(shop.lat, shop.lng, 16);
   };
 
+  const searchResultShop = (r: ShopResult) => (r.kind === "shop" ? searchShop(r.shop) : searchNearbyShop(r.shop));
+  const clearSearch = () => setQuery("");
+
   const startAdding = (name: string) => {
+    setQuery("");
     selectRated(null);
     setMode("Map");
     setListCollapsed(false);
@@ -244,20 +265,46 @@ export default function MapScreen() {
     />
   ) : null;
 
-  const list = (wide: boolean) => (
-    <ShopListView
-      rows={rows}
-      activeKey={activeKey}
-      wide={wide}
-      status={status}
-      offline={!online}
-      fallbackLabel={userCenter || locationLoading ? null : startCenter.name}
-      onPressRow={onPressRow}
-      onRetry={reload}
-    />
-  );
+  const list = (wide: boolean) =>
+    searching ? (
+      <SearchResults
+        query={query}
+        places={sections.places}
+        shops={sections.shops}
+        pending={search.pending || search.results === null}
+        origin={origin}
+        wide={wide}
+        activeKey={activeKey}
+        webAppUrl={WEB_APP_URL}
+        onSelectPlace={searchPlace}
+        onPressShop={searchResultShop}
+        onAddMissing={startAdding}
+      />
+    ) : (
+      <>
+        {guide ? (
+          <Pressable
+            onPress={() => Linking.openURL(`${WEB_APP_URL}/city-guides/${guide.slug}`)}
+            accessibilityRole="link"
+            style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
+          >
+            <Label style={{ color: colors.oxblood }}>{`Read the ${guide.name} guide →`}</Label>
+          </Pressable>
+        ) : null}
+        <ShopListView
+          rows={rows}
+          activeKey={activeKey}
+          wide={wide}
+          status={status}
+          offline={!online}
+          fallbackLabel={userCenter || locationLoading ? null : startCenter.name}
+          onPressRow={onPressRow}
+          onRetry={reload}
+        />
+      </>
+    );
 
-  const countLabel = `${total} ${total === 1 ? "shop" : "shops"} nearby`;
+  const countLabel = searching ? "Search" : `${total} ${total === 1 ? "shop" : "shops"} nearby`;
   // null until something's actually been searched — the bar shows the "Search a
   // city or a shop" invite by default, not a "Near you" label nobody asked for.
   const areaLabel = searchedAreaLabel;
@@ -267,12 +314,10 @@ export default function MapScreen() {
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
-            {/* zIndex here, not just on the search row: the list below is a later sibling
-                and would otherwise paint over the search dropdown on web. */}
-            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule, zIndex: 30 }}>
+            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
               {/* Row, like the mobile controls bar — MapSearch's flex: 1 collapses its height in a column. */}
-              <View style={{ flexDirection: "row", paddingHorizontal: 20, zIndex: 30 }}>
-                <MapSearch areaLabel={areaLabel} count={total} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} onAddMissing={startAdding} />
+              <View style={{ flexDirection: "row", paddingHorizontal: 20 }}>
+                <MapSearch areaLabel={areaLabel} count={total} value={query} onChangeText={setQuery} onClear={clearSearch} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -332,12 +377,10 @@ export default function MapScreen() {
             onLocate={locate}
             locateDisabled={!userCenter}
             onRefresh={reload}
-            webAppUrl={WEB_APP_URL}
-            origin={searchOrigin}
-            onSelectPlace={searchPlace}
-            onSelectShop={searchShop}
-            onSelectNearbyShop={searchNearbyShop}
-            onAddMissing={startAdding}
+            query={query}
+            onQueryChange={setQuery}
+            onSearchFocus={() => setMode("List")}
+            onSearchClear={clearSearch}
           />
           <FilterChips value={filter} onChange={setFilter} />
         </View>

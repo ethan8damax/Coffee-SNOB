@@ -2,8 +2,6 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { MAP_FILTERS, type MapFilter } from "../../lib/map/shop-list";
-import type { Place } from "../../lib/map/geocode";
-import type { NearbyShopPin, RatedShopPin } from "./types";
 import { Chip } from "../chip";
 import { LocateIcon } from "./locate-icon";
 import { MapSearch } from "./map-search";
@@ -136,24 +134,20 @@ export function MapTopBar({
   onLocate,
   locateDisabled,
   onRefresh,
-  webAppUrl,
-  origin,
-  onSelectPlace,
-  onSelectShop,
-  onSelectNearbyShop,
-  onAddMissing,
+  query,
+  onQueryChange,
+  onSearchFocus,
+  onSearchClear,
 }: {
   areaLabel: string | null;
   count: number;
   onLocate: () => void;
   locateDisabled: boolean;
   onRefresh: () => void;
-  webAppUrl: string;
-  origin: { lat: number; lng: number } | null;
-  onSelectPlace: (place: Place) => void;
-  onSelectShop: (shop: RatedShopPin) => void;
-  onSelectNearbyShop: (shop: NearbyShopPin) => void;
-  onAddMissing?: (name: string) => void;
+  query: string;
+  onQueryChange: (text: string) => void;
+  onSearchFocus: () => void;
+  onSearchClear: () => void;
 }) {
   // The map itself now draws edge-to-edge under the status bar/notch (see
   // public/index.html), so this bar needs a real inset-aware top padding —
@@ -162,7 +156,7 @@ export function MapTopBar({
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 10, zIndex: 30 }}>
-      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} onSelectNearbyShop={onSelectNearbyShop} onAddMissing={onAddMissing} />
+      <MapSearch areaLabel={areaLabel} count={count} value={query} onChangeText={onQueryChange} onFocus={onSearchFocus} onClear={onSearchClear} />
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

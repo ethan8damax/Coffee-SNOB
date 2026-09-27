@@ -8,6 +8,7 @@ describe("searchEverywhere", () => {
       json: () => Promise.resolve({
         places: [{ id: "R1", primary: "Atlanta", secondary: "GA, USA", lat: 33.7, lng: -84.4 }],
         shops: [{ externalId: "node/1", name: "Dancing Goats Coffee", secondary: "Atlanta, GA, USA", lat: 33.75, lng: -84.36 }],
+        scoped: { name: "dancing", place: { primary: "Atlanta", secondary: "GA, USA", lat: 33.7, lng: -84.4 } },
       }),
     }));
     vi.stubGlobal("fetch", fetchSpy);
@@ -18,6 +19,7 @@ describe("searchEverywhere", () => {
       shop: { externalId: "node/1", name: "Dancing Goats Coffee", lat: 33.75, lng: -84.36, address: null, hours: null, website: null, phone: null },
       secondary: "Atlanta, GA, USA",
     }]);
+    expect(result.scoped).toEqual({ name: "dancing", place: { primary: "Atlanta", secondary: "GA, USA", lat: 33.7, lng: -84.4 } });
     vi.unstubAllGlobals();
   });
 

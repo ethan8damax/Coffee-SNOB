@@ -27,7 +27,6 @@ describe("nav", () => {
 
   it("highlights Map on shop pages and You on profile pages", () => {
     expect(routeForPath("/shop/abc-123")).toBe("map");
-    expect(routeForPath("/city/atlanta-georgia-us")).toBe("map");
     expect(routeForPath("/u/mara")).toBe("profile");
   });
 });

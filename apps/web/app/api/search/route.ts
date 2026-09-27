@@ -13,7 +13,8 @@ const CORS_HEADERS = { "Access-Control-Allow-Origin": "*" };
 // Search results barely change; the location bias is rounded (below) so
 // nearby searchers share CDN entries. Errors are never cached.
 const CACHE_HEADERS = { ...CORS_HEADERS, "Cache-Control": "public, s-maxage=3600, stale-while-revalidate=86400" };
-const CITY_VALUES = new Set(["city", "town", "village"]);
+// Cities and towns only: a village named "Here" shouldn't scope "wuz here".
+const CITY_VALUES = new Set(["city", "town"]);
 
 async function photon(q: string, tags: string[], limit: number, bias: { lat: string; lon: string } | null): Promise<PhotonFeature[]> {
   const params = new URLSearchParams({ q, limit: String(limit), lang: "en" });

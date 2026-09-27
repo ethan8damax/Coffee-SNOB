@@ -1,4 +1,4 @@
-import { distanceKm } from "./shop-list";
+import { distanceKm, type ListRow, type MapFilter } from "./shop-list";
 import type { Place } from "./geocode";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
@@ -67,4 +67,26 @@ export function rankResults(results: SearchResult[], query: string, origin: { la
     .map((r) => ({ r, s: score(r) }))
     .sort((a, b) => a.s.tier - b.s.tier || a.s.rated - b.s.rated || a.s.dist - b.s.dist)
     .map(({ r }) => r);
+}
+
+export const MAX_PLACES = 3;
+export type ShopResult = Exclude<SearchResult, { kind: "place" }>;
+
+// The panel's two sections, from ranked results. Places are a way to move the
+// map, so the shop filters never hide them.
+export function buildSearchSections(results: SearchResult[], filter: MapFilter): { places: Place[]; shops: ShopResult[] } {
+  const places = results.flatMap((r) => (r.kind === "place" ? [r.place] : [])).slice(0, MAX_PLACES);
+  const shops = results.filter(
+    (r): r is ShopResult => r.kind !== "place" && (filter === "all" || (r.kind === "shop" && (filter === "rated" || r.shop.rating >= 4))),
+  );
+  return { places, shops };
+}
+
+// A shop result as a list row, so search reuses the nearby list's ShopRow. The
+// search's secondary line (a far shop's city) goes where that row shows one.
+export function toListRow(r: ShopResult, origin: { lat: number; lng: number } | null): ListRow {
+  const distance = origin ? distanceKm(origin, r.shop) : null;
+  return r.kind === "shop"
+    ? { kind: "rated", shop: { ...r.shop, neighborhood: r.shop.neighborhood ?? r.secondary }, distanceKm: distance }
+    : { kind: "nearby", shop: { ...r.shop, address: r.shop.address ?? r.secondary }, distanceKm: distance };
 }

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mergeResults, rankResults, type SearchResult } from "./search-sort";
+import { buildSearchSections, mergeResults, rankResults, toListRow, type SearchResult } from "./search-sort";
 
 const place = (id: string, primary: string, lat: number, lng: number): SearchResult => ({ kind: "place", place: { id, primary, secondary: "", lat, lng } });
 const nearby = (externalId: string, name: string, lat: number, lng: number): SearchResult => ({
@@ -49,5 +49,36 @@ describe("rankResults", () => {
   it("ignores accents, case and punctuation when matching", () => {
     const results = [nearby("node/2", "Other Cafe", 0, 0), nearby("node/1", "Café Kitsuné", 0, 0)];
     expect(rankResults(results, "cafe kitsune", null).map(key)).toEqual(["node/1", "node/2"]);
+  });
+});
+
+describe("buildSearchSections", () => {
+  const results: SearchResult[] = [
+    place("R1", "Atlanta", 33.7, -84.4), place("R2", "Atlanta, TX", 33.1, -94.2), place("R3", "Atlantic City", 39.4, -74.4), place("R4", "Atlantis", 26.6, -80.1),
+    rated("s1", "Muchacho", 33.7, -84.3), nearby("node/2", "Atlanta Coffee", 33.8, -84.4),
+    { ...rated("s3", "Okay Café", 33.7, -84.3), shop: { ...(rated("s3", "Okay Café", 33.7, -84.3) as any).shop, rating: 2 } } as SearchResult,
+  ];
+
+  it("caps places at three and keeps every shop on 'All'", () => {
+    const { places, shops } = buildSearchSections(results, "all");
+    expect(places.map((p) => p.id)).toEqual(["R1", "R2", "R3"]);
+    expect(shops.map(key)).toEqual(["s1", "node/2", "s3"]);
+  });
+
+  it("filters shops like the map, and never hides places", () => {
+    expect(buildSearchSections(results, "rated").shops.map(key)).toEqual(["s1", "s3"]);
+    expect(buildSearchSections(results, "top").shops.map(key)).toEqual(["s1"]);
+    expect(buildSearchSections(results, "top").places).toHaveLength(3);
+  });
+});
+
+describe("toListRow", () => {
+  it("puts a search's secondary line where the row shows it, with distance", () => {
+    const row = toListRow(nearby("node/2", "George Howell", 42.36, -71.06) as any, null);
+    expect(row).toMatchObject({ kind: "nearby", distanceKm: null, shop: { address: null } });
+    const withLine = toListRow({ ...(nearby("node/2", "George Howell", 42.36, -71.06) as any), secondary: "Boston, MA, USA" }, { lat: 42.36, lng: -71.06 });
+    expect(withLine).toMatchObject({ kind: "nearby", distanceKm: 0, shop: { address: "Boston, MA, USA" } });
+    const ratedRow = toListRow({ ...(rated("s1", "Muchacho", 33.7, -84.3) as any), secondary: "Atlanta" }, null);
+    expect(ratedRow).toMatchObject({ kind: "rated", shop: { neighborhood: "Atlanta" } });
   });
 });

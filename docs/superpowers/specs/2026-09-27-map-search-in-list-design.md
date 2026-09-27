@@ -41,7 +41,8 @@ cities, rated shops and fuzzy worldwide junk ("wuz here" → Wu'an, Hebei).
   asks Photon whether the last 1–2 words are a city. If so it returns
   `scoped: { name: "muchacho", place: Atlanta }`, and the app searches the
   coffee index around that place for the name (catches coffee-serving
-  restaurants Photon's café filter misses).
+  restaurants Photon's café filter misses). While the index is off in
+  production, the live OSM name search (`/api/nearby-shops?q=`) stands in.
 - **Rated search** matches each word against the shop's name *or* its city,
   so "muchacho atlanta" and plain "atlanta" find rated shops there.
 

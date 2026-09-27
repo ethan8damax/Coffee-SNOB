@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { Text, View, Pressable, StyleSheet, type TextProps, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import { Animated, Text, View, StyleSheet, type TextProps, type StyleProp, type ViewStyle } from "react-native";
+import { Tap, type TapProps } from "@/components/tap";
+import { usePop } from "@/lib/motion";
 import Svg, { Path } from "react-native-svg";
 import { colors } from "@coffeesnob/design-tokens";
 
@@ -56,6 +58,16 @@ export function IconHeart({ size = 16, color = colors.ink, filled = false }: { s
     <Svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? color : "none"} stroke={color} strokeWidth={1.8} strokeLinecap="square">
       <Path d={d} />
     </Svg>
+  );
+}
+
+// A like's heart: fills burnt, and pops as it turns on so the tap reads as landed.
+export function HeartToggle({ on, size, offColor }: { on: boolean; size: number; offColor: string }) {
+  const pop = usePop(on);
+  return (
+    <Animated.View style={pop}>
+      <IconHeart size={size} color={on ? colors.burnt : offColor} filled={on} />
+    </Animated.View>
   );
 }
 
@@ -133,12 +145,12 @@ export function ButtonOx({
   icon,
   style,
   ...rest
-}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
+}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<TapProps, "style">) {
   return (
-    <Pressable {...rest} style={[styles.btn, styles.btnOx, style]}>
+    <Tap {...rest} style={[styles.btn, styles.btnOx, style]}>
       {icon}
       <Text style={styles.btnOxText}>{title}</Text>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -146,11 +158,11 @@ export function ButtonLine({
   title,
   style,
   ...rest
-}: { title: string; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
+}: { title: string; style?: StyleProp<ViewStyle> } & Omit<TapProps, "style">) {
   return (
-    <Pressable {...rest} style={[styles.btn, styles.btnLine, style]}>
+    <Tap {...rest} style={[styles.btn, styles.btnLine, style]}>
       <Text style={styles.btnLineText}>{title}</Text>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -159,12 +171,12 @@ export function ButtonBu({
   icon,
   style,
   ...rest
-}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<PressableProps, "style">) {
+}: { title: string; icon?: ReactNode; style?: StyleProp<ViewStyle> } & Omit<TapProps, "style">) {
   return (
-    <Pressable {...rest} style={[styles.btn, styles.btnBu, style]}>
+    <Tap {...rest} style={[styles.btn, styles.btnBu, style]}>
       {icon}
       <Text style={styles.btnBuText}>{title}</Text>
-    </Pressable>
+    </Tap>
   );
 }
 

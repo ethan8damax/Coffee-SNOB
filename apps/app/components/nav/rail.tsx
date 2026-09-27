@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { router, usePathname } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { useAuth } from "@/context/auth";
@@ -25,7 +26,7 @@ export function Rail() {
         {NAV_ITEMS.map((item) => {
           const on = active === item.route;
           return (
-            <Pressable
+            <Tap
               key={item.route}
               onPress={() => router.navigate(item.path)}
               accessibilityRole="link"
@@ -49,7 +50,7 @@ export function Rail() {
               >
                 {item.label}
               </Text>
-            </Pressable>
+            </Tap>
           );
         })}
       </View>
@@ -64,9 +65,9 @@ export function Rail() {
             </View>
           </>
         ) : (
-          <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="link">
+          <Tap onPress={() => router.push("/sign-in")} accessibilityRole="link">
             <Label style={{ color: colors.cream }}>Sign in</Label>
-          </Pressable>
+          </Tap>
         )}
       </View>
     </View>

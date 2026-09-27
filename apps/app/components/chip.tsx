@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { chipStyleForVariant, type ChipVariant } from "./chip-style";
 
 export function Chip({
@@ -33,9 +34,9 @@ export function Chip({
     </View>
   );
   return onPress ? (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+    <Tap onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
       {body}
-    </Pressable>
+    </Tap>
   ) : (
     body
   );

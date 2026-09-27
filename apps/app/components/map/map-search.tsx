@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { Pressable, Text, TextInput } from "react-native";
+import { Text, TextInput } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { CloseIcon, PinIcon } from "./map-icons";
 
@@ -44,7 +45,7 @@ export function MapSearch({
 
   if (!active) {
     return (
-      <Pressable
+      <Tap
         onPress={() => {
           setEditing(true);
           onFocus?.();
@@ -69,12 +70,12 @@ export function MapSearch({
           {areaLabel ?? SEARCH_LABEL}
         </Text>
         <Text style={{ marginLeft: "auto", fontFamily: "AreaExtended-Black", fontSize: 9, color: colors.ink3 }}>{count}</Text>
-      </Pressable>
+      </Tap>
     );
   }
 
   return (
-    <Pressable onPress={() => inputRef.current?.focus()} style={pillBase} accessible={false}>
+    <Tap feedback="none" onPress={() => inputRef.current?.focus()} style={pillBase} accessible={false}>
       <PinIcon color={colors.oxblood} />
       <TextInput
         ref={inputRef}
@@ -93,7 +94,7 @@ export function MapSearch({
         returnKeyType="search"
         style={{ flex: 1, minWidth: 0, fontFamily: "Area-Regular", fontSize: 15, color: colors.ink }}
       />
-      <Pressable
+      <Tap
         onPress={() => {
           setEditing(false);
           inputRef.current?.blur();
@@ -104,7 +105,7 @@ export function MapSearch({
         hitSlop={12}
       >
         <CloseIcon size={12} color={colors.ink3} />
-      </Pressable>
-    </Pressable>
+      </Tap>
+    </Tap>
   );
 }

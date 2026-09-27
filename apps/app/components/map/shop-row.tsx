@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { formatDistance, rowSubtitle, type ListRow } from "../../lib/map/shop-list";
 import { Detour } from "../detour";
@@ -37,7 +38,7 @@ export function rowKey(row: ListRow): string {
 export function ShopRow({ row, active, wide, onPress }: { row: ListRow; active: boolean; wide: boolean; onPress: () => void }) {
   const subtitle = rowSubtitle(row);
   return (
-    <Pressable
+    <Tap feedback="tint"
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${row.shop.name}, ${subtitle}`}
@@ -71,6 +72,6 @@ export function ShopRow({ row, active, wide, onPress }: { row: ListRow; active: 
         </Label>
         {row.kind === "rated" ? <Detour value={row.shop.rating} /> : null}
       </View>
-    </Pressable>
+    </Tap>
   );
 }

@@ -71,10 +71,12 @@ describe("isPublicTabPath — detail pages", () => {
     expect(isPublicTabPath("/shop/abc-123")).toBe(true);
     expect(isPublicTabPath("/u/mara")).toBe(true);
     expect(isPublicTabPath("/people")).toBe(true);
+    expect(isPublicTabPath("/collection/abc-123")).toBe(true);
   });
 
   it("does not treat lookalike prefixes as public", () => {
     expect(isPublicTabPath("/shopping")).toBe(false);
     expect(isPublicTabPath("/user/mara")).toBe(false);
+    expect(isPublicTabPath("/collections")).toBe(false);
   });
 });

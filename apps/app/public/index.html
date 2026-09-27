@@ -40,6 +40,23 @@
         height: 100%;
         flex: 1;
       }
+      /* Keyboard focus, everywhere: DESIGN.md's 2px burnt ring, inset-feeling.
+         :focus-visible only, so a mouse click or a tap never draws it. Every
+         Tap renders as a focusable div, so [tabindex] covers them all. */
+      [tabindex]:focus-visible,
+      a:focus-visible {
+        outline: 2px solid #c46a17 !important;
+        outline-offset: -1px;
+      }
+      /* Reduced motion: Tap's fade/tint and every transition snap instead. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          transition-duration: 0.01ms !important;
+          animation-duration: 0.01ms !important;
+        }
+      }
       /* iOS Safari quirk (github.com/w3c/csswg-drafts, Apple dev forums, well-
          documented): the app's own layout reaches the bottom of the viewport
          correctly — measured on an iPhone 15 in standalone, the tab bar's

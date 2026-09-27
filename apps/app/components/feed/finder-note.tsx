@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { getUnreadNotifications, markNotificationRead, type FinderNotification } from "@coffeesnob/supabase";
@@ -23,7 +24,7 @@ export function FinderNote() {
 
   return (
     <View style={{ padding: 16, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}>
-      <Pressable
+      <Tap
         onPress={() => {
           done();
           router.push(`/shop/${note.shopId}`);
@@ -35,10 +36,10 @@ export function FinderNote() {
         <Label style={{ color: colors.oxblood }}>You found it first</Label>
         <D4 style={{ marginTop: 7 }}>{`${note.shopName} is Snob-Approved.`}</D4>
         <BodySm style={{ marginTop: 6, color: colors.ink2 }}>You were the first to log it. We went twice. It earned the pin.</BodySm>
-      </Pressable>
-      <Pressable onPress={done} accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={8} style={{ alignSelf: "flex-end", minHeight: 36, justifyContent: "center" }}>
+      </Tap>
+      <Tap onPress={done} accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={8} style={{ alignSelf: "flex-end", minHeight: 36, justifyContent: "center" }}>
         <Label style={{ color: colors.ink3 }}>Got it</Label>
-      </Pressable>
+      </Tap>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { Linking, View, StyleSheet, useWindowDimensions } from "react-native";
+import { Tap } from "@/components/tap";
 import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
@@ -13,6 +14,7 @@ import { AddToCollection, type CollectTarget } from "../../components/collection
 import { newShopId } from "../../lib/log/new-shop";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { SearchResults } from "../../components/map/search-results";
+import { Enter } from "../../components/enter";
 import { Label } from "../../components/primitives";
 import type { MapBounds, MapViewProps, NearbyShopPin, RatedShopPin } from "../../components/map/types";
 import { useNearbyMapData } from "../../lib/map/nearby-map-data";
@@ -321,6 +323,7 @@ export default function MapScreen() {
   );
 
   const preview = selectedRow ? (
+    <Enter key={activeKey} rise={12} duration={220}>
     <PreviewCard
       row={selectedRow}
       onOpen={() => openShop(selectedRow)}
@@ -329,6 +332,7 @@ export default function MapScreen() {
       onCollect={() => collect(selectedRow)}
       onDismiss={() => selectRated(null)}
     />
+    </Enter>
   ) : null;
 
   const emptyMessage = everywhere
@@ -347,6 +351,7 @@ export default function MapScreen() {
 
   const list = (wide: boolean) =>
     searching ? (
+      <Enter rise={0} duration={150} style={{ flex: 1 }}>
       <SearchResults
         query={query}
         places={sections.places}
@@ -360,16 +365,17 @@ export default function MapScreen() {
         onPressShop={searchResultShop}
         onAddMissing={startAdding}
       />
+      </Enter>
     ) : (
       <>
         {guide ? (
-          <Pressable
+          <Tap feedback="tint"
             onPress={() => Linking.openURL(`${WEB_APP_URL}/city-guides/${guide.slug}`)}
             accessibilityRole="link"
             style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
           >
             <Label style={{ color: colors.oxblood }}>{`Read the ${guide.name} guide →`}</Label>
-          </Pressable>
+          </Tap>
         ) : null}
         <ShopListView
           rows={rows}
@@ -416,7 +422,7 @@ export default function MapScreen() {
           {map}
           <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
             {/* Straddles the panel/map seam either way, so it's always reachable. */}
-            <Pressable
+            <Tap
               onPress={() => setListCollapsed((c) => !c)}
               accessibilityRole="button"
               accessibilityLabel={listCollapsed ? "Show the shop list" : "Hide the shop list"}
@@ -435,7 +441,7 @@ export default function MapScreen() {
               }}
             >
               <ChevronIcon direction={listCollapsed ? "right" : "left"} color={colors.ink} size={11} />
-            </Pressable>
+            </Tap>
             <View style={{ position: "absolute", top: 16, right: 16 }}>
               <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
             </View>

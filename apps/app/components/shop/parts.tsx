@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, Linking, Platform } from "react-native";
+import { View, Text, Linking, Platform } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
@@ -22,14 +23,14 @@ export function goBack() {
 export function Hero({ shop }: { shop: ShopDetail }) {
   return (
     <View style={{ backgroundColor: colors.oxblood, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 }}>
-      <Pressable
+      <Tap
         onPress={goBack}
         accessibilityRole="button"
         accessibilityLabel="Back"
         style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}
       >
         <IconBack color={colors.cream} />
-      </Pressable>
+      </Tap>
       <D1 accessibilityRole="header" style={{ color: colors.cream, marginTop: 28 }}>
         {shop.name}
       </D1>
@@ -125,7 +126,7 @@ export function TabStrip({ tab, onChange }: { tab: ShopTab; onChange: (t: ShopTa
   return (
     <View accessibilityRole="tablist" style={{ flexDirection: "row", borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule }}>
       {TABS.map((t) => (
-        <Pressable
+        <Tap
           key={t}
           onPress={() => onChange(t)}
           accessibilityRole="tab"
@@ -134,7 +135,7 @@ export function TabStrip({ tab, onChange }: { tab: ShopTab; onChange: (t: ShopTa
           style={{ flex: 1, minHeight: 44, alignItems: "center", justifyContent: "center", backgroundColor: tab === t ? colors.ink : "transparent" }}
         >
           <Label style={{ color: tab === t ? colors.paper : colors.ink3 }}>{t}</Label>
-        </Pressable>
+        </Tap>
       ))}
     </View>
   );
@@ -147,14 +148,14 @@ function ReviewRow({ review }: { review: ShopReview }) {
     <View style={{ paddingVertical: 16, borderBottomWidth: 1, borderBottomColor: colors.rule2, gap: 10 }}>
       <View style={{ flexDirection: "row", alignItems: "center", gap: 9 }}>
         <Avatar name={name} size={28} />
-        <Pressable
+        <Tap
           onPress={() => router.push(`/u/${review.username}`)}
           accessibilityRole="link"
           accessibilityLabel={`${name}'s profile`}
           style={{ minHeight: 44, justifyContent: "center", flexShrink: 1 }}
         >
           <Label numberOfLines={1} style={{ color: colors.ink }}>{name}</Label>
-        </Pressable>
+        </Tap>
         {when ? <Label style={{ marginLeft: "auto" }}>{when}</Label> : null}
       </View>
       <View style={{ flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8, paddingLeft: 37 }}>
@@ -207,9 +208,9 @@ export function HoursCard({ hours }: { hours: string | null }) {
 
 function LinkRow({ label, onPress, hint }: { label: string; onPress: () => void; hint: string }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="link" accessibilityLabel={hint} style={{ minHeight: 44, justifyContent: "center" }}>
+    <Tap onPress={onPress} accessibilityRole="link" accessibilityLabel={hint} style={{ minHeight: 44, justifyContent: "center" }}>
       <Body style={{ color: colors.teal, textDecorationLine: "underline" }}>{label}</Body>
-    </Pressable>
+    </Tap>
   );
 }
 

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, TextInput, ActivityIndicator } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { getComments, getCommentLikes, getProfilesByIds, postComment, setCommentLike } from "@coffeesnob/supabase";
-import { Avatar, BodySm, IconHeart, Label } from "../primitives";
+import { Avatar, BodySm, HeartToggle, Label } from "../primitives";
 import { buildCommentTree, type CommentWithMeta } from "../../lib/feed/comment-tree";
 
 export function CommentThread({ logId, userId, onCountChange }: { logId: string; userId: string; onCountChange?: (count: number) => void }) {
@@ -119,19 +120,19 @@ function CommentRow({ comment, indent, onLike, onReply }: { comment: CommentWith
         </View>
         <BodySm style={{ marginTop: 4 }}>{comment.body}</BodySm>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginTop: 7 }}>
-          <Pressable
+          <Tap
             onPress={onLike}
             accessibilityRole="button"
             accessibilityLabel={comment.likedByMe ? "Unlike" : "Like"}
             style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
           >
-            <IconHeart size={12} color={comment.likedByMe ? colors.burnt : colors.ink3} filled={comment.likedByMe} />
+            <HeartToggle on={comment.likedByMe} size={12} offColor={colors.ink3} />
             <Label style={{ color: comment.likedByMe ? colors.burnt : colors.ink3 }}>{String(comment.likeCount)}</Label>
-          </Pressable>
+          </Tap>
           {onReply && (
-            <Pressable onPress={onReply}>
+            <Tap onPress={onReply}>
               <Label style={{ color: colors.ink3 }}>Reply</Label>
-            </Pressable>
+            </Tap>
           )}
         </View>
       </View>
@@ -146,9 +147,9 @@ function ComposeRow({ value, onChange, onSubmit, indent, placeholder }: { value:
       <View style={{ flex: 1, height: indent ? 30 : 34, borderWidth: 1, borderColor: colors.rule, borderRadius: 17, paddingHorizontal: 12, justifyContent: "center" }}>
         <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.ink3} onSubmitEditing={onSubmit} style={{ fontSize: 12, color: colors.ink }} />
       </View>
-      <Pressable onPress={onSubmit}>
+      <Tap onPress={onSubmit}>
         <Label style={{ color: value.trim() ? colors.tealDk : colors.ink3 }}>Post</Label>
-      </Pressable>
+      </Tap>
     </View>
   );
 }

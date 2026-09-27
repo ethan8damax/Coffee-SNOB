@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { setLogLike } from "@coffeesnob/supabase";
-import { Avatar, Body, Label, D2, IconComment, IconHeart } from "../primitives";
+import { Avatar, Body, Label, D2, IconComment, HeartToggle } from "../primitives";
 import { Detour } from "../detour";
 import { CommentThread } from "./comment-thread";
 import type { LogFeedCard } from "../../lib/feed/types";
@@ -42,16 +43,16 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
       {item.note && <Body style={{ marginTop: 10 }}>{item.note}</Body>}
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 14 }}>
-        <Pressable
+        <Tap
           onPress={toggleLike}
           accessibilityRole="button"
           accessibilityLabel={liked ? "Unlike" : "Like"}
           style={{ flexDirection: "row", alignItems: "center", gap: 5 }}
         >
-          <IconHeart size={15} color={liked ? colors.burnt : colors.ink2} filled={liked} />
+          <HeartToggle on={liked} size={15} offColor={colors.ink2} />
           <Label style={{ color: colors.ink2 }}>{String(likeCount)}</Label>
-        </Pressable>
-        <Pressable
+        </Tap>
+        <Tap
           onPress={() => setCommentsOpen((o) => !o)}
           accessibilityRole="button"
           accessibilityLabel={commentsOpen ? "Hide comments" : "Show comments"}
@@ -59,7 +60,7 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
         >
           <IconComment size={15} color={commentsOpen ? colors.ink : colors.ink2} />
           <Label style={{ color: colors.ink2 }}>{String(commentCount)}</Label>
-        </Pressable>
+        </Tap>
       </View>
 
       {commentsOpen && <CommentThread logId={item.id} userId={userId} onCountChange={setCommentCount} />}

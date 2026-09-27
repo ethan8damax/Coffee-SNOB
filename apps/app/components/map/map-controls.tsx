@@ -1,9 +1,11 @@
 import { useRef, useState } from "react";
-import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
+import { Modal, View, Text, StyleSheet } from "react-native";
+import { Tap } from "@/components/tap";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { EFFORT_OPTIONS, YOU_OPTIONS, type MapFilter } from "../../lib/map/shop-list";
 import { chipStyleForVariant } from "../chip-style";
+import { Enter } from "../enter";
 import { LocateIcon } from "./locate-icon";
 import { MapSearch } from "./map-search";
 import { MinusIcon, PinIcon, PlusIcon, RefreshIcon } from "./map-icons";
@@ -32,7 +34,7 @@ function FilterMenu<T extends string>({
   const s = chipStyleForVariant(on ? "ox" : "default");
   return (
     <View>
-      <Pressable
+      <Tap
         ref={chip}
         onPress={() => {
           if (open) return onToggle();
@@ -51,17 +53,19 @@ function FilterMenu<T extends string>({
           {on ? current : title}
         </Text>
         <Text style={{ fontSize: 9, color: s.text }}>▾</Text>
-      </Pressable>
+      </Tap>
       <Modal visible={open && anchor !== null} transparent animationType="none" onRequestClose={onToggle}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onToggle} accessibilityLabel={`Close ${title} menu`} />
-        <View
+        <Tap feedback="none" style={StyleSheet.absoluteFill} onPress={onToggle} accessibilityLabel={`Close ${title} menu`} />
+        <Enter
           accessibilityRole="menu"
+          rise={-4}
+          duration={160}
           style={{ position: "absolute", top: anchor?.y ?? 0, left: anchor?.x ?? 0, minWidth: 200, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rule, borderRadius: 2, paddingVertical: 4 }}
         >
           {options.map((o) => {
             const selected = o.id === value;
             return (
-              <Pressable
+              <Tap feedback="tint"
                 key={o.id}
                 onPress={() => onChange(o.id)}
                 accessibilityRole="menuitem"
@@ -70,10 +74,10 @@ function FilterMenu<T extends string>({
               >
                 <Text style={{ width: 10, fontSize: 10, color: colors.oxblood }}>{selected ? "●" : ""}</Text>
                 <Text style={{ fontFamily: selected ? "Area-Bold" : "Area-Regular", fontSize: 14, color: colors.ink }}>{o.label}</Text>
-              </Pressable>
+              </Tap>
             );
           })}
-        </View>
+        </Enter>
       </Modal>
     </View>
   );
@@ -119,7 +123,7 @@ export function ViewToggle({ value, onChange }: { value: "Map" | "List"; onChang
       {(["Map", "List"] as const).map((v) => {
         const active = value === v;
         return (
-          <Pressable
+          <Tap
             key={v}
             onPress={() => onChange(v)}
             accessibilityRole="button"
@@ -128,7 +132,7 @@ export function ViewToggle({ value, onChange }: { value: "Map" | "List"; onChang
             style={{ height: 32, minWidth: 44, paddingHorizontal: 10, alignItems: "center", justifyContent: "center", backgroundColor: active ? colors.ink : "transparent" }}
           >
             <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 8.5, letterSpacing: 0.85, textTransform: "uppercase", color: active ? colors.paper : colors.ink3 }}>{v}</Text>
-          </Pressable>
+          </Tap>
         );
       })}
     </View>
@@ -137,7 +141,7 @@ export function ViewToggle({ value, onChange }: { value: "Map" | "List"; onChang
 
 export function LocateButton({ onPress, disabled, size = 44 }: { onPress: () => void; disabled: boolean; size?: number }) {
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -156,7 +160,7 @@ export function LocateButton({ onPress, disabled, size = 44 }: { onPress: () => 
       }}
     >
       <LocateIcon color={colors.ink} />
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -175,17 +179,17 @@ export function ZoomControls({
   const box = { width: 40, height: 40, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.rule };
   return (
     <View style={{ gap: 1 }}>
-      <Pressable onPress={() => onZoom(1)} accessibilityRole="button" accessibilityLabel="Zoom in" style={box}>
+      <Tap onPress={() => onZoom(1)} accessibilityRole="button" accessibilityLabel="Zoom in" style={box}>
         <PlusIcon color={colors.ink} />
-      </Pressable>
-      <Pressable onPress={() => onZoom(-1)} accessibilityRole="button" accessibilityLabel="Zoom out" style={box}>
+      </Tap>
+      <Tap onPress={() => onZoom(-1)} accessibilityRole="button" accessibilityLabel="Zoom out" style={box}>
         <MinusIcon color={colors.ink} />
-      </Pressable>
+      </Tap>
       <LocateButton onPress={onLocate} disabled={locateDisabled} size={40} />
       {onRefresh && (
-        <Pressable onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
+        <Tap onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
           <RefreshIcon color={colors.ink} />
-        </Pressable>
+        </Tap>
       )}
     </View>
   );
@@ -196,7 +200,7 @@ export function ZoomControls({
 // always-available way to force a fresh look without waiting on that.
 export function RefreshButton({ onPress, size = 44 }: { onPress: () => void; size?: number }) {
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="Search this area again"
@@ -212,7 +216,7 @@ export function RefreshButton({ onPress, size = 44 }: { onPress: () => void; siz
       }}
     >
       <RefreshIcon color={colors.ink} />
-    </Pressable>
+    </Tap>
   );
 }
 

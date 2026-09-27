@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
+import { ActivityIndicator, ScrollView, TextInput, View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { getFollowList, searchProfiles, type PersonRow } from "@coffeesnob/supabase";
@@ -58,9 +59,9 @@ export default function PeopleScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ alignItems: "center", paddingBottom: 40 }}>
       <View style={{ width: "100%", maxWidth: 640 }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 12, gap: 10 }}>
-          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
+          <Tap onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
             <IconBack />
-          </Pressable>
+          </Tap>
           <Label accessibilityRole="header" style={{ color: colors.ink2 }}>
             {params.u ? `@${params.u}` : "People"}
           </Label>
@@ -68,7 +69,7 @@ export default function PeopleScreen() {
 
         <View accessibilityRole="tablist" style={{ marginTop: 14, flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.rule }}>
           {TABS.map((t) => (
-            <Pressable
+            <Tap
               key={t.key}
               onPress={() => setTab(t.key)}
               accessibilityRole="tab"
@@ -76,7 +77,7 @@ export default function PeopleScreen() {
               style={{ paddingHorizontal: 16, paddingVertical: 12, minHeight: 44, borderBottomWidth: 2, borderBottomColor: tab === t.key ? colors.ink : "transparent", marginBottom: -1 }}
             >
               <Label style={{ color: tab === t.key ? colors.ink : colors.ink3 }}>{t.label}</Label>
-            </Pressable>
+            </Tap>
           ))}
         </View>
 
@@ -107,7 +108,7 @@ export default function PeopleScreen() {
         ) : (
           <View style={{ paddingHorizontal: 16 }}>
             {rows.map((p) => (
-              <Pressable
+              <Tap feedback="tint"
                 key={p.id}
                 onPress={() => router.push(`/u/${p.username}`)}
                 accessibilityRole="link"
@@ -119,7 +120,7 @@ export default function PeopleScreen() {
                   <Body numberOfLines={1} style={{ fontFamily: "Area-Bold", color: colors.ink }}>{displayNameFor(p)}</Body>
                   <Label numberOfLines={1}>@{p.username}</Label>
                 </View>
-              </Pressable>
+              </Tap>
             ))}
           </View>
         )}

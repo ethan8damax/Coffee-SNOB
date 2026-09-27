@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Text, TextInput, View } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { ButtonOx, Label } from "../primitives";
 
@@ -24,9 +25,9 @@ export function AddShopBar({ initialName, onCancel, onConfirm }: { initialName: 
     <View style={{ backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink, padding: 20, gap: 12 }}>
       <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
         <Label style={{ color: colors.ink }}>Put the pin on the door</Label>
-        <Pressable onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel adding a shop" hitSlop={10}>
+        <Tap onPress={onCancel} accessibilityRole="button" accessibilityLabel="Cancel adding a shop" hitSlop={10}>
           <Label style={{ color: colors.ink3 }}>Cancel</Label>
-        </Pressable>
+        </Tap>
       </View>
       <TextInput
         value={name}

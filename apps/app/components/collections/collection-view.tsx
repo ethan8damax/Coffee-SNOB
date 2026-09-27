@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Pressable, ScrollView, Switch, TextInput, View } from "react-native";
+import { ScrollView, Switch, TextInput, View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import {
@@ -51,10 +52,10 @@ function Item({ item, editing, listId, onRemoved }: { item: CollectionItem; edit
   };
   return (
     <View style={{ paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.rule2, gap: 6 }}>
-      <Pressable onPress={() => openItem(item)} accessibilityRole="link" accessibilityLabel={item.name} style={{ gap: 3 }}>
+      <Tap onPress={() => openItem(item)} accessibilityRole="link" accessibilityLabel={item.name} style={{ gap: 3 }}>
         <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{item.name}</Body>
         <Label>{area(item) || (item.rated ? "Rated" : "Not yet rated")}</Label>
-      </Pressable>
+      </Tap>
       {editing ? (
         <View style={{ gap: 8 }}>
           <TextInput
@@ -68,7 +69,7 @@ function Item({ item, editing, listId, onRemoved }: { item: CollectionItem; edit
             accessibilityLabel={`Note for ${item.name}`}
             style={input}
           />
-          <Pressable
+          <Tap
             onPress={async () => {
               try {
                 await removeFromCollection(supabase, listId, item.shopId);
@@ -83,7 +84,7 @@ function Item({ item, editing, listId, onRemoved }: { item: CollectionItem; edit
             style={{ alignSelf: "flex-start", minHeight: 32, justifyContent: "center" }}
           >
             <Label style={{ color: colors.oxblood }}>Remove</Label>
-          </Pressable>
+          </Tap>
           {failed ? <BodySm style={{ color: colors.oxblood }}>{"Couldn't save that. Try again."}</BodySm> : null}
         </View>
       ) : savedNote ? (
@@ -137,9 +138,9 @@ export function CollectionView({ collection, onChanged }: { collection: Collecti
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ alignItems: "center", paddingBottom: 60 }}>
       <View style={{ width: "100%", maxWidth: 640, paddingHorizontal: 16, paddingTop: 12 }}>
-        <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
+        <Tap onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
           <IconBack />
-        </Pressable>
+        </Tap>
 
         {editing ? (
           <View style={{ gap: 10, marginTop: 8 }}>
@@ -170,9 +171,9 @@ export function CollectionView({ collection, onChanged }: { collection: Collecti
           <View style={{ gap: 8, marginTop: 8 }}>
             <D2 accessibilityRole="header">{collection.title}</D2>
             {collection.ownerUsername ? (
-              <Pressable onPress={() => router.push(`/u/${collection.ownerUsername}`)} accessibilityRole="link" hitSlop={6} style={{ alignSelf: "flex-start" }}>
+              <Tap onPress={() => router.push(`/u/${collection.ownerUsername}`)} accessibilityRole="link" hitSlop={6} style={{ alignSelf: "flex-start" }}>
                 <Label style={{ color: colors.ink2 }}>{`by @${collection.ownerUsername}`}</Label>
-              </Pressable>
+              </Tap>
             ) : null}
             {collection.description ? <Body style={{ color: colors.ink2 }}>{collection.description}</Body> : null}
             <Label>{isOwn ? `${collection.isPublic ? "Public" : "Private"} · ${count}${saves}` : `${count}${saves}`}</Label>
@@ -204,9 +205,9 @@ export function CollectionView({ collection, onChanged }: { collection: Collecti
         </View>
 
         {editing ? (
-          <Pressable onPress={remove} accessibilityRole="button" accessibilityLabel="Delete this collection" style={{ marginTop: 24, minHeight: 44, justifyContent: "center" }}>
+          <Tap onPress={remove} accessibilityRole="button" accessibilityLabel="Delete this collection" style={{ marginTop: 24, minHeight: 44, justifyContent: "center" }}>
             <Label style={{ color: colors.oxblood }}>{confirmDelete ? "Tap again to delete" : "Delete collection"}</Label>
-          </Pressable>
+          </Tap>
         ) : null}
         {failed ? <BodySm style={{ color: colors.oxblood, marginTop: 8 }}>{"Couldn't save that. Try again."}</BodySm> : null}
       </View>

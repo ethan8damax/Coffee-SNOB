@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { View, FlatList, Pressable, ActivityIndicator } from "react-native";
+import { View, FlatList, ActivityIndicator } from "react-native";
+import { Tap } from "@/components/tap";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { useAuth } from "@/context/auth";
@@ -52,9 +53,9 @@ export default function HomeScreen() {
     <View style={{ flex: 1, paddingTop: insets.top, backgroundColor: colors.paper }}>
       <View style={{ flexDirection: "row", borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule }}>
         {TABS.map((t) => (
-          <Pressable key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 11, alignItems: "center", backgroundColor: tab === t ? colors.ink : "transparent" }}>
+          <Tap key={t} onPress={() => setTab(t)} style={{ flex: 1, paddingVertical: 11, alignItems: "center", backgroundColor: tab === t ? colors.ink : "transparent" }}>
             <Label style={{ color: tab === t ? colors.paper : colors.ink3 }}>{t}</Label>
-          </Pressable>
+          </Tap>
         ))}
       </View>
 

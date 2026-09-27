@@ -1,4 +1,5 @@
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Linking, ScrollView, Text, View } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import type { Place } from "../../lib/map/geocode";
 import { toListRow, type ShopResult } from "../../lib/map/search-sort";
@@ -46,7 +47,7 @@ export function SearchResults({
       {places.length > 0 ? <SectionLabel>Places</SectionLabel> : null}
       {places.map((place) => (
         <View key={place.id} style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.rule2 }}>
-          <Pressable
+          <Tap feedback="tint"
             onPress={() => onSelectPlace(place)}
             accessibilityRole="button"
             accessibilityLabel={place.secondary ? `${place.primary}, ${place.secondary}` : place.primary}
@@ -54,17 +55,17 @@ export function SearchResults({
           >
             <Text numberOfLines={1} style={{ fontFamily: "Area-Bold", fontSize: 15, color: colors.ink }}>{place.primary}</Text>
             {place.secondary ? <Text numberOfLines={1} style={{ fontFamily: "Area-Regular", fontSize: 12, color: colors.ink3 }}>{place.secondary}</Text> : null}
-          </Pressable>
+          </Tap>
           {/* Only cities with a curated editorial guide get this (the server decides). */}
           {place.guideSlug ? (
-            <Pressable
+            <Tap
               onPress={() => Linking.openURL(`${webAppUrl}/city-guides/${place.guideSlug}`)}
               accessibilityRole="link"
               accessibilityLabel={`Read the ${place.primary} guide`}
               style={{ minHeight: 44, minWidth: 44, justifyContent: "center", paddingHorizontal: 20 }}
             >
               <Label style={{ color: colors.oxblood }}>Guide →</Label>
-            </Pressable>
+            </Tap>
           ) : null}
         </View>
       ))}
@@ -79,14 +80,14 @@ export function SearchResults({
         <Text style={{ padding: 20, fontFamily: "Area-Regular", fontSize: 14, color: colors.ink2 }}>{`Nothing called “${query.trim()}” that we can find.`}</Text>
       ) : null}
       {!pending && onAddMissing ? (
-        <Pressable
+        <Tap
           onPress={() => onAddMissing(query.trim())}
           accessibilityRole="button"
           accessibilityLabel="Add a shop that's missing from the map"
           style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 20 }}
         >
           <Label style={{ color: colors.oxblood }}>Not on the map? Add it</Label>
-        </Pressable>
+        </Tap>
       ) : null}
     </ScrollView>
   );

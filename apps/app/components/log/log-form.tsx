@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { logVisit } from "@coffeesnob/supabase";
@@ -70,16 +71,16 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
       >
         <View style={{ width: "100%", maxWidth: desktop ? 560 : undefined, paddingHorizontal: 16, paddingBottom: 32 }}>
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 52 }}>
-            <Pressable
+            <Tap
               onPress={cancel}
               accessibilityRole="button"
               accessibilityLabel="Cancel"
               style={{ minHeight: 44, minWidth: 64, justifyContent: "center" }}
             >
               <Label style={{ color: colors.ink2 }}>Cancel</Label>
-            </Pressable>
+            </Tap>
             <Label style={{ color: colors.ink }}>New entry</Label>
-            <Pressable
+            <Tap
               onPress={publish}
               disabled={!valid}
               accessibilityRole="button"
@@ -88,7 +89,7 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
               style={{ minHeight: 44, minWidth: 64, justifyContent: "center", alignItems: "flex-end" }}
             >
               <Label style={{ color: valid ? colors.burnt : colors.ink3 }}>Publish</Label>
-            </Pressable>
+            </Tap>
           </View>
 
           <View style={{ paddingVertical: 20, gap: 6 }}>

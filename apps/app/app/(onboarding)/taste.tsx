@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { View, Pressable, StyleSheet } from "react-native";
+import { View, StyleSheet } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { saveTastePicks } from "@coffeesnob/supabase";
@@ -58,13 +59,13 @@ export default function TasteScreen() {
         {OPTIONS.map((o) => {
           const on = picks.includes(o.id);
           return (
-            <Pressable key={o.id} onPress={() => toggle(o.id)} style={[styles.row, on && styles.rowOn]}>
+            <Tap feedback="tint" key={o.id} onPress={() => toggle(o.id)} style={[styles.row, on && styles.rowOn]}>
               <View style={[styles.checkbox, on && styles.checkboxOn]}>{on && <IconCheck size={13} color={colors.cream} />}</View>
               <View style={styles.rowText}>
                 <D4>{o.label}</D4>
                 <BodySm style={{ color: colors.ink3, marginTop: 5 }}>{o.sub}</BodySm>
               </View>
-            </Pressable>
+            </Tap>
           );
         })}
         {error && <BodySm style={styles.error}>{error}</BodySm>}

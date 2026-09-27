@@ -1,4 +1,5 @@
-import { ScrollView, Pressable, Text } from "react-native";
+import { ScrollView, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { DRINKS } from "../../lib/log/verdicts";
 
@@ -9,7 +10,7 @@ export function DrinkChips({ value, onChange }: { value: string | null; onChange
       {DRINKS.map((d) => {
         const on = value === d;
         return (
-          <Pressable
+          <Tap
             key={d}
             onPress={() => onChange(on ? null : d)}
             accessibilityRole="button"
@@ -36,7 +37,7 @@ export function DrinkChips({ value, onChange }: { value: string | null; onChange
             >
               {d}
             </Text>
-          </Pressable>
+          </Tap>
         );
       })}
     </ScrollView>

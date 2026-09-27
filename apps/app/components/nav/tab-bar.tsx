@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
@@ -45,7 +46,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
           // The burnt "square" now wraps the icon and label together (it used to be the
           // Log-a-visit action button's own footprint; Map inherits the whole shape, not just the color).
           return (
-            <Pressable key={item.route} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
+            <Tap key={item.route} onPress={onPress} accessibilityRole="tab" accessibilityState={{ selected: focused }} accessibilityLabel={item.label} style={{ flex: 1, alignItems: "center" }}>
               <View style={{ alignItems: "center", gap: 3, borderRadius: 2, backgroundColor: colors.burnt, paddingVertical: 6, paddingHorizontal: 14 }}>
                 {/* ink, not paper/cream: matches ButtonBu's own burnt-background text color — 4.8:1 contrast vs 3.3:1, needed for AA at this text size. */}
                 <NavIcon name={item.icon} size={18} color={colors.ink} />
@@ -53,12 +54,12 @@ export function TabBar({ state, navigation }: TabBarProps) {
                   {item.label}
                 </Text>
               </View>
-            </Pressable>
+            </Tap>
           );
         }
 
         return (
-          <Pressable
+          <Tap
             key={item.route}
             onPress={onPress}
             accessibilityRole="tab"
@@ -83,7 +84,7 @@ export function TabBar({ state, navigation }: TabBarProps) {
             >
               {item.label}
             </Text>
-          </Pressable>
+          </Tap>
         );
       })}
     </View>

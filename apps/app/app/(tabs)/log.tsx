@@ -1,4 +1,5 @@
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router, useLocalSearchParams } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { useAuth } from "@/context/auth";
@@ -24,7 +25,7 @@ export default function LogScreen() {
           accessibilityLabel="Find a shop on the map"
           onPress={() => router.push("/map")}
         />
-        <Pressable
+        <Tap
           onPress={() => router.push({ pathname: "/map", params: { add: "1" } })}
           accessibilityRole="button"
           accessibilityLabel="Add a shop that's missing from the map"
@@ -32,7 +33,7 @@ export default function LogScreen() {
           style={{ minHeight: 44, justifyContent: "center" }}
         >
           <Label style={{ color: colors.oxblood }}>{"Not on the map? Add it"}</Label>
-        </Pressable>
+        </Tap>
       </View>
     );
   }

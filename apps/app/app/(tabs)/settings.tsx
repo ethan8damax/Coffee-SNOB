@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { getPublicProfileByUsername, type PublicProfile } from "@coffeesnob/supabase";
@@ -34,9 +35,9 @@ export default function SettingsScreen() {
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ alignItems: "center", paddingBottom: 40 }}>
       <View style={{ width: "100%", maxWidth: 640 }}>
         <View style={{ paddingHorizontal: 16, paddingTop: 12, gap: 10 }}>
-          <Pressable onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
+          <Tap onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
             <IconBack />
-          </Pressable>
+          </Tap>
           <Label accessibilityRole="header" style={{ color: colors.ink2 }}>
             Settings
           </Label>
@@ -54,14 +55,14 @@ export default function SettingsScreen() {
           ) : (
             <>
               <ButtonLine title="Edit profile" onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel="Edit profile" style={{ alignSelf: "flex-start" }} />
-              <Pressable
+              <Tap
                 onPress={signOut}
                 accessibilityRole="button"
                 accessibilityLabel="Sign out"
                 style={{ minHeight: 44, justifyContent: "center" }}
               >
                 <Label style={{ color: colors.ink2, textDecorationLine: "underline" }}>Sign out</Label>
-              </Pressable>
+              </Tap>
             </>
           )}
         </View>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Pressable, View } from "react-native";
+import { View } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { flagPlace, getMyPlaceFlags, type PlaceFlagKind } from "@coffeesnob/supabase";
@@ -49,9 +50,9 @@ export function ReportPlace({ shop }: { shop: NearbyShopPin }) {
 
   if (!open) {
     return (
-      <Pressable onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={`Report a problem with ${shop.name}`} style={{ minHeight: 32, justifyContent: "center", alignSelf: "flex-start" }}>
+      <Tap onPress={() => setOpen(true)} accessibilityRole="button" accessibilityLabel={`Report a problem with ${shop.name}`} style={{ minHeight: 32, justifyContent: "center", alignSelf: "flex-start" }}>
         <Label style={{ color: colors.ink3, textDecorationLine: "underline" }}>Something off?</Label>
-      </Pressable>
+      </Tap>
     );
   }
 
@@ -59,9 +60,9 @@ export function ReportPlace({ shop }: { shop: NearbyShopPin }) {
     return (
       <View style={{ flexDirection: "row", alignItems: "center", gap: 10, minHeight: 32 }}>
         <BodySm style={{ color: colors.ink2 }}>Reports need an account.</BodySm>
-        <Pressable onPress={() => router.push("/sign-in")} accessibilityRole="link" style={{ minHeight: 32, justifyContent: "center" }}>
+        <Tap onPress={() => router.push("/sign-in")} accessibilityRole="link" style={{ minHeight: 32, justifyContent: "center" }}>
           <Label style={{ color: colors.ink, textDecorationLine: "underline" }}>Sign in</Label>
-        </Pressable>
+        </Tap>
       </View>
     );
   }

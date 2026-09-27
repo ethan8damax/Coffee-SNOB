@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import Svg, { Path } from "react-native-svg";
 import { colors } from "@coffeesnob/design-tokens";
 import { Label } from "../primitives";
@@ -29,7 +30,7 @@ export function VerdictChips({ value, onChange }: { value: number | null; onChan
         const selected = value === v.value;
         const s = selected ? SELECTED[v.fill] : { bg: "transparent", border: colors.rule, text: colors.ink, sub: colors.ink3, chevron: colors.burnt };
         return (
-          <Pressable
+          <Tap
             key={v.value}
             onPress={() => onChange(v.value)}
             accessibilityRole="radio"
@@ -53,7 +54,7 @@ export function VerdictChips({ value, onChange }: { value: number | null; onChan
               <Label style={{ color: s.text, fontSize: 10, letterSpacing: 1.2 }}>{v.word}</Label>
               <Text style={{ fontFamily: "Area-Regular", fontSize: 12, lineHeight: 16, color: s.sub }}>{v.sub}</Text>
             </View>
-          </Pressable>
+          </Tap>
         );
       })}
     </View>

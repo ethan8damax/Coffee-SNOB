@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, Switch, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, Switch, TextInput, View, useWindowDimensions } from "react-native";
+import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import {
   addToCollection,
@@ -122,12 +123,12 @@ export function AddToCollection({ target, onClose, onCreated }: { target?: Colle
 
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <Pressable
+      <Tap feedback="none"
         onPress={onClose}
         accessibilityLabel="Close"
         style={{ flex: 1, backgroundColor: "rgba(26,20,16,0.45)", justifyContent: desktop ? "center" : "flex-end", alignItems: "center" }}
       >
-        <Pressable
+        <Tap feedback="none"
           onPress={() => {}}
           accessible={false}
           style={{
@@ -148,9 +149,9 @@ export function AddToCollection({ target, onClose, onCreated }: { target?: Colle
               <D4 accessibilityRole="header">{target ? "Add to a collection" : "New collection"}</D4>
               {target ? <Label numberOfLines={1} style={{ marginTop: 4 }}>{target.name}</Label> : null}
             </View>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Done" hitSlop={10}>
+            <Tap onPress={onClose} accessibilityRole="button" accessibilityLabel="Done" hitSlop={10}>
               <Label style={{ color: colors.ink }}>Done</Label>
-            </Pressable>
+            </Tap>
           </View>
 
           {target && !lists && !failed ? <ActivityIndicator color={colors.oxblood} style={{ padding: 16 }} /> : null}
@@ -160,7 +161,7 @@ export function AddToCollection({ target, onClose, onCreated }: { target?: Colle
               {lists.map((l) => {
                 const on = holding.has(l.id);
                 return (
-                  <Pressable
+                  <Tap feedback="tint"
                     key={l.id}
                     onPress={() => toggle(l.id)}
                     disabled={busy !== null}
@@ -188,7 +189,7 @@ export function AddToCollection({ target, onClose, onCreated }: { target?: Colle
                     >
                       {on ? <IconCheck size={14} color={colors.paper} /> : null}
                     </View>
-                  </Pressable>
+                  </Tap>
                 );
               })}
             </ScrollView>
@@ -235,8 +236,8 @@ export function AddToCollection({ target, onClose, onCreated }: { target?: Colle
           )}
 
           {failed ? <BodySm style={{ color: colors.oxblood }}>{"Couldn't save that. Try again."}</BodySm> : null}
-        </Pressable>
-      </Pressable>
+        </Tap>
+      </Tap>
     </Modal>
   );
 }

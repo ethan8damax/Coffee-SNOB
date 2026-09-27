@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
-import { Modal, View, Text, StyleSheet } from "react-native";
-import { Tap } from "@/components/tap";
+import { Modal, View, Text, StyleSheet, type ViewStyle } from "react-native";
+import { Tap, type TapFeedback } from "@/components/tap";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { EFFORT_OPTIONS, YOU_OPTIONS, type MapFilter } from "../../lib/map/shop-list";
@@ -139,9 +139,23 @@ export function ViewToggle({ value, onChange }: { value: "Map" | "List"; onChang
   );
 }
 
-export function LocateButton({ onPress, disabled, size = 44 }: { onPress: () => void; disabled: boolean; size?: number }) {
+export function LocateButton({
+  onPress,
+  disabled,
+  size = 44,
+  style,
+  feedback,
+}: {
+  onPress: () => void;
+  disabled: boolean;
+  size?: number;
+  // The desktop stack passes its flat box and "outline" hover instead.
+  style?: ViewStyle;
+  feedback?: TapFeedback;
+}) {
   return (
     <Tap
+      feedback={feedback}
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -156,7 +170,7 @@ export function LocateButton({ onPress, disabled, size = 44 }: { onPress: () => 
         borderWidth: 1,
         borderColor: colors.ink,
         backgroundColor: colors.card,
-        opacity: disabled ? 0.4 : 1,
+        ...style,
       }}
     >
       <LocateIcon color={colors.ink} />
@@ -176,18 +190,19 @@ export function ZoomControls({
   locateDisabled: boolean;
   onRefresh?: () => void;
 }) {
+  // One flat look for the whole stack; hover lifts each to card + ink border.
   const box = { width: 40, height: 40, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.rule };
   return (
     <View style={{ gap: 1 }}>
-      <Tap onPress={() => onZoom(1)} accessibilityRole="button" accessibilityLabel="Zoom in" style={box}>
+      <Tap feedback="outline" onPress={() => onZoom(1)} accessibilityRole="button" accessibilityLabel="Zoom in" style={box}>
         <PlusIcon color={colors.ink} />
       </Tap>
-      <Tap onPress={() => onZoom(-1)} accessibilityRole="button" accessibilityLabel="Zoom out" style={box}>
+      <Tap feedback="outline" onPress={() => onZoom(-1)} accessibilityRole="button" accessibilityLabel="Zoom out" style={box}>
         <MinusIcon color={colors.ink} />
       </Tap>
-      <LocateButton onPress={onLocate} disabled={locateDisabled} size={40} />
+      <LocateButton onPress={onLocate} disabled={locateDisabled} size={40} style={box} feedback="outline" />
       {onRefresh && (
-        <Tap onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
+        <Tap feedback="outline" onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
           <RefreshIcon color={colors.ink} />
         </Tap>
       )}

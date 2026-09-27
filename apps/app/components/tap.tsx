@@ -1,20 +1,27 @@
 import { forwardRef } from "react";
+import { colors } from "@coffeesnob/design-tokens";
 import { Pressable, type PressableProps, type PressableStateCallbackType, type StyleProp, type View, type ViewStyle } from "react-native";
 
 // How a Tap answers a press (and a hover, on web):
 // - "fade": buttons, chips, icons — the thing itself dims.
 // - "tint": list rows and menu items — the row's ground darkens a step.
+// - "outline": the map's control stack — the flat button lifts to card with
+//   an ink border on hover (the look the phone's standalone buttons wear).
 // - "none": invisible backdrops that only exist to catch a tap.
-export type TapFeedback = "fade" | "tint" | "none";
+export type TapFeedback = "fade" | "tint" | "outline" | "none";
 
 type TapState = PressableStateCallbackType & { hovered?: boolean };
 
 // Web-only: the fade/tint eases instead of snapping (react-native-web passes
 // these through as CSS; public/index.html zeroes them for reduced motion).
-const EASE = { transitionProperty: "opacity, background-color", transitionDuration: "150ms", transitionTimingFunction: "cubic-bezier(0.25, 1, 0.5, 1)" } as ViewStyle;
+const EASE = { transitionProperty: "opacity, background-color, border-color", transitionDuration: "150ms", transitionTimingFunction: "cubic-bezier(0.25, 1, 0.5, 1)" } as ViewStyle;
 
 function feedbackStyle(feedback: TapFeedback, { pressed, hovered }: TapState, disabled: boolean): ViewStyle | null {
   if (disabled) return { opacity: 0.4 };
+  if (feedback === "outline") {
+    const lifted = { backgroundColor: colors.card, borderColor: colors.ink };
+    return pressed ? { ...lifted, opacity: 0.7 } : hovered ? lifted : null;
+  }
   if (feedback === "fade") return pressed ? { opacity: 0.6 } : hovered ? { opacity: 0.82 } : null;
   // Ink at low alpha, so the step reads the same on paper, card or cream.
   if (feedback === "tint") return pressed ? { backgroundColor: "rgba(22,19,16,.09)" } : hovered ? { backgroundColor: "rgba(22,19,16,.045)" } : null;

@@ -54,6 +54,8 @@ jobs:
             mkdir -p "prev/v/$ver"
             curl -fsS "$PUBLIC_URL/v/$ver/id_map.json" -o "prev/v/$ver/id_map.json"
             curl -fsS "$PUBLIC_URL/v/$ver/places.ndjson.gz" -o "prev/v/$ver/places.ndjson.gz"
+            # Last month's missing-rated-shop counts (Phase 6); optional.
+            curl -fsS "$PUBLIC_URL/v/$ver/report.json" -o "prev/v/$ver/report.json" || true
             echo "args=--prev prev/v/$ver" >> "$GITHUB_OUTPUT"
           else
             echo "Live manifest returned $code"; exit 1

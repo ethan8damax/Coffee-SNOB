@@ -1,4 +1,4 @@
-import { createReadStream, createWriteStream, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline";
 import { pipeline } from "node:stream/promises";
@@ -82,7 +82,9 @@ async function main() {
   const prevIdMap: Record<string, string> = prevDir ? JSON.parse(readFileSync(join(prevDir, "id_map.json"), "utf8")) : {};
   const prevIds = prevDir ? await readIds(join(prevDir, "places.ndjson.gz")) : null;
   // Missing rated shops are counted across builds; a pilot bbox can't tell.
-  const prevReport = prevDir ? JSON.parse(readFileSync(join(prevDir, "report.json"), "utf8")) : {};
+  // Builds before Phase 6 (or a missing download) just start the count at 1.
+  const prevReportPath = prevDir ? join(prevDir, "report.json") : null;
+  const prevReport = prevReportPath && existsSync(prevReportPath) ? JSON.parse(readFileSync(prevReportPath, "utf8")) : {};
   const prevMissing = bbox ? undefined : ((prevReport.missingRated ?? []) as { externalId: string; builds: number }[]);
 
   const { places, idMap, report } = buildIndex({ osm, overture, chains, prevIdMap, prevIds, overrides, notSpecialty, decided, roasters, stockists, rated, prevMissing });

@@ -659,30 +659,6 @@ export async function getProfileVisitDates(client: Client, userId: string, since
   return data.map((l) => l.visited_at);
 }
 
-// Their 4–5 verdicts, best and newest first.
-export async function getProfileFaves(client: Client, userId: string, limit = 30): Promise<ProfileEntry[]> {
-  const { data, error } = await client
-    .from("logs")
-    .select("id, shop_id, rating, note, drink, visited_at, created_at, shops(name, neighborhood)")
-    .eq("user_id", userId)
-    .gte("rating", 4)
-    .order("rating", { ascending: false })
-    .order("visited_at", { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return data.map((l) => ({
-    id: l.id,
-    shopId: l.shop_id,
-    shopName: l.shops?.name ?? "",
-    shopNeighborhood: l.shops?.neighborhood ?? null,
-    rating: l.rating,
-    note: l.note,
-    drink: l.drink,
-    visitedAt: l.visited_at,
-    createdAt: l.created_at,
-  }));
-}
-
 // The map's You filter: your saved and logged shops, anywhere. Rated ones come
 // as shop_ratings rows (pins with a verdict); saved shops nobody has rated yet
 // come from shops, to show as unrated rows. Closed shops drop out of both.

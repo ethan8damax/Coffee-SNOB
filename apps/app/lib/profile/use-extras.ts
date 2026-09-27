@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  getProfileFaves,
   getProfileVisitDates,
   getSavedShops,
   isShopSaved,
   setShopSaved,
-  type ProfileEntry,
   type SavedShop,
 } from "@coffeesnob/supabase";
 import { heatmapSince } from "./status";
@@ -37,13 +35,6 @@ export function useLoad<T>(load: (supabase: any) => Promise<T>, deps: unknown[],
 
 export const useVisitDates = (userId: string) =>
   useLoad<string[]>((s) => getProfileVisitDates(s as never, userId, heatmapSince(new Date())), [userId]);
-
-export const useFaves = (userId: string, enabled: boolean) => useLoad<ProfileEntry[]>((s) => getProfileFaves(s as never, userId), [userId], enabled);
-
-// The status block's "Top shops" showcase — same query as Faves, just capped to a
-// handful for a Letterboxd-style row instead of the full grid.
-export const useTopShops = (userId: string, limit = 3) =>
-  useLoad<ProfileEntry[]>((s) => getProfileFaves(s as never, userId, limit), [userId, limit]);
 
 export const useSaved = (userId: string, enabled: boolean) => useLoad<SavedShop[]>((s) => getSavedShops(s as never, userId), [userId], enabled);
 

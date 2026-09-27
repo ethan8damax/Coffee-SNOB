@@ -1,4 +1,5 @@
-import { View, Text, Pressable } from "react-native";
+import { View, Text } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import type { PublicProfile, ProfileStats } from "@coffeesnob/supabase";
@@ -7,7 +8,7 @@ import { displayNameFor, formatCount } from "@/lib/profile/profile-helpers";
 
 function Stat({ value, label, last, onPress }: { value: number; label: string; last?: boolean; onPress?: () => void }) {
   return (
-    <Pressable
+    <Tap
       disabled={!onPress}
       onPress={onPress}
       accessibilityRole={onPress ? "link" : undefined}
@@ -16,14 +17,14 @@ function Stat({ value, label, last, onPress }: { value: number; label: string; l
     >
       <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 22, letterSpacing: -0.4, color: colors.ink }}>{formatCount(value)}</Text>
       <Label>{label}</Label>
-    </Pressable>
+    </Tap>
   );
 }
 
 function FollowButton({ following, onPress }: { following: boolean; onPress: () => void }) {
   if (!following) return <ButtonOx title="Follow" onPress={onPress} accessibilityRole="button" accessibilityLabel="Follow" style={{ flex: 1 }} />;
   return (
-    <Pressable
+    <Tap
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel="Following, tap to unfollow"
@@ -36,7 +37,7 @@ function FollowButton({ following, onPress }: { following: boolean; onPress: () 
       <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 10.5, letterSpacing: 1.05, textTransform: "uppercase", color: colors.ink }}>
         Following
       </Text>
-    </Pressable>
+    </Tap>
   );
 }
 
@@ -72,7 +73,7 @@ export function ProfileHeader({
             <Label style={{ color: colors.ink2, marginTop: 2 }}>@{profile.username}</Label>
           </View>
           {isOwn && (
-            <Pressable
+            <Tap
               onPress={() => router.push("/settings")}
               accessibilityRole="button"
               accessibilityLabel="Settings"
@@ -80,7 +81,7 @@ export function ProfileHeader({
               style={{ minHeight: 44, minWidth: 44, alignItems: "center", justifyContent: "center" }}
             >
               <Label style={{ color: colors.ink2, textDecorationLine: "underline" }}>Settings</Label>
-            </Pressable>
+            </Tap>
           )}
         </View>
         {!!profile.bio && <Body style={{ color: colors.ink2 }}>{profile.bio}</Body>}

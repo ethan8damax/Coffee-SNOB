@@ -1,4 +1,5 @@
-import { View, Pressable, type ViewStyle } from "react-native";
+import { View, type ViewStyle } from "react-native";
+import { Tap } from "@/components/tap";
 import Svg, { Path } from "react-native-svg";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
@@ -34,7 +35,7 @@ export function EntryTile({
   const rating = Math.max(1, Math.min(5, Math.round(entry.rating)));
   return (
     <View style={{ width: `${100 / columns}%`, aspectRatio: 3 / 4, padding: 1 }}>
-      <Pressable
+      <Tap
         onPress={() => router.push(`/shop/${entry.shopId}`)}
         accessibilityRole="button"
         accessibilityLabel={`${entry.shopName}, ${DETOUR_LABELS[rating - 1]}, entry ${n}`}
@@ -51,7 +52,7 @@ export function EntryTile({
             ))}
           </View>
         </View>
-      </Pressable>
+      </Tap>
     </View>
   );
 }

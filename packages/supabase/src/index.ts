@@ -39,7 +39,6 @@ export {
   setFollow,
   updateProfile,
   getProfileVisitDates,
-  getProfileFaves,
   getSavedShops,
   isShopSaved,
   setShopSaved,

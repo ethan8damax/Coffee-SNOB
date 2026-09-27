@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, Pressable, ScrollView, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, ScrollView, View, useWindowDimensions } from "react-native";
+import { Tap } from "@/components/tap";
 import { router, useFocusEffect } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -8,7 +9,10 @@ import { Body, ButtonLine, ButtonOx, Label } from "@/components/primitives";
 import { isDesktopWidth } from "@/lib/nav";
 import { PROFILE_MAX_WIDTH, gridColumns } from "@/lib/profile/profile-helpers";
 import { useProfile } from "@/lib/profile/use-profile";
-import { useFaves, useSaved } from "@/lib/profile/use-extras";
+import { useSaved } from "@/lib/profile/use-extras";
+import { useSavedCollections, useUserCollections } from "@/lib/collections/use-collections";
+import type { CollectionSummary } from "@coffeesnob/supabase";
+import { AddToCollection } from "@/components/collections/add-to-collection";
 import { EntryTile } from "./entry-tile";
 import { ProfileHeader } from "./profile-header";
 import { StatusBlock } from "./status-block";
@@ -28,13 +32,13 @@ function Centered({ children }: { children: React.ReactNode }) {
 const message = { textAlign: "center", color: colors.ink3, maxWidth: 260 } as const;
 
 
-type Tab = "Entries" | "Faves" | "Saved";
+type Tab = "Entries" | "Collections" | "Faves";
 
 function TabStrip({ tabs, tab, counts, onChange }: { tabs: Tab[]; tab: Tab; counts: Partial<Record<Tab, number>>; onChange: (t: Tab) => void }) {
   return (
     <View accessibilityRole="tablist" style={{ marginTop: 22, flexDirection: "row", borderBottomWidth: 1, borderBottomColor: colors.rule }}>
       {tabs.map((t) => (
-        <Pressable
+        <Tap
           key={t}
           onPress={() => onChange(t)}
           accessibilityRole="tab"
@@ -53,7 +57,7 @@ function TabStrip({ tabs, tab, counts, onChange }: { tabs: Tab[]; tab: Tab; coun
             {t}
             {counts[t] !== undefined ? ` ${counts[t]}` : ""}
           </Label>
-        </Pressable>
+        </Tap>
       ))}
     </View>
   );
@@ -68,39 +72,107 @@ function Note({ children, onRetry }: { children: string; onRetry?: () => void })
   );
 }
 
-function FavesTab({ userId, isOwn, columns }: { userId: string; isOwn: boolean; columns: number }) {
-  const faves = useFaves(userId, true);
-  if (faves.status === "error") return <Note onRetry={faves.retry}>Couldn't load faves.</Note>;
-  if (!faves.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
-  if (faves.data.length === 0) return <Note>{isOwn ? "Faves are your 4 and 5 verdicts. Nothing here yet." : "No faves yet."}</Note>;
+function CollectionRow({ c, showPrivacy }: { c: CollectionSummary; showPrivacy: boolean }) {
+  const meta = [`${c.shopCount} ${c.shopCount === 1 ? "café" : "cafés"}`, showPrivacy && !c.isPublic ? "Private" : null].filter(Boolean).join(" · ");
   return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", paddingTop: 1 }}>
-      {faves.data.map((e, i) => (
-        <EntryTile key={e.id} entry={e} index={i} total={faves.data!.length} columns={columns} />
-      ))}
+    <Tap feedback="tint"
+      onPress={() => router.push(`/collection/${c.id}`)}
+      accessibilityRole="link"
+      accessibilityLabel={`${c.title}, ${meta}`}
+      style={{ minHeight: 56, justifyContent: "center", gap: 3, borderBottomWidth: 1, borderBottomColor: colors.rule2, paddingVertical: 10 }}
+    >
+      <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{c.title}</Body>
+      <Label>{meta}</Label>
+    </Tap>
+  );
+}
+
+function CollectionsTab({ userId, isOwn }: { userId: string; isOwn: boolean }) {
+  const lists = useUserCollections(userId);
+  const [creating, setCreating] = useState(false);
+  const create = isOwn ? (
+    <View style={{ paddingTop: 16, paddingBottom: 4 }}>
+      <ButtonLine title="New collection" onPress={() => setCreating(true)} accessibilityRole="button" accessibilityLabel="New collection" style={{ alignSelf: "flex-start" }} />
+      {creating ? (
+        <AddToCollection
+          onClose={() => setCreating(false)}
+          onCreated={(id) => {
+            setCreating(false);
+            router.push(`/collection/${id}`);
+          }}
+        />
+      ) : null}
+    </View>
+  ) : null;
+  if (lists.status === "error") return <Note onRetry={lists.retry}>{"Couldn't load collections."}</Note>;
+  if (!lists.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
+  return (
+    <View style={{ paddingHorizontal: 16 }}>
+      {create}
+      {lists.data.length === 0 ? (
+        <Note>{isOwn ? "Make a list: a trip, a wishlist, your regulars." : "No public collections yet."}</Note>
+      ) : (
+        lists.data.map((c) => <CollectionRow key={c.id} c={c} showPrivacy={isOwn} />)
+      )}
     </View>
   );
 }
 
-function SavedTab({ userId }: { userId: string }) {
-  const saved = useSaved(userId, true);
-  if (saved.status === "error") return <Note onRetry={saved.retry}>Couldn't load your saved shops.</Note>;
-  if (!saved.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
-  if (saved.data.length === 0) return <Note>Nothing saved. Tap Save on a shop page to keep it for later.</Note>;
+// Faves: what someone saved, shops and other people's collections. Shown to
+// visitors only when the owner turns it on in Settings.
+function FavesTab({ userId, isOwn, isPublic }: { userId: string; isOwn: boolean; isPublic: boolean }) {
+  const shops = useSaved(userId, true);
+  const lists = useSavedCollections(userId, true);
+  if (shops.status === "error" || lists.status === "error") {
+    return (
+      <Note
+        onRetry={() => {
+          shops.retry();
+          lists.retry();
+        }}
+      >
+        {"Couldn't load faves."}
+      </Note>
+    );
+  }
+  if (!shops.data || !lists.data) return <ActivityIndicator color={colors.oxblood} style={{ padding: 32 }} />;
+  const empty = shops.data.length === 0 && lists.data.length === 0;
   return (
     <View style={{ paddingHorizontal: 16 }}>
-      {saved.data.map((s) => (
-        <Pressable
-          key={s.shopId}
-          onPress={() => router.push(`/shop/${s.shopId}`)}
-          accessibilityRole="link"
-          accessibilityLabel={s.name}
-          style={{ minHeight: 56, justifyContent: "center", gap: 3, borderBottomWidth: 1, borderBottomColor: colors.rule2, paddingVertical: 10 }}
-        >
-          <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{s.name}</Body>
-          {s.neighborhood ? <Label>{s.neighborhood}</Label> : null}
-        </Pressable>
-      ))}
+      {isOwn ? (
+        <View style={{ flexDirection: "row", gap: 8, alignItems: "center", paddingTop: 14, flexWrap: "wrap" }}>
+          <Label>{isPublic ? "Anyone can see this." : "Only you can see this."}</Label>
+          <Tap onPress={() => router.push("/settings")} accessibilityRole="link" hitSlop={8}>
+            <Label style={{ color: colors.oxblood }}>Change in Settings</Label>
+          </Tap>
+        </View>
+      ) : null}
+      {empty ? (
+        <Note>{isOwn ? "Nothing saved. Save shops and collections to keep them here." : "Nothing saved yet."}</Note>
+      ) : null}
+      {lists.data.length ? (
+        <View style={{ marginTop: 18 }}>
+          <Label style={{ color: colors.ink }}>Collections</Label>
+          {lists.data.map((c) => <CollectionRow key={c.id} c={c} showPrivacy={false} />)}
+        </View>
+      ) : null}
+      {shops.data.length ? (
+        <View style={{ marginTop: 18 }}>
+          <Label style={{ color: colors.ink }}>Shops</Label>
+          {shops.data.map((sh) => (
+            <Tap feedback="tint"
+              key={sh.shopId}
+              onPress={() => router.push(`/shop/${sh.shopId}`)}
+              accessibilityRole="link"
+              accessibilityLabel={sh.name}
+              style={{ minHeight: 56, justifyContent: "center", gap: 3, borderBottomWidth: 1, borderBottomColor: colors.rule2, paddingVertical: 10 }}
+            >
+              <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{sh.name}</Body>
+              {sh.neighborhood ? <Label>{sh.neighborhood}</Label> : null}
+            </Tap>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -170,12 +242,17 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
           onToggleFollow={onToggleFollow}
         />
 
-        <StatusBlock userId={profile.id} entries={total} />
+        <StatusBlock userId={profile.id} entries={total} isOwn={isOwn} />
 
-        <TabStrip tabs={isOwn ? ["Entries", "Faves", "Saved"] : ["Entries", "Faves"]} tab={tab} counts={{ Entries: stats.entries }} onChange={setTab} />
+        <TabStrip
+          tabs={isOwn || profile.favesPublic ? ["Entries", "Collections", "Faves"] : ["Entries", "Collections"]}
+          tab={tab}
+          counts={{ Entries: stats.entries }}
+          onChange={setTab}
+        />
 
-        {tab === "Faves" && <FavesTab userId={profile.id} isOwn={isOwn} columns={columns} />}
-        {tab === "Saved" && isOwn && <SavedTab userId={profile.id} />}
+        {tab === "Collections" && <CollectionsTab userId={profile.id} isOwn={isOwn} />}
+        {tab === "Faves" && (isOwn || profile.favesPublic) && <FavesTab userId={profile.id} isOwn={isOwn} isPublic={profile.favesPublic} />}
 
         {tab === "Entries" &&
           (entries.length === 0 ? (

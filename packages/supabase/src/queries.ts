@@ -1269,3 +1269,75 @@ export async function removeStockist(client: Client, id: string): Promise<void> 
   const { error } = await client.from("roaster_stockists").delete().eq("id", id);
   if (error) throw error;
 }
+
+// ── Freshness (Curation Phase 6) ────────────────────────────────────────
+export type RatedRef = { externalId: string; name: string; lat: number; lng: number };
+
+// Every rated shop's external id, for the monthly build (public view).
+// Paged: PostgREST caps a response at 1000 rows.
+export async function getRatedExternalIds(client: Client): Promise<RatedRef[]> {
+  const out: RatedRef[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await client
+      .from("shop_ratings")
+      .select("external_id, name, lat, lng")
+      .not("external_id", "is", null)
+      .order("id")
+      .range(from, from + 999);
+    if (error) throw error;
+    for (const r of data) if (r.external_id && r.lat !== null && r.lng !== null) out.push({ externalId: r.external_id, name: r.name!, lat: r.lat, lng: r.lng });
+    if (data.length < 1000) return out;
+  }
+}
+
+export type FreshnessShop = {
+  id: string; name: string; externalId: string | null; locality: string | null; region: string | null;
+  closedAt: string | null; openCheckedAt: string | null;
+};
+const freshnessShop = (r: { id: string; name: string; external_id: string | null; locality: string | null; region: string | null; closed_at: string | null; open_checked_at: string | null }): FreshnessShop => ({
+  id: r.id, name: r.name, externalId: r.external_id, locality: r.locality, region: r.region, closedAt: r.closed_at, openCheckedAt: r.open_checked_at,
+});
+const FRESHNESS_COLS = "id, name, external_id, locality, region, closed_at, open_checked_at";
+
+export async function getShopsByExternalIds(client: Client, ids: string[]): Promise<FreshnessShop[]> {
+  if (!ids.length) return [];
+  const { data, error } = await client.from("shops").select(FRESHNESS_COLS).in("external_id", ids);
+  if (error) throw error;
+  return data.map(freshnessShop);
+}
+
+export async function getClosedShops(client: Client): Promise<FreshnessShop[]> {
+  const { data, error } = await client.from("shops").select(FRESHNESS_COLS).not("closed_at", "is", null).order("closed_at", { ascending: false });
+  if (error) throw error;
+  return data.map(freshnessShop);
+}
+
+// Closed takes a shop off the map and city pages; reopening puts it back.
+export async function setShopClosed(client: Client, id: string, closed: boolean): Promise<void> {
+  const { error } = await client.from("shops").update({ closed_at: closed ? new Date().toISOString() : null }).eq("id", id);
+  if (error) throw error;
+}
+
+// "Still open": off the Closed? list until a later build still can't find it.
+export async function markShopOpen(client: Client, id: string): Promise<void> {
+  const { error } = await client.from("shops").update({ open_checked_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
+}
+
+export type FinderNotification = { id: string; shopId: string; shopName: string; createdAt: string };
+
+// The signed-in user's unread notes (RLS: only their own).
+export async function getUnreadNotifications(client: Client): Promise<FinderNotification[]> {
+  const { data, error } = await client
+    .from("notifications")
+    .select("id, shop_id, created_at, shops(name)")
+    .is("read_at", null)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data.map((r) => ({ id: r.id, shopId: r.shop_id, shopName: (r.shops as { name: string } | null)?.name ?? "", createdAt: r.created_at }));
+}
+
+export async function markNotificationRead(client: Client, id: string): Promise<void> {
+  const { error } = await client.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id);
+  if (error) throw error;
+}

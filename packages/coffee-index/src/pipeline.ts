@@ -6,6 +6,7 @@ import type { ChainEntry, Roaster, Stockist } from "./index";
 import { fromOsm, fromOverture, type IndexPlace, type OsmRow, type OvertureRow, type SourcePlace } from "./place";
 import { buildReport, type Report } from "./report";
 import { matchRoasters, type RoasterReport } from "./roasters";
+import { linkUserShops, missingRated, type MissingRated, type RatedRef } from "./freshness";
 import { scorePlace } from "./visibility";
 
 export type BuildInput = {
@@ -23,11 +24,16 @@ export type BuildInput = {
   // Phase 5: roasters we trust and their stockist lines.
   roasters?: Roaster[];
   stockists?: Stockist[];
+  // Phase 6: rated shops (to link hand-added ones and spot ones the sources
+  // lost) and last build's missing list. prevMissing undefined = don't
+  // track (pilot bbox builds cover only part of the world).
+  rated?: RatedRef[];
+  prevMissing?: MissingRated[];
 };
 
 // The whole index build minus I/O: normalise → dedupe → filter → score → ids.
 // Ids go to kept places only, so a chain's records never claim a cs_ id.
-export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Record<string, string>; report: Report & { roasters: RoasterReport } } {
+export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Record<string, string>; report: Report & { roasters: RoasterReport; missingRated: MissingRated[] | null; linkedUserShops: number } } {
   const sources = [...input.overture.map(fromOverture), ...input.osm.map(fromOsm)].filter((p): p is SourcePlace => p !== null);
   const all = clusterPlaces(sources, config.dedupeRadiusM, config.similarNameMin).map(mergeCluster);
   const learned = learnChainSignals(all, input.chains);
@@ -47,7 +53,13 @@ export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Re
         : scorePlace(p, input.notSpecialty?.[p.id] ?? 0, roasters.why.get(p.id)),
     ),
   );
-  return { places, idMap, report: { ...buildReport(places, input.prevIds, input.chains, input.decided), roasters: roasters.report } };
+  const linkedUserShops = linkUserShops(places, input.rated ?? []);
+  const missing = input.prevMissing ? missingRated(places, input.rated ?? [], input.prevMissing) : null;
+  return {
+    places,
+    idMap,
+    report: { ...buildReport(places, input.prevIds, input.chains, input.decided), roasters: roasters.report, missingRated: missing, linkedUserShops },
+  };
 }
 
 // OSM-only places carry no address. Borrow the country of the nearest place

@@ -27,6 +27,7 @@ export function MapSearch({
   onSelectPlace,
   onSelectShop,
   onSelectNearbyShop,
+  onAddMissing,
 }: {
   // null = nothing searched yet, shows the DEFAULT_LABEL invite.
   areaLabel: string | null;
@@ -39,6 +40,8 @@ export function MapSearch({
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
   onSelectNearbyShop: (shop: NearbyShopPin) => void;
+  // "Not on the map?": pin mode for a café no source has yet.
+  onAddMissing?: (name: string) => void;
 }) {
   const [active, setActive] = useState(false);
   const hidden = usePlaceHides(Boolean(COFFEE_INDEX_URL));
@@ -259,6 +262,20 @@ export function MapSearch({
             <Label style={{ padding: 14, color: colors.ink3 }}>Searching more cafés…</Label>
           ) : results && results.length === 0 ? (
             <Label style={{ padding: 14, color: colors.ink3 }}>No matches.</Label>
+          ) : null}
+          {results && !pending && onAddMissing ? (
+            <Pressable
+              onPress={() => {
+                const name = query.trim();
+                close();
+                onAddMissing(name);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Add a shop that's missing from the map"
+              style={{ minHeight: 44, justifyContent: "center", paddingHorizontal: 14, borderTopWidth: 1, borderTopColor: colors.rule }}
+            >
+              <Label style={{ color: colors.oxblood }}>{"Not on the map? Add it"}</Label>
+            </Pressable>
           ) : null}
           </ScrollView>
         </View>

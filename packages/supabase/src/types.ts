@@ -407,6 +407,41 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          read_at: string | null
+          shop_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          read_at?: string | null
+          shop_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          read_at?: string | null
+          shop_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       place_overrides: {
         Row: {
           action: string
@@ -587,6 +622,7 @@ export type Database = {
           address: string | null
           city_id: string | null
           city_key: string | null
+          closed_at: string | null
           country_code: string | null
           created_at: string
           external_id: string | null
@@ -597,6 +633,7 @@ export type Database = {
           locality: string | null
           name: string
           neighborhood: string | null
+          open_checked_at: string | null
           phone: string | null
           promotion_status: string
           region: string | null
@@ -605,7 +642,9 @@ export type Database = {
         Insert: {
           address?: string | null
           city_id?: string | null
+          closed_at?: string | null
           country_code?: string | null
+          open_checked_at?: string | null
           created_at?: string
           external_id?: string | null
           hours?: string | null
@@ -623,7 +662,9 @@ export type Database = {
         Update: {
           address?: string | null
           city_id?: string | null
+          closed_at?: string | null
           country_code?: string | null
+          open_checked_at?: string | null
           created_at?: string
           external_id?: string | null
           hours?: string | null

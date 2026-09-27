@@ -7,6 +7,8 @@ import {
   addCurationVisit,
   addRoaster,
   addStockists,
+  markShopOpen,
+  setShopClosed,
   pinStockist,
   removeRoaster,
   removeStockist,
@@ -133,5 +135,21 @@ export async function pinStockistAction(formData: FormData) {
 
 export async function removeStockistAction(formData: FormData) {
   await removeStockist(await getSupabaseServer(), str(formData, "stockistId"));
+  revalidatePath("/admin/shops");
+}
+
+// ── Possibly closed (Phase 6) ───────────────────────────────────────────
+export async function closeShopAction(formData: FormData) {
+  await setShopClosed(await getSupabaseServer(), str(formData, "shopId"), true);
+  revalidatePath("/admin/shops");
+}
+
+export async function reopenShopAction(formData: FormData) {
+  await setShopClosed(await getSupabaseServer(), str(formData, "shopId"), false);
+  revalidatePath("/admin/shops");
+}
+
+export async function stillOpenAction(formData: FormData) {
+  await markShopOpen(await getSupabaseServer(), str(formData, "shopId"));
   revalidatePath("/admin/shops");
 }

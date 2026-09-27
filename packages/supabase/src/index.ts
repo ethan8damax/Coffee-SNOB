@@ -83,6 +83,13 @@ export {
   addStockists,
   pinStockist,
   removeStockist,
+  getRatedExternalIds,
+  getShopsByExternalIds,
+  getClosedShops,
+  setShopClosed,
+  markShopOpen,
+  getUnreadNotifications,
+  markNotificationRead,
 } from "./queries";
 export { cityKey } from "./city";
 export { TIERS, snobStatus } from "./profile-status";
@@ -98,6 +105,6 @@ export type {
   CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
-export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, Lead, CurationVisit, Roaster, RoasterStockist } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, Lead, CurationVisit, Roaster, RoasterStockist, RatedRef, FreshnessShop, FinderNotification } from "./queries";
 export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";

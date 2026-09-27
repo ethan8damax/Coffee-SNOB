@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Label } from "@/components/primitives";
 import { LogCard } from "@/components/feed/log-card";
 import { CollectionCard } from "@/components/feed/collection-card";
+import { FinderNote } from "@/components/feed/finder-note";
 import { useFollowingFeed } from "@/lib/feed/use-following-feed";
 import { useNearbyFeed } from "@/lib/feed/use-nearby-feed";
 import { useUserLocation } from "@/lib/map/use-user-location";
@@ -56,6 +57,8 @@ export default function HomeScreen() {
           </Pressable>
         ))}
       </View>
+
+      <FinderNote />
 
       {active.loading ? (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>

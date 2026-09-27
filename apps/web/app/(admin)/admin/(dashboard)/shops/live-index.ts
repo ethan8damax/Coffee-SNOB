@@ -12,6 +12,8 @@ export type LiveReport = {
   alarm: string | null;
   // Builds before Phase 5 have no roasters section.
   roasters?: { stockists: StockistMatch[]; ownCafes: Record<string, number> };
+  // Phase 6: rated shops no source has, by consecutive builds (null on pilot builds).
+  missingRated?: { externalId: string; builds: number }[] | null;
 };
 export type LiveManifest = {
   version: string;

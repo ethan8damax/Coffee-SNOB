@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { View, Pressable, StyleSheet, useWindowDimensions } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
@@ -8,6 +8,8 @@ import { FilterChips, MapTopBar, ViewToggle, ZoomControls } from "../../componen
 import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
+import { AddShopBar, Crosshair } from "../../components/map/add-shop";
+import { newShopId } from "../../lib/log/new-shop";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { Label } from "../../components/primitives";
 import type { MapBounds, MapViewProps, NearbyShopPin, RatedShopPin } from "../../components/map/types";
@@ -65,6 +67,16 @@ export default function MapScreen() {
   const [camera, setCamera] = useState<CameraTarget | null>(null);
   const [zoomRequest, setZoomRequest] = useState<ZoomRequest | null>(null);
   const nonce = useRef(0);
+  // Pin mode for a café the map doesn't have: null = off, else the name so far.
+  // The log screen's "Which shop?" opens it with ?add=1.
+  const { add } = useLocalSearchParams<{ add?: string }>();
+  const [adding, setAdding] = useState<string | null>(null);
+  useEffect(() => {
+    if (add) {
+      setAdding("");
+      router.setParams({ add: undefined });
+    }
+  }, [add]);
 
   const flyTo = (lat: number, lng: number, zoom?: number) => setCamera({ lat, lng, zoom, nonce: ++nonce.current });
 
@@ -136,7 +148,8 @@ export default function MapScreen() {
     if (phone) params.phone = phone;
     if (hours) params.hours = hours;
     // Index dots: their OSM ids, so a shop first rated under one isn't duplicated.
-    const legacy = (row.shop.sourceIds ?? []).filter((s) => s.startsWith("osm:")).map((s) => s.slice(4));
+    // A hand-added shop the build linked to this dot rides along as "user/<uuid>".
+    const legacy = (row.shop.sourceIds ?? []).flatMap((s) => (s.startsWith("osm:") ? [s.slice(4)] : s.startsWith("user/") ? [s] : []));
     if (legacy.length) params.legacyIds = legacy.join(",");
     router.push({ pathname: "/log", params });
   };
@@ -186,6 +199,19 @@ export default function MapScreen() {
     flyTo(shop.lat, shop.lng, 16);
   };
 
+  const startAdding = (name: string) => {
+    selectRated(null);
+    setMode("Map");
+    setListCollapsed(false);
+    setAdding(name);
+  };
+  const confirmAdd = (name: string) => {
+    const at = bounds ? boundsCenter(bounds) : center;
+    setAdding(null);
+    router.push({ pathname: "/log", params: { externalId: newShopId(), name, lat: String(at.lat), lng: String(at.lng) } });
+  };
+  const addBar = adding !== null ? <AddShopBar initialName={adding} onCancel={() => setAdding(null)} onConfirm={confirmAdd} /> : null;
+
   const areaHeight = height - tabBarHeight;
   // List mode takes the whole page — nothing useful shows through the sliver of map
   // behind a partial sheet once you've chosen to browse the list instead of the pins.
@@ -193,7 +219,7 @@ export default function MapScreen() {
 
   const map = (
     <MapView
-      bottomInset={desktop ? 0 : sheetHeight}
+      bottomInset={desktop || adding !== null ? 0 : sheetHeight}
       ratedShops={visible.rated}
       nearbyShops={visible.nearby}
       initialCenter={center}
@@ -241,9 +267,12 @@ export default function MapScreen() {
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
-            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
-              <View style={{ paddingHorizontal: 20, zIndex: 30 }}>
-                <MapSearch areaLabel={areaLabel} count={total} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} />
+            {/* zIndex here, not just on the search row: the list below is a later sibling
+                and would otherwise paint over the search dropdown on web. */}
+            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule, zIndex: 30 }}>
+              {/* Row, like the mobile controls bar — MapSearch's flex: 1 collapses its height in a column. */}
+              <View style={{ flexDirection: "row", paddingHorizontal: 20, zIndex: 30 }}>
+                <MapSearch areaLabel={areaLabel} count={total} webAppUrl={WEB_APP_URL} origin={searchOrigin} onSelectPlace={searchPlace} onSelectShop={searchShop} onSelectNearbyShop={searchNearbyShop} onAddMissing={startAdding} />
               </View>
               <FilterChips value={filter} onChange={setFilter} />
             </View>
@@ -277,7 +306,14 @@ export default function MapScreen() {
             <View style={{ position: "absolute", top: 16, right: 16 }}>
               <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
             </View>
-            {preview ? <View style={{ position: "absolute", left: 16, bottom: 16, width: 360, maxWidth: "90%" }}>{preview}</View> : null}
+            {adding !== null ? (
+              <>
+                <Crosshair />
+                <View style={{ position: "absolute", left: 16, bottom: 16, width: 380, maxWidth: "90%" }}>{addBar}</View>
+              </>
+            ) : preview ? (
+              <View style={{ position: "absolute", left: 16, bottom: 16, width: 360, maxWidth: "90%" }}>{preview}</View>
+            ) : null}
           </View>
         </View>
       </View>
@@ -287,6 +323,7 @@ export default function MapScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {map}
+      {adding !== null ? <Crosshair /> : null}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
         <View pointerEvents="box-none">
           <MapTopBar
@@ -300,9 +337,11 @@ export default function MapScreen() {
             onSelectPlace={searchPlace}
             onSelectShop={searchShop}
             onSelectNearbyShop={searchNearbyShop}
+            onAddMissing={startAdding}
           />
           <FilterChips value={filter} onChange={setFilter} />
         </View>
+        {addBar ?? (
         <View pointerEvents="box-none">
           {preview && mode === "Map" ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}
           <View style={{ height: sheetHeight, backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink }}>
@@ -316,6 +355,7 @@ export default function MapScreen() {
             <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: colors.rule }}>{list(false)}</View>
           </View>
         </View>
+        )}
       </View>
     </View>
   );

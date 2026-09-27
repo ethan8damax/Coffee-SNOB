@@ -62,7 +62,7 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
   return { count: places.length, byCountry, added, removed, suggestedChains, alarm };
 }
 
-export function reportMarkdown(r: Report & { roasters?: RoasterReport }, meta: { builtAt: string; sources: Record<string, string> }): string {
+export function reportMarkdown(r: Report & { roasters?: RoasterReport; missingRated?: { builds: number }[] | null; linkedUserShops?: number }, meta: { builtAt: string; sources: Record<string, string> }): string {
   const countries = Object.entries(r.byCountry).sort((a, b) => b[1] - a[1]).slice(0, 30);
   return [
     `# Coffee index build ${meta.builtAt}`,
@@ -80,5 +80,7 @@ export function reportMarkdown(r: Report & { roasters?: RoasterReport }, meta: {
     ...(r.roasters?.stockists.length
       ? [`## Roaster stockists: ${r.roasters.stockists.filter((s) => s.matchedId).length} of ${r.roasters.stockists.length} matched`, ""]
       : []),
+    ...(r.missingRated ? [`## Rated shops no source has: ${r.missingRated.length} (${r.missingRated.filter((m) => m.builds >= 2).length} for 2+ builds)`, ""] : []),
+    ...(r.linkedUserShops ? [`Hand-added shops linked to the index: ${r.linkedUserShops}`, ""] : []),
   ].join("\n");
 }

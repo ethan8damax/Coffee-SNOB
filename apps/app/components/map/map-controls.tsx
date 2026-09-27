@@ -141,6 +141,7 @@ export function MapTopBar({
   onSelectPlace,
   onSelectShop,
   onSelectNearbyShop,
+  onAddMissing,
 }: {
   areaLabel: string | null;
   count: number;
@@ -152,6 +153,7 @@ export function MapTopBar({
   onSelectPlace: (place: Place) => void;
   onSelectShop: (shop: RatedShopPin) => void;
   onSelectNearbyShop: (shop: NearbyShopPin) => void;
+  onAddMissing?: (name: string) => void;
 }) {
   // The map itself now draws edge-to-edge under the status bar/notch (see
   // public/index.html), so this bar needs a real inset-aware top padding —
@@ -160,7 +162,7 @@ export function MapTopBar({
   const insets = useSafeAreaInsets();
   return (
     <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 10, zIndex: 30 }}>
-      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} onSelectNearbyShop={onSelectNearbyShop} />
+      <MapSearch areaLabel={areaLabel} count={count} webAppUrl={webAppUrl} origin={origin} onSelectPlace={onSelectPlace} onSelectShop={onSelectShop} onSelectNearbyShop={onSelectNearbyShop} onAddMissing={onAddMissing} />
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

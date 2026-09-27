@@ -15,12 +15,15 @@ import {
   getLeads,
   getRoasters,
   getRoasterStockists,
+  getShopsByExternalIds,
+  getClosedShops,
 } from "@coffeesnob/supabase";
 import { LeadsTab, readyLeadCount } from "./leads-tab";
 import { BuildTab } from "./build-tab";
 import { ChainsTab, pendingChainCount } from "./chains-tab";
 import { FlagsTab, groupFlags } from "./flags-tab";
 import { RoastersTab, unmatchedStockistCount } from "./roasters-tab";
+import { ClosedTab, closedCandidates, missingIds } from "./closed-tab";
 import { getLiveIndex } from "./live-index";
 
 async function saveAction(formData: FormData) {
@@ -68,13 +71,14 @@ async function rejectAction(formData: FormData) {
 }
 
 type Filter = "all" | "flagged";
-type Tab = "shops" | "leads" | "roasters" | "chains" | "flags" | "build";
+type Tab = "shops" | "leads" | "roasters" | "chains" | "flags" | "closed" | "build";
 const TABS: { id: Tab; label: string }[] = [
   { id: "shops", label: "Shops" },
   { id: "leads", label: "Leads" },
   { id: "roasters", label: "Roasters" },
   { id: "chains", label: "Chains" },
   { id: "flags", label: "Flags" },
+  { id: "closed", label: "Closed?" },
   { id: "build", label: "Build" },
 ];
 
@@ -96,6 +100,8 @@ export default async function AdminShopsPage({
     getRoasters(supabase),
     getRoasterStockists(supabase),
   ]);
+  const [missingShops, closedShops] = await Promise.all([getShopsByExternalIds(supabase, [...missingIds(live).keys()]), getClosedShops(supabase)]);
+  const closedList = closedCandidates(missingShops, live);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
   const counts: Record<Tab, number> = {
     shops: 0,
@@ -103,6 +109,7 @@ export default async function AdminShopsPage({
     roasters: unmatchedStockistCount(stockists, live),
     chains: pendingChainCount(live, decisions),
     flags: groupFlags(flags).length,
+    closed: closedList.length,
     build: typeof live !== "string" && live.report.alarm ? 1 : 0,
   };
 
@@ -137,6 +144,7 @@ export default async function AdminShopsPage({
       {tab === "roasters" ? <RoastersTab roasters={roasters} stockists={stockists} live={live} open={roaster} /> : null}
       {tab === "chains" ? <ChainsTab live={live} decisions={decisions} lookup={chainQuery} /> : null}
       {tab === "flags" ? <FlagsTab flags={flags} overrides={overrides} /> : null}
+      {tab === "closed" ? <ClosedTab candidates={closedList} closed={closedShops} live={live} /> : null}
       {tab === "build" ? <BuildTab live={live} /> : null}
       {tab === "shops" ? (
       <>

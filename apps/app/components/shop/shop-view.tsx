@@ -17,7 +17,7 @@ export function ShopView({ shop, reviews }: { shop: ShopDetail; reviews: ShopRev
         <View style={{ flexDirection: "row", alignItems: "flex-start", gap: 32, padding: 32, width: "100%", maxWidth: 1120, alignSelf: "center" }}>
           <View style={{ flex: 1, minWidth: 0, gap: 24 }}>
             <Consensus shop={shop} />
-            <Actions shopId={shop.id} />
+            <Actions shopId={shop.id} name={shop.name} />
             <ReviewsList reviews={reviews} />
           </View>
           <View style={{ width: 340, gap: 16 }}>
@@ -34,7 +34,7 @@ export function ShopView({ shop, reviews }: { shop: ShopDetail; reviews: ShopRev
       <Hero shop={shop} />
       <View style={{ padding: 16, gap: 18 }}>
         <Consensus shop={shop} />
-        <Actions shopId={shop.id} />
+        <Actions shopId={shop.id} name={shop.name} />
       </View>
       <TabStrip tab={tab} onChange={setTab} />
       <View style={{ padding: 16 }}>

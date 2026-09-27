@@ -9,6 +9,7 @@ import { Detour } from "../detour";
 import { Chip } from "../chip";
 import { useAuth } from "../../context/auth";
 import { useShopSaved } from "../../lib/profile/use-extras";
+import { AddToCollection } from "../collections/add-to-collection";
 import { openDirections } from "../../lib/directions";
 import { hoursLines } from "../../lib/shop/hours";
 import { consensusLine, relativeDate, telUrl, verdictCountLabel, websiteUrl } from "../../lib/shop/format";
@@ -63,8 +64,9 @@ export function Consensus({ shop }: { shop: ShopDetail }) {
   );
 }
 
-export function Actions({ shopId }: { shopId: string }) {
+export function Actions({ shopId, name }: { shopId: string; name: string }) {
   const { session } = useAuth();
+  const [collecting, setCollecting] = useState(false);
   const { saved, failed, toggle } = useShopSaved(session?.user.id ?? null, shopId);
   const [copied, setCopied] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -97,6 +99,13 @@ export function Actions({ shopId }: { shopId: string }) {
         accessibilityLabel={saved ? "Saved, tap to remove from your saved shops" : "Save this shop"}
         onPress={session ? toggle : () => router.push("/sign-in")}
       />
+      <ButtonLine
+        title="Collect"
+        accessibilityRole="button"
+        accessibilityLabel="Add this shop to a collection"
+        onPress={session ? () => setCollecting(true) : () => router.push("/sign-in")}
+      />
+      {collecting ? <AddToCollection target={{ shopId, name }} onClose={() => setCollecting(false)} /> : null}
       {Platform.OS === "web" && (
         <ButtonLine
           title={copied ? "Link copied" : "Share"}

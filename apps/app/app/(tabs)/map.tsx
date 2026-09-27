@@ -9,6 +9,7 @@ import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
 import { AddShopBar, Crosshair } from "../../components/map/add-shop";
+import { AddToCollection, type CollectTarget } from "../../components/collections/add-to-collection";
 import { newShopId } from "../../lib/log/new-shop";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { SearchResults } from "../../components/map/search-results";
@@ -183,6 +184,11 @@ export default function MapScreen() {
     if (row.kind === "rated") router.push(`/shop/${row.shop.id}`);
   };
 
+  // Index dots: their OSM ids, so a shop first rated under one isn't duplicated.
+  // A hand-added shop the build linked to this dot rides along as "user/<uuid>".
+  const legacyIdsOf = (shop: NearbyShopPin) =>
+    (shop.sourceIds ?? []).flatMap((s) => (s.startsWith("osm:") ? [s.slice(4)] : s.startsWith("user/") ? [s] : []));
+
   const logVisit = (row: ListRow) => {
     if (row.kind === "rated") {
       router.push({ pathname: "/log", params: { shopId: row.shop.id } });
@@ -194,11 +200,23 @@ export default function MapScreen() {
     if (website) params.website = website;
     if (phone) params.phone = phone;
     if (hours) params.hours = hours;
-    // Index dots: their OSM ids, so a shop first rated under one isn't duplicated.
-    // A hand-added shop the build linked to this dot rides along as "user/<uuid>".
-    const legacy = (row.shop.sourceIds ?? []).flatMap((s) => (s.startsWith("osm:") ? [s.slice(4)] : s.startsWith("user/") ? [s] : []));
+    const legacy = legacyIdsOf(row.shop);
     if (legacy.length) params.legacyIds = legacy.join(",");
     router.push({ pathname: "/log", params });
+  };
+
+  const [collecting, setCollecting] = useState<CollectTarget | null>(null);
+  const collect = (row: ListRow) => {
+    if (!session) {
+      router.push("/sign-in");
+      return;
+    }
+    if (row.kind === "rated") {
+      setCollecting({ shopId: row.shop.id, name: row.shop.name });
+      return;
+    }
+    const { externalId, name, lat, lng, address, website, phone, hours } = row.shop;
+    setCollecting({ name, place: { externalId, name, lat, lng, address, website, phone, hours, legacyIds: legacyIdsOf(row.shop) } });
   };
 
   const onPressRow = (row: ListRow) => {
@@ -267,6 +285,7 @@ export default function MapScreen() {
     setAdding(null);
     router.push({ pathname: "/log", params: { externalId: newShopId(), name, lat: String(at.lat), lng: String(at.lng) } });
   };
+  const collectSheet = collecting ? <AddToCollection target={collecting} onClose={() => setCollecting(null)} /> : null;
   const addBar = adding !== null ? <AddShopBar initialName={adding} onCancel={() => setAdding(null)} onConfirm={confirmAdd} /> : null;
 
   const areaHeight = height - tabBarHeight;
@@ -297,6 +316,7 @@ export default function MapScreen() {
       onOpen={() => openShop(selectedRow)}
       onLog={() => logVisit(selectedRow)}
       onDirections={() => openDirections(selectedRow.shop.lat, selectedRow.shop.lng)}
+      onCollect={() => collect(selectedRow)}
       onDismiss={() => selectRated(null)}
     />
   ) : null;
@@ -382,6 +402,7 @@ export default function MapScreen() {
           </View>
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
+          {collectSheet}
           {map}
           <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
             {/* Straddles the panel/map seam either way, so it's always reachable. */}
@@ -424,6 +445,7 @@ export default function MapScreen() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
+      {collectSheet}
       {map}
       {adding !== null ? <Crosshair /> : null}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>

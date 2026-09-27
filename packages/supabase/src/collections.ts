@@ -176,3 +176,10 @@ export async function ensureShop(client: Client, p: PlaceRef): Promise<string> {
   if (error) throw error;
   return data as string;
 }
+
+// The shop row for a map café if one exists already; never creates one.
+export async function findShopId(client: Client, p: Pick<PlaceRef, "externalId" | "legacyIds">): Promise<string | null> {
+  const { data, error } = await client.from("shops").select("id").in("external_id", [p.externalId, ...(p.legacyIds ?? [])]).limit(1);
+  if (error) throw error;
+  return data?.[0]?.id ?? null;
+}

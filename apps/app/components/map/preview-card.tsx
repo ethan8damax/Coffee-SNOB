@@ -53,12 +53,15 @@ export function PreviewCard({
   onOpen,
   onLog,
   onDirections,
+  onCollect,
   onDismiss,
 }: {
   row: ListRow;
   onOpen: () => void;
   onLog: () => void;
   onDirections: () => void;
+  // Unrated cafés have no shop page, so collecting happens here.
+  onCollect: () => void;
   onDismiss: () => void;
 }) {
   if (row.kind === "rated") {
@@ -107,6 +110,7 @@ export function PreviewCard({
       <View style={{ flexDirection: "row", gap: 7, marginTop: 11 }}>
         <ActionButton solid title="Log a visit" icon={<PlusIcon size={13} color={colors.cream} />} onPress={onLog} label={`Log a visit to ${row.shop.name}`} />
         <ActionButton title="Directions" onPress={onDirections} label={`Directions to ${row.shop.name}`} />
+        <ActionButton title="Collect" onPress={onCollect} label={`Add ${row.shop.name} to a collection`} />
       </View>
       {row.shop.externalId.startsWith("cs_") ? (
         <View style={{ marginTop: 8 }}>

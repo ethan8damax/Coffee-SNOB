@@ -532,6 +532,8 @@ export type PublicProfile = {
   bio: string | null;
   avatarUrl: string | null;
   createdAt: string;
+  // Whether their Faves (saved shops and collections) show on their profile.
+  favesPublic: boolean;
 };
 
 export type ProfileStats = { entries: number; followers: number; following: number };
@@ -551,7 +553,7 @@ export type ProfileEntry = {
 export async function getPublicProfileByUsername(client: Client, username: string): Promise<PublicProfile | null> {
   const { data, error } = await client
     .from("profiles")
-    .select("id, username, display_name, bio, avatar_url, created_at")
+    .select("id, username, display_name, bio, avatar_url, created_at, faves_public")
     .eq("username", username)
     .maybeSingle();
   if (error) throw error;
@@ -563,6 +565,7 @@ export async function getPublicProfileByUsername(client: Client, username: strin
     bio: data.bio,
     avatarUrl: data.avatar_url,
     createdAt: data.created_at,
+    favesPublic: data.faves_public,
   };
 }
 
@@ -713,7 +716,7 @@ export async function getMyShops(client: Client, userId: string) {
 
 export type SavedShop = { shopId: string; name: string; neighborhood: string | null; savedAt: string };
 
-// Private: RLS only ever returns the signed-in user's own saves.
+// RLS returns your own saves, or anyone's whose Faves are public.
 export async function getSavedShops(client: Client, userId: string): Promise<SavedShop[]> {
   const { data, error } = await client
     .from("shop_saves")

@@ -108,3 +108,5 @@ export type { AdminUserRow } from "./queries";
 export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, Lead, CurationVisit, Roaster, RoasterStockist, RatedRef, FreshnessShop, FinderNotification } from "./queries";
 export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";
+
+export * from "./collections";

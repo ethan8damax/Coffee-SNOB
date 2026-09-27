@@ -204,7 +204,7 @@ export type Database = {
           id?: string
           list_id: string
           note?: string | null
-          position: number
+          position?: number
           shop_id: string
         }
         Update: {

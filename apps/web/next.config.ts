@@ -13,6 +13,20 @@ const nextConfig: NextConfig = {
     const origin = process.env.COFFEE_INDEX_ORIGIN;
     return origin ? [{ source: "/coffee-index/:path*", destination: `${origin.replace(/\/$/, "")}/:path*` }] : [];
   },
+  // This project predates Vercel caching external rewrites by default, so
+  // opt in (it then honours R2's immutable / 5-minute Cache-Control). CORS
+  // lets the app, on its own domain, fetch the tiles.
+  async headers() {
+    return [
+      {
+        source: "/coffee-index/:path*",
+        headers: [
+          { key: "x-vercel-enable-rewrite-caching", value: "1" },
+          { key: "Access-Control-Allow-Origin", value: "*" },
+        ],
+      },
+    ];
+  },
   async redirects() {
     return [
       {

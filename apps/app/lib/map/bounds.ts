@@ -43,3 +43,17 @@ export function snapToGrid(b: MapBounds, step: number): MapBounds {
 export function latSpan(b: MapBounds): number {
   return b.maxLat - b.minLat;
 }
+
+// Center and zoom that roughly fit every point (the You filter's "everywhere"
+// view). Web-mercator: each zoom level halves the degrees on screen, and a
+// ~1000px view shows about 360° at zoom 0 × 4 tiles.
+// ponytail: estimates from the widest span, no pixel math; fitBounds on each map if it's off.
+export function fitPoints(points: { lat: number; lng: number }[]): { lat: number; lng: number; zoom: number } | null {
+  if (points.length === 0) return null;
+  const lats = points.map((p) => p.lat);
+  const lngs = points.map((p) => p.lng);
+  const [minLat, maxLat, minLng, maxLng] = [Math.min(...lats), Math.max(...lats), Math.min(...lngs), Math.max(...lngs)];
+  const span = Math.max(maxLng - minLng, (maxLat - minLat) * 1.5, 0.02);
+  const zoom = Math.max(2, Math.min(15, Math.floor(Math.log2(1440 / span)) - 1));
+  return { lat: (minLat + maxLat) / 2, lng: (minLng + maxLng) / 2, zoom };
+}

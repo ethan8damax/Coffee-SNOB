@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, visibleNearby, formatDistance, MAP_FILTERS, MAX_ROWS, rowSubtitle, withPinned } from "./shop-list";
+import { applyFilter, buildRows, distanceKm, dropRatedDuplicates, visibleNearby, formatDistance, EFFORT_OPTIONS, MAX_ROWS, rowSubtitle, withPinned } from "./shop-list";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
 const rated = (id: string, rating: number, lat: number, lng: number, extra: Partial<RatedShopPin> = {}): RatedShopPin => ({
@@ -30,20 +30,35 @@ describe("formatDistance", () => {
 });
 
 describe("applyFilter", () => {
-  const r = [rated("a", 5, 0, 0), rated("b", 3, 0, 0), rated("c", 4, 0, 0)];
+  const r = [rated("a", 5, 0, 0), rated("b", 3, 0, 0), rated("c", 3.6, 0, 0, { isSnobApproved: true }), rated("d", 1, 0, 0)];
   const n = [nearby("x", 0, 0)];
-  it("all keeps everything", () => {
-    expect(applyFilter("all", r, n)).toEqual({ rated: r, nearby: n });
+  const f = (effort: any, you: any = "any") => ({ effort, you });
+  const ids = (x: { rated: { id: string }[] }) => x.rated.map((s) => s.id);
+  const mine = { saved: new Set(["a", "far"]), been: new Set(["a", "b"]), rated: [rated("a", 5, 0, 0), rated("b", 3, 0, 0), rated("far", 4, 42, -71)], unrated: [nearby("node/9", 1, 1)] };
+
+  it("Any keeps everything", () => {
+    expect(applyFilter(f("any"), r, n)).toEqual({ rated: r, nearby: n });
   });
-  it("rated drops the unrated dots", () => {
-    expect(applyFilter("rated", r, n)).toEqual({ rated: r, nearby: [] });
+  it("every other effort drops unrated dots and filters by the rounded verdict", () => {
+    expect(applyFilter(f("rated"), r, n)).toEqual({ rated: r, nearby: [] });
+    expect(ids(applyFilter(f("detour"), r, n))).toEqual(["a", "b", "c"]);
+    expect(ids(applyFilter(f("trip"), r, n))).toEqual(["a", "c"]);
+    expect(ids(applyFilter(f("flight"), r, n))).toEqual(["a"]);
+    expect(ids(applyFilter(f("snob"), r, n))).toEqual(["c"]);
   });
-  it("top keeps only 4s and 5s and drops the dots", () => {
-    expect(applyFilter("top", r, n).rated.map((s) => s.id)).toEqual(["a", "c"]);
-    expect(applyFilter("top", r, n).nearby).toEqual([]);
+  it("Saved and Been swap in your shops from anywhere", () => {
+    expect(applyFilter(f("any", "saved"), r, n, mine)).toEqual({ rated: [mine.rated[0], mine.rated[2]], nearby: mine.unrated });
+    expect(applyFilter(f("any", "been"), r, n, mine)).toEqual({ rated: [mine.rated[0], mine.rated[1]], nearby: [] });
+    expect(applyFilter(f("any", "saved"), r, n, null)).toEqual({ rated: [], nearby: [] });
   });
-  it("exposes the design's chip labels", () => {
-    expect(MAP_FILTERS.map((f) => f.label)).toEqual(["All", "Rated", "Make the trip +"]);
+  it("Not been drops shops you've logged, in view", () => {
+    expect(applyFilter(f("any", "notBeen"), r, n, mine)).toEqual({ rated: [r[2], r[3]], nearby: n });
+  });
+  it("combines: saved shops worth the trip", () => {
+    expect(ids(applyFilter(f("trip", "saved"), r, n, mine))).toEqual(["a", "far"]);
+  });
+  it("labels effort with the scale's words", () => {
+    expect(EFFORT_OPTIONS.map((o) => o.label)).toEqual(["Any", "Rated", "Worth the detour +", "Make the trip +", "Catch a flight", "Snob-Approved"]);
   });
 });
 

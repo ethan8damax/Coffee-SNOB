@@ -12,6 +12,7 @@ export {
   getRatedShopsInBounds,
   searchRatedShops,
   citiesWithGuides,
+  getMyShops,
   logShopVisit,
   getProfilesByIds,
   getCitiesByIds,

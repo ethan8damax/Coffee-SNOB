@@ -1,25 +1,103 @@
-import { View, Text, Pressable, ScrollView } from "react-native";
+import { useState } from "react";
+import { View, Text, Pressable } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
-import { MAP_FILTERS, type MapFilter } from "../../lib/map/shop-list";
-import { Chip } from "../chip";
+import { EFFORT_OPTIONS, YOU_OPTIONS, type MapFilter } from "../../lib/map/shop-list";
+import { chipStyleForVariant } from "../chip-style";
 import { LocateIcon } from "./locate-icon";
 import { MapSearch } from "./map-search";
 import { MinusIcon, PinIcon, PlusIcon, RefreshIcon } from "./map-icons";
 
-// Chips sit on the map, so an inactive chip needs a solid ground to stay legible.
-export function FilterChips({ value, onChange, padding = 20 }: { value: MapFilter; onChange: (f: MapFilter) => void; padding?: number }) {
+function FilterMenu<T extends string>({
+  title,
+  value,
+  options,
+  open,
+  onToggle,
+  onChange,
+}: {
+  title: string;
+  value: T;
+  options: { id: T; label: string }[];
+  open: boolean;
+  onToggle: () => void;
+  onChange: (v: T) => void;
+}) {
+  const on = value !== "any";
+  const current = options.find((o) => o.id === value)?.label ?? "";
+  const s = chipStyleForVariant(on ? "ox" : "default");
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 5, paddingHorizontal: padding }} accessibilityRole="tablist">
-      {MAP_FILTERS.map((f) => {
-        const active = value === f.id;
-        return (
-          <View key={f.id} accessibilityState={{ selected: active }} style={{ backgroundColor: active ? "transparent" : colors.card }}>
-            <Chip label={f.label} variant={active ? "ox" : "default"} onPress={() => onChange(f.id)} />
-          </View>
-        );
-      })}
-    </ScrollView>
+    <View style={{ zIndex: open ? 40 : 1 }}>
+      <Pressable
+        onPress={onToggle}
+        accessibilityRole="button"
+        accessibilityLabel={`${title}: ${current}`}
+        accessibilityState={{ expanded: open }}
+        hitSlop={6}
+        style={{ flexDirection: "row", alignItems: "center", gap: 6, height: 32, paddingHorizontal: 12, borderRadius: 2, borderWidth: 1, borderColor: s.border, backgroundColor: on ? s.background : colors.card }}
+      >
+        <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 8.5, letterSpacing: 0.85, textTransform: "uppercase", color: s.text }}>
+          {on ? current : title}
+        </Text>
+        <Text style={{ fontSize: 9, color: s.text }}>▾</Text>
+      </Pressable>
+      {open ? (
+        <View
+          accessibilityRole="menu"
+          style={{ position: "absolute", top: 36, left: 0, minWidth: 200, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rule, borderRadius: 2, paddingVertical: 4 }}
+        >
+          {options.map((o) => {
+            const selected = o.id === value;
+            return (
+              <Pressable
+                key={o.id}
+                onPress={() => onChange(o.id)}
+                accessibilityRole="menuitem"
+                accessibilityState={{ selected }}
+                style={{ minHeight: 40, flexDirection: "row", alignItems: "center", gap: 10, paddingHorizontal: 14 }}
+              >
+                <Text style={{ width: 10, fontSize: 10, color: colors.oxblood }}>{selected ? "●" : ""}</Text>
+                <Text style={{ fontFamily: selected ? "Area-Bold" : "Area-Regular", fontSize: 14, color: colors.ink }}>{o.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+// Effort ▾ and You ▾ (signed in only). They sit on the map, so a closed chip
+// needs a solid ground to stay legible. Picking an option closes the menu.
+export function FilterChips({ value, onChange, signedIn, padding = 20 }: { value: MapFilter; onChange: (f: MapFilter) => void; signedIn: boolean; padding?: number }) {
+  const [open, setOpen] = useState<"effort" | "you" | null>(null);
+  return (
+    <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: padding, zIndex: open ? 40 : 1 }}>
+      <FilterMenu
+        title="Effort"
+        value={value.effort}
+        options={EFFORT_OPTIONS}
+        open={open === "effort"}
+        onToggle={() => setOpen(open === "effort" ? null : "effort")}
+        onChange={(effort) => {
+          setOpen(null);
+          onChange({ ...value, effort });
+        }}
+      />
+      {signedIn ? (
+        <FilterMenu
+          title="You"
+          value={value.you}
+          options={YOU_OPTIONS}
+          open={open === "you"}
+          onToggle={() => setOpen(open === "you" ? null : "you")}
+          onChange={(you) => {
+            setOpen(null);
+            onChange({ ...value, you });
+          }}
+        />
+      ) : null}
+    </View>
   );
 }
 

@@ -56,6 +56,7 @@ export function ShopListView({
   fallbackLabel,
   onPressRow,
   onRetry,
+  emptyMessage = null,
 }: {
   rows: ListRow[];
   activeKey: string | null;
@@ -66,6 +67,8 @@ export function ShopListView({
   fallbackLabel: string | null;
   onPressRow: (row: ListRow) => void;
   onRetry: () => void;
+  // Set when a filter, not the area, is why the list is empty.
+  emptyMessage?: string | null;
 }) {
   const notices: string[] = [];
   if (offline) notices.push("You're offline. Showing what's already loaded.");
@@ -79,7 +82,15 @@ export function ShopListView({
       keyExtractor={rowKey}
       renderItem={({ item }) => <ShopRow row={item} active={rowKey(item) === activeKey} wide={wide} onPress={() => onPressRow(item)} />}
       ListHeaderComponent={notices.length ? <View>{notices.map((n) => <Notice key={n}>{n}</Notice>)}</View> : null}
-      ListEmptyComponent={<EmptyState status={status} onRetry={onRetry} />}
+      ListEmptyComponent={
+        emptyMessage ? (
+          <View style={{ padding: 28 }}>
+            <Body style={{ color: colors.ink2, textAlign: "center" }}>{emptyMessage}</Body>
+          </View>
+        ) : (
+          <EmptyState status={status} onRetry={onRetry} />
+        )
+      }
       initialNumToRender={12}
       windowSize={7}
       keyboardShouldPersistTaps="handled"

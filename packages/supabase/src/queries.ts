@@ -680,6 +680,37 @@ export async function getProfileFaves(client: Client, userId: string, limit = 30
   }));
 }
 
+// The map's You filter: your saved and logged shops, anywhere. Rated ones come
+// as shop_ratings rows (pins with a verdict); saved shops nobody has rated yet
+// come from shops, to show as unrated rows. Closed shops drop out of both.
+// ponytail: ids ride in the URL; fine for hundreds of shops, an RPC past that.
+export async function getMyShops(client: Client, userId: string) {
+  const [saves, logs] = await Promise.all([
+    client.from("shop_saves").select("shop_id").eq("user_id", userId),
+    client.from("logs").select("shop_id").eq("user_id", userId),
+  ]);
+  if (saves.error) throw saves.error;
+  if (logs.error) throw logs.error;
+  const saved = [...new Set(saves.data.map((r) => r.shop_id))];
+  const been = [...new Set(logs.data.map((r) => r.shop_id))];
+  const ids = [...new Set([...saved, ...been])];
+  if (ids.length === 0) return { saved, been, rated: [], unrated: [] };
+  const { data: rated, error } = await client
+    .from("shop_ratings")
+    .select("id, name, lat, lng, neighborhood, is_snob_approved, tag, price_tier, rating, log_count, external_id")
+    .in("id", ids);
+  if (error) throw error;
+  const ratedIds = new Set(rated.map((r) => r.id));
+  const missing = saved.filter((id) => !ratedIds.has(id));
+  let unrated: { id: string; name: string; lat: number; lng: number; external_id: string | null }[] = [];
+  if (missing.length > 0) {
+    const res = await client.from("shops").select("id, name, lat, lng, external_id").in("id", missing).is("closed_at", null);
+    if (res.error) throw res.error;
+    unrated = res.data.flatMap((s) => (s.lat !== null && s.lng !== null ? [{ ...s, lat: s.lat, lng: s.lng }] : []));
+  }
+  return { saved, been, rated, unrated };
+}
+
 export type SavedShop = { shopId: string; name: string; neighborhood: string | null; savedAt: string };
 
 // Private: RLS only ever returns the signed-in user's own saves.

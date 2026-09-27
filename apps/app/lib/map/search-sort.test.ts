@@ -60,15 +60,20 @@ describe("buildSearchSections", () => {
   ];
 
   it("caps places at three and keeps every shop on 'All'", () => {
-    const { places, shops } = buildSearchSections(results, "all");
+    const { places, shops } = buildSearchSections(results, { effort: "any", you: "any" });
     expect(places.map((p) => p.id)).toEqual(["R1", "R2", "R3"]);
     expect(shops.map(key)).toEqual(["s1", "node/2", "s3"]);
   });
 
+  it("Saved keeps only your matches among results", () => {
+    const mine = { saved: new Set(["s3"]), been: new Set<string>(), rated: [], unrated: [] };
+    expect(buildSearchSections(results, { effort: "any", you: "saved" }, mine).shops.map(key)).toEqual(["s3"]);
+  });
+
   it("filters shops like the map, and never hides places", () => {
-    expect(buildSearchSections(results, "rated").shops.map(key)).toEqual(["s1", "s3"]);
-    expect(buildSearchSections(results, "top").shops.map(key)).toEqual(["s1"]);
-    expect(buildSearchSections(results, "top").places).toHaveLength(3);
+    expect(buildSearchSections(results, { effort: "rated", you: "any" }).shops.map(key)).toEqual(["s1", "s3"]);
+    expect(buildSearchSections(results, { effort: "trip", you: "any" }).shops.map(key)).toEqual(["s1"]);
+    expect(buildSearchSections(results, { effort: "trip", you: "any" }).places).toHaveLength(3);
   });
 });
 

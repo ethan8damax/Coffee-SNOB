@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { boundsAround, containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
+import { boundsAround, containsBounds, fitPoints, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
 
 describe("boundsAround", () => {
   it("builds a symmetric box around the center point", () => {
@@ -60,5 +60,18 @@ describe("withinBounds", () => {
     expect(withinBounds(box, 13, 22)).toBe(false);
     expect(withinBounds(box, 11, 19)).toBe(false);
     expect(withinBounds(box, 11, 25)).toBe(false);
+  });
+});
+
+describe("fitPoints", () => {
+  it("centers on the points and zooms out as they spread", () => {
+    expect(fitPoints([])).toBeNull();
+    const one = fitPoints([{ lat: 27.95, lng: -82.46 }])!;
+    expect(one).toMatchObject({ lat: 27.95, lng: -82.46, zoom: 15 });
+    const metro = fitPoints([{ lat: 27.9, lng: -82.5 }, { lat: 28.1, lng: -82.3 }])!;
+    const country = fitPoints([{ lat: 27.95, lng: -82.46 }, { lat: 42.36, lng: -71.06 }, { lat: 47.6, lng: -122.3 }])!;
+    expect(metro.zoom).toBeGreaterThan(9);
+    expect(country.zoom).toBeLessThanOrEqual(4);
+    expect(country.lng).toBeCloseTo(-96.68, 1);
   });
 });

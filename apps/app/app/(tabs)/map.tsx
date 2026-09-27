@@ -20,7 +20,10 @@ import { useUserLocation } from "../../lib/map/use-user-location";
 import { boundsAround } from "../../lib/map/bounds";
 import { FALLBACK_CITY, readLastLocation, saveLastLocation } from "../../lib/map/fallback";
 import type { Place } from "../../lib/map/geocode";
-import { applyFilter, buildRows, withPinned, type ListRow, type MapFilter } from "../../lib/map/shop-list";
+import { applyFilter, buildRows, DEFAULT_FILTER, withPinned, type ListRow, type MapFilter } from "../../lib/map/shop-list";
+import { useMyShops } from "../../lib/map/use-my-shops";
+import { fitPoints } from "../../lib/map/bounds";
+import { useAuth } from "../../context/auth";
 import { buildSearchSections, type ShopResult } from "../../lib/map/search-sort";
 import { useMapSearch } from "../../lib/map/use-map-search";
 import { openDirections } from "../../lib/directions";
@@ -56,7 +59,14 @@ export default function MapScreen() {
   const center = userCenter ?? startCenter;
 
   const [bounds, setBounds] = useState<MapBounds | null>(null);
-  const [filter, setFilter] = useState<MapFilter>("all");
+  const { session } = useAuth();
+  const userId = session?.user.id ?? null;
+  const [chosenFilter, setFilter] = useState<MapFilter>(DEFAULT_FILTER);
+  // You is signed-in only; signing out drops back to Any.
+  const filter: MapFilter = userId ? chosenFilter : { ...chosenFilter, you: "any" };
+  // Saved/Been show your shops from anywhere, not what's in view.
+  const everywhere = filter.you === "saved" || filter.you === "been";
+  const my = useMyShops(userId, filter.you !== "any");
   const [mode, setMode] = useState<"Map" | "List">("Map");
   const [listCollapsed, setListCollapsed] = useState(false);
   // null = automatic ("Near you" / the fallback city); set once someone searches a
@@ -109,7 +119,11 @@ export default function MapScreen() {
   }, [userCenter]);
 
   const { ratedShops, nearbyShops, status, reload } = useNearbyMapData(bounds, WEB_APP_URL);
-  const visible = useMemo(() => applyFilter(filter, ratedShops, withPinned(nearbyShops, pinnedShop, ratedShops)), [filter, ratedShops, nearbyShops, pinnedShop]);
+  const visible = useMemo(
+    () => applyFilter(filter, ratedShops, withPinned(nearbyShops, pinnedShop, ratedShops), my.mine),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [filter.effort, filter.you, ratedShops, nearbyShops, pinnedShop, my.mine],
+  );
   // The pin only exists to hold a fresh search pick; once the selection moves
   // off it (another pin, dismissed card), let it go so it can't follow you home.
   useEffect(() => {
@@ -123,7 +137,29 @@ export default function MapScreen() {
   // if you've flown somewhere else to browse, that's "near" for search purposes.
   const searchOrigin = bounds ? boundsCenter(bounds) : userCenter;
   const search = useMapSearch(searching ? query : "", searchOrigin, WEB_APP_URL);
-  const sections = useMemo(() => buildSearchSections(search.results ?? [], filter), [search.results, filter]);
+  const sections = useMemo(
+    () => buildSearchSections(search.results ?? [], filter, my.mine),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [search.results, filter.effort, filter.you, my.mine],
+  );
+
+  // Picking Saved/Been zooms out to fit your shops, once per pick (not on every
+  // refresh, so panning around them afterwards sticks).
+  const fitFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!everywhere) {
+      fitFor.current = null;
+      return;
+    }
+    if (!my.mine || fitFor.current === filter.you) return;
+    fitFor.current = filter.you;
+    const fit = fitPoints([...visible.rated, ...visible.nearby]);
+    if (fit) {
+      flewToFix.current = true;
+      flyTo(fit.lat, fit.lng, fit.zoom);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [everywhere, filter.you, my.mine]);
 
   const activeKey = selectedRatedShopId ? `r:${selectedRatedShopId}` : selectedNearbyExternalId ? `n:${selectedNearbyExternalId}` : null;
   // Looked up in everything shown, not the capped list, so a far-away pick or a
@@ -265,6 +301,20 @@ export default function MapScreen() {
     />
   ) : null;
 
+  const emptyMessage = everywhere
+    ? !my.mine
+      ? my.failed
+        ? "Couldn't load your shops. Try again in a moment."
+        : "Loading your shops…"
+      : filter.you === "saved" && my.mine.saved.size === 0
+        ? "Nothing saved yet. Tap Save on any shop page."
+        : filter.you === "been" && my.mine.been.size === 0
+          ? "No logs yet. Your first one starts your map."
+          : "Nothing here fits. Try a wider Effort."
+    : filter.effort !== "any" || filter.you !== "any"
+      ? "Nothing here fits. Try a wider Effort."
+      : null;
+
   const list = (wide: boolean) =>
     searching ? (
       <SearchResults
@@ -295,16 +345,23 @@ export default function MapScreen() {
           rows={rows}
           activeKey={activeKey}
           wide={wide}
-          status={status}
+          status={everywhere ? "ready" : status}
           offline={!online}
-          fallbackLabel={userCenter || locationLoading ? null : startCenter.name}
+          fallbackLabel={everywhere || userCenter || locationLoading ? null : startCenter.name}
           onPressRow={onPressRow}
           onRetry={reload}
+          emptyMessage={emptyMessage}
         />
       </>
     );
 
-  const countLabel = searching ? "Search" : `${total} ${total === 1 ? "shop" : "shops"} nearby`;
+  const countLabel = searching
+    ? "Search"
+    : filter.you === "saved"
+      ? `${total} saved`
+      : filter.you === "been"
+        ? `${total} logged`
+        : `${total} ${total === 1 ? "shop" : "shops"} nearby`;
   // null until something's actually been searched — the bar shows the "Search a
   // city or a shop" invite by default, not a "Near you" label nobody asked for.
   const areaLabel = searchedAreaLabel;
@@ -314,12 +371,13 @@ export default function MapScreen() {
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
-            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+            {/* zIndex: the filter menus drop over the list, a later sibling. */}
+            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule, zIndex: 30 }}>
               {/* Row, like the mobile controls bar — MapSearch's flex: 1 collapses its height in a column. */}
               <View style={{ flexDirection: "row", paddingHorizontal: 20 }}>
                 <MapSearch areaLabel={areaLabel} count={total} value={query} onChangeText={setQuery} onClear={clearSearch} />
               </View>
-              <FilterChips value={filter} onChange={setFilter} />
+              <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} />
             </View>
             <View style={{ flex: 1 }}>{list(true)}</View>
           </View>
@@ -370,7 +428,8 @@ export default function MapScreen() {
       {map}
       {adding !== null ? <Crosshair /> : null}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
-        <View pointerEvents="box-none">
+        {/* zIndex: the filter menus drop over the sheet, a later sibling. */}
+        <View pointerEvents="box-none" style={{ zIndex: 30 }}>
           <MapTopBar
             areaLabel={areaLabel}
             count={total}
@@ -382,7 +441,7 @@ export default function MapScreen() {
             onSearchFocus={() => setMode("List")}
             onSearchClear={clearSearch}
           />
-          <FilterChips value={filter} onChange={setFilter} />
+          <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} />
         </View>
         {addBar ?? (
         <View pointerEvents="box-none">

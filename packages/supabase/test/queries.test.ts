@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { citiesWithGuides, getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops } from "../src/queries";
+import { citiesWithGuides, getMyShops, getCities, getCitiesWithShopCounts, getCityGuide, getProfile, isUsernameAvailable, saveIdentity, saveTastePicks, getRatedShopsInBounds, logShopVisit, getProfilesByIds, getCitiesByIds, getLogLikes, setLogLike, getComments, getCommentLikes, setCommentLike, postComment, getCommentCountsByLog, getFollowedUserIds, getFollowingFeedLogs, getFollowingFeedLists, getShopsInBounds, getLogsForShops, getLiveCityGuides, summarizeVerdicts, getShopDetail, getShopReviews, logVisit, getPublicProfileByUsername, getProfileStats, getProfileEntries, isFollowing, setFollow, updateProfile, getAdminUserDirectory, setUserStatus, setUserAdmin, createCity, updateCity, searchRatedShops } from "../src/queries";
 import { createShop, updateShop, upsertShopCuration, rejectShopPromotion, getAdminShops } from "../src/queries";
 import { createCityGuide, updateCityGuide, getCityGuideItems, setCityGuideItems, getAdminCityGuides } from "../src/queries";
 
@@ -1526,5 +1526,44 @@ describe("leads", () => {
     expect(eqSpy).toHaveBeenCalledWith("promotion_status", "flagged");
     expect(leads.map((l) => l.id)).toEqual(["s2", "s1"]);
     expect(leads[1]).toMatchObject({ loggers: 6, adjusted: 4.3, firstLogAt: "2026-05-01T00:00:00Z", visits: [{ id: "v1", visitedOn: "2026-09-01", notes: "Dialed." }] });
+  });
+});
+
+describe("getMyShops", () => {
+  function client(tables: Record<string, unknown[]>) {
+    const calls: unknown[][] = [];
+    const from = (t: string) => {
+      const builder: any = {
+        select: (c: string) => { calls.push(["select", t, c]); return builder; },
+        eq: () => builder,
+        in: (col: string, v: unknown) => { calls.push(["in", t, col, v]); return builder; },
+        is: () => builder,
+        then: (resolve: (v: unknown) => void) => resolve({ data: tables[t], error: null }),
+      };
+      return builder;
+    };
+    return { calls, client: { from } as any };
+  }
+
+  it("returns saved and logged ids, rated pins, and never-rated saved shops", async () => {
+    const { client: c, calls } = client({
+      shop_saves: [{ shop_id: "a" }, { shop_id: "b" }],
+      logs: [{ shop_id: "a" }, { shop_id: "c" }, { shop_id: "c" }],
+      shop_ratings: [{ id: "a", rating: 4 }, { id: "c", rating: 5 }],
+      shops: [{ id: "b", name: "New Spot", lat: 1, lng: 2, external_id: "node/9" }, { id: "x", name: "No coords", lat: null, lng: null, external_id: null }],
+    });
+    const mine = await getMyShops(c, "u1");
+    expect(mine.saved).toEqual(["a", "b"]);
+    expect(mine.been).toEqual(["a", "c"]);
+    expect(mine.rated.map((r: any) => r.id)).toEqual(["a", "c"]);
+    expect(mine.unrated).toEqual([{ id: "b", name: "New Spot", lat: 1, lng: 2, external_id: "node/9" }]);
+    expect(calls).toContainEqual(["in", "shop_ratings", "id", ["a", "b", "c"]]);
+    expect(calls).toContainEqual(["in", "shops", "id", ["b"]]);
+  });
+
+  it("skips the shop lookups when you have nothing", async () => {
+    const { client: c, calls } = client({ shop_saves: [], logs: [] });
+    expect(await getMyShops(c, "u1")).toEqual({ saved: [], been: [], rated: [], unrated: [] });
+    expect(calls.some((x) => x[1] === "shop_ratings")).toBe(false);
   });
 });

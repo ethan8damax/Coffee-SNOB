@@ -1,4 +1,4 @@
-import { distanceKm, type ListRow, type MapFilter } from "./shop-list";
+import { applyFilter, distanceKm, type ListRow, type MapFilter, type MyShops } from "./shop-list";
 import type { Place } from "./geocode";
 import type { NearbyShopPin, RatedShopPin } from "../../components/map/types";
 
@@ -73,11 +73,19 @@ export const MAX_PLACES = 3;
 export type ShopResult = Exclude<SearchResult, { kind: "place" }>;
 
 // The panel's two sections, from ranked results. Places are a way to move the
-// map, so the shop filters never hide them.
-export function buildSearchSections(results: SearchResult[], filter: MapFilter): { places: Place[]; shops: ShopResult[] } {
+// map, so the shop filters never hide them. Shops go through the map's own
+// filter; Saved/Been keep only your matches rather than swapping in all yours.
+export function buildSearchSections(results: SearchResult[], filter: MapFilter, mine: MyShops | null = null): { places: Place[]; shops: ShopResult[] } {
   const places = results.flatMap((r) => (r.kind === "place" ? [r.place] : [])).slice(0, MAX_PLACES);
-  const shops = results.filter(
-    (r): r is ShopResult => r.kind !== "place" && (filter === "all" || (r.kind === "shop" && (filter === "rated" || r.shop.rating >= 4))),
+  const all = results.filter((r): r is ShopResult => r.kind !== "place");
+  const rated = all.flatMap((r) => (r.kind === "shop" ? [r.shop] : []));
+  const nearby = all.flatMap((r) => (r.kind === "nearby" ? [r.shop] : []));
+  const scoped = filter.you === "saved" || filter.you === "been" ? { ...filter, you: "any" as const } : filter;
+  const kept = applyFilter(scoped, rated, nearby, mine);
+  const keepIds = new Set([...kept.rated.map((s) => s.id), ...kept.nearby.map((s) => s.externalId)]);
+  const yours = filter.you === "saved" || filter.you === "been" ? (mine?.[filter.you] ?? new Set<string>()) : null;
+  const shops = all.filter((r) =>
+    r.kind === "shop" ? keepIds.has(r.shop.id) && (!yours || yours.has(r.shop.id)) : keepIds.has(r.shop.externalId) && !yours,
   );
   return { places, shops };
 }

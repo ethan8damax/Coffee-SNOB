@@ -2,14 +2,38 @@ import type { MapBounds, NearbyShopPin, RatedShopPin } from "../../components/ma
 
 type Point = { lat: number; lng: number };
 
-// Chip labels follow the design ("Make the trip +" = verdicts 4 and 5). The
-// design's "Open now" and "Quiet" chips are out of v1 (no hours parsing, no tags).
-export type MapFilter = "all" | "rated" | "top";
-export const MAP_FILTERS: { id: MapFilter; label: string }[] = [
-  { id: "all", label: "All" },
+// Two dropdown chips, combinable. Effort filters what's in view by the
+// verdict (rounded, so it matches the chevrons a row shows). You is signed-in
+// only: Saved/Been swap in your shops from anywhere; Not been filters in view.
+export type Effort = "any" | "rated" | "detour" | "trip" | "flight" | "snob";
+export type You = "any" | "saved" | "been" | "notBeen";
+export type MapFilter = { effort: Effort; you: You };
+export const DEFAULT_FILTER: MapFilter = { effort: "any", you: "any" };
+export const EFFORT_OPTIONS: { id: Effort; label: string }[] = [
+  { id: "any", label: "Any" },
   { id: "rated", label: "Rated" },
-  { id: "top", label: "Make the trip +" },
+  { id: "detour", label: "Worth the detour +" },
+  { id: "trip", label: "Make the trip +" },
+  { id: "flight", label: "Catch a flight" },
+  { id: "snob", label: "Snob-Approved" },
 ];
+export const YOU_OPTIONS: { id: You; label: string }[] = [
+  { id: "any", label: "Any" },
+  { id: "saved", label: "Saved" },
+  { id: "been", label: "Been" },
+  { id: "notBeen", label: "Not been" },
+];
+
+// Your shops for the You filter (see getMyShops): ids, plus pins for them.
+export type MyShops = { saved: Set<string>; been: Set<string>; rated: RatedShopPin[]; unrated: NearbyShopPin[] };
+
+const MIN_VERDICT: Partial<Record<Effort, number>> = { detour: 3, trip: 4, flight: 5 };
+
+function passesEffort(effort: Effort, shop: RatedShopPin): boolean {
+  if (effort === "snob") return shop.isSnobApproved;
+  const min = MIN_VERDICT[effort];
+  return min === undefined || Math.round(shop.rating) >= min;
+}
 
 export type ListRow =
   | { kind: "rated"; shop: RatedShopPin; distanceKm: number | null }
@@ -32,10 +56,18 @@ export function formatDistance(km: number): string {
 }
 
 // The filter applies to the map's pins and to the list alike.
-export function applyFilter(filter: MapFilter, rated: RatedShopPin[], nearby: NearbyShopPin[]) {
-  if (filter === "all") return { rated, nearby };
-  if (filter === "rated") return { rated, nearby: [] as NearbyShopPin[] };
-  return { rated: rated.filter((s) => s.rating >= 4), nearby: [] as NearbyShopPin[] };
+export function applyFilter(filter: MapFilter, rated: RatedShopPin[], nearby: NearbyShopPin[], mine: MyShops | null = null) {
+  let r = rated;
+  let n = nearby;
+  if (filter.you === "saved" || filter.you === "been") {
+    const ids = mine ? mine[filter.you] : new Set<string>();
+    r = (mine?.rated ?? []).filter((s) => ids.has(s.id));
+    n = filter.you === "saved" ? (mine?.unrated ?? []) : [];
+  } else if (filter.you === "notBeen" && mine) {
+    r = r.filter((s) => !mine.been.has(s.id));
+  }
+  if (filter.effort === "any") return { rated: r, nearby: n };
+  return { rated: r.filter((s) => passesEffort(filter.effort, s)), nearby: [] as NearbyShopPin[] };
 }
 
 // Zoomed way out over a whole region, "nearby" can mean thousands of shops — the list

@@ -266,6 +266,7 @@ export type Database = {
           curator_id: string | null
           description: string | null
           id: string
+          is_public: boolean
           save_count: number
           slug: string
           title: string
@@ -279,8 +280,9 @@ export type Database = {
           curator_id?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean
           save_count?: number
-          slug: string
+          slug?: string
           title: string
           type: string
         }
@@ -292,6 +294,7 @@ export type Database = {
           curator_id?: string | null
           description?: string | null
           id?: string
+          is_public?: boolean
           save_count?: number
           slug?: string
           title?: string
@@ -531,12 +534,39 @@ export type Database = {
         }
         Relationships: []
       }
+      profile_top_shops: {
+        Row: {
+          shop_id: string
+          slot: number
+          user_id: string
+        }
+        Insert: {
+          shop_id: string
+          slot: number
+          user_id: string
+        }
+        Update: {
+          shop_id?: string
+          slot?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_top_shops_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string
           display_name: string | null
+          faves_public: boolean
           id: string
           is_admin: boolean
           onboarded_at: string | null
@@ -549,6 +579,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          faves_public?: boolean
           id: string
           is_admin?: boolean
           onboarded_at?: string | null
@@ -561,6 +592,7 @@ export type Database = {
           bio?: string | null
           created_at?: string
           display_name?: string | null
+          faves_public?: boolean
           id?: string
           is_admin?: boolean
           onboarded_at?: string | null
@@ -811,6 +843,22 @@ export type Database = {
           not_specialty: number
           place_id: string
         }[]
+      }
+      ensure_shop: {
+        Args: {
+          p_external_id: string
+          p_name: string
+          p_lat: number
+          p_lng: number
+          p_address?: string
+          p_website?: string
+          p_phone?: string
+          p_hours?: string
+          p_locality?: string
+          p_region?: string
+          p_country_code?: string
+        }
+        Returns: string
       }
       log_shop_visit: {
         Args: {

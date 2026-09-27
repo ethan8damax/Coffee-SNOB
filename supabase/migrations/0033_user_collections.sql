@@ -165,3 +165,8 @@ end;
 $$;
 revoke all on function public.ensure_shop(text, text, double precision, double precision, text, text, text, text, text, text, text) from public, anon, authenticated;
 grant execute on function public.ensure_shop(text, text, double precision, double precision, text, text, text, text, text, text, text) to authenticated;
+
+-- Trigger functions aren't API (as 0012/0013).
+revoke all on function public.guard_list_write() from public, anon, authenticated;
+revoke all on function public.place_list_item() from public, anon, authenticated;
+revoke all on function public.cap_list_items() from public, anon, authenticated;

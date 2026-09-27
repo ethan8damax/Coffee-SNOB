@@ -15,7 +15,7 @@ export type Loadable<T> = { status: "idle" | "loading" | "ready" | "error"; data
 // ponytail: framework glue (fetch-when-enabled), same category as useProfile — not unit tested.
 // `supabase` is required lazily so importing this module never pulls in react-native.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function useLoad<T>(load: (supabase: any) => Promise<T>, deps: unknown[], enabled = true): Loadable<T> & { retry: () => void } {
+export function useLoad<T>(load: (supabase: any) => Promise<T>, deps: unknown[], enabled = true): Loadable<T> & { retry: () => void } {
   const [state, setState] = useState<Loadable<T>>({ status: "idle", data: null });
   const [key, setKey] = useState(0);
   useEffect(() => {

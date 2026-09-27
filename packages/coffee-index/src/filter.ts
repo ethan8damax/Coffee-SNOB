@@ -2,7 +2,7 @@ import { isChain, isCoffeePlace, normalizeChainName, type ChainEntry } from "./i
 import type { MergedPlace } from "./place";
 
 // Hosts many unrelated businesses use for their "website": never a chain signal.
-const PLATFORMS = new Set([
+export const PLATFORMS = new Set([
   "facebook.com", "instagram.com", "linktr.ee", "google.com", "goo.gl", "maps.app.goo.gl", "yelp.com",
   "square.site", "toasttab.com", "order.online", "doordash.com", "ubereats.com", "grubhub.com",
   "placeweb.site", "business.site", "wixsite.com", "squarespace.com", "tripadvisor.com", "x.com", "twitter.com",

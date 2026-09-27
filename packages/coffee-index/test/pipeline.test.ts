@@ -32,6 +32,16 @@ describe("buildIndex", () => {
     expect(places.find((p) => p.name === "Chrome Yellow")?.countryCode).toBe("US");
   });
 
+  it("shows a roaster's stockist and reports the match", () => {
+    const lone = { ...input, osm: [osm(3, "Chrome Yellow", 33.76, -84.37)] };
+    const roasters = [{ id: "r1", name: "Brash", website: null, countryCode: "US" }];
+    const stockists = [{ id: "s1", roasterId: "r1", rawName: "Chrome Yellow Trading Co", rawAddress: "", matchedId: null }];
+    const { places, report } = buildIndex({ ...lone, roasters, stockists });
+    const cy = places.find((p) => p.name === "Chrome Yellow")!;
+    expect(cy).toMatchObject({ visibility: "show", why: ["serves Brash"] });
+    expect(report.roasters.stockists[0]).toMatchObject({ id: "s1", matchedId: cy.id });
+  });
+
   it("applies admin overrides and 'not specialty' reports", () => {
     const base = buildIndex(input);
     const id = base.places[0].id;

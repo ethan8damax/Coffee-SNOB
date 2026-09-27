@@ -1,6 +1,8 @@
 // The live coffee index's manifest and build report, read from the public
 // bucket (COFFEE_INDEX_ORIGIN). Cached an hour: a build lands once a month.
 export type SuggestedChain = { key: string; name: string; countryCode: string; count: number };
+export type PlaceSummary = { id: string; name: string; address: string | null; locality: string | null; countryCode: string | null };
+export type StockistMatch = { id: string; matchedId: string | null; place?: PlaceSummary; candidates?: PlaceSummary[] };
 export type LiveReport = {
   count: number;
   byCountry: Record<string, number>;
@@ -8,6 +10,8 @@ export type LiveReport = {
   removed: number | null;
   suggestedChains: SuggestedChain[];
   alarm: string | null;
+  // Builds before Phase 5 have no roasters section.
+  roasters?: { stockists: StockistMatch[]; ownCafes: Record<string, number> };
 };
 export type LiveManifest = {
   version: string;

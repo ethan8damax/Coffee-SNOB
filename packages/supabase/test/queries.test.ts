@@ -1508,6 +1508,19 @@ describe("coffee index controls", () => {
     expect(await getActivePlaceHides(client)).toEqual(["cs_aaaaaaaaaaaa"]);
     expect(await getPlaceFlagCounts(client)).toEqual([{ placeId: "cs_bbbbbbbbbbbb", notSpecialty: 2 }]);
   });
+
+  it("addStockists ignores lines already on the roaster's list, and skips an empty paste", async () => {
+    const upsertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ upsert: upsertSpy }) } as any;
+    const { addStockists } = await import("../src/queries");
+    await addStockists(client, "r1", []);
+    expect(upsertSpy).not.toHaveBeenCalled();
+    await addStockists(client, "r1", [{ rawName: "Luna", rawAddress: "" }]);
+    expect(upsertSpy).toHaveBeenCalledWith(
+      [{ roaster_id: "r1", raw_name: "Luna", raw_address: "" }],
+      { onConflict: "roaster_id,raw_name,raw_address", ignoreDuplicates: true },
+    );
+  });
 });
 
 describe("leads", () => {

@@ -431,6 +431,68 @@ export type Database = {
         }
         Relationships: []
       }
+      roaster_stockists: {
+        Row: {
+          added_at: string
+          id: string
+          matched_id: string | null
+          raw_address: string
+          raw_name: string
+          roaster_id: string
+        }
+        Insert: {
+          added_at?: string
+          id?: string
+          matched_id?: string | null
+          raw_address?: string
+          raw_name: string
+          roaster_id: string
+        }
+        Update: {
+          added_at?: string
+          id?: string
+          matched_id?: string | null
+          raw_address?: string
+          raw_name?: string
+          roaster_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roaster_stockists_roaster_id_fkey"
+            columns: ["roaster_id"]
+            isOneToOne: false
+            referencedRelation: "roasters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roasters: {
+        Row: {
+          country_code: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          website: string | null
+        }
+        Insert: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          website?: string | null
+        }
+        Update: {
+          country_code?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null

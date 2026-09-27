@@ -2,9 +2,10 @@ import { config } from "./config";
 import { clusterPlaces, mergeCluster } from "./dedupe";
 import { keepPlace, learnChainSignals } from "./filter";
 import { assignIds } from "./identity";
-import type { ChainEntry } from "./index";
+import type { ChainEntry, Roaster, Stockist } from "./index";
 import { fromOsm, fromOverture, type IndexPlace, type OsmRow, type OvertureRow, type SourcePlace } from "./place";
 import { buildReport, type Report } from "./report";
+import { matchRoasters, type RoasterReport } from "./roasters";
 import { scorePlace } from "./visibility";
 
 export type BuildInput = {
@@ -19,11 +20,14 @@ export type BuildInput = {
   overrides?: { placeId: string; action: "show" | "hide" }[];
   notSpecialty?: Record<string, number>;
   decided?: ChainEntry[];
+  // Phase 5: roasters we trust and their stockist lines.
+  roasters?: Roaster[];
+  stockists?: Stockist[];
 };
 
 // The whole index build minus I/O: normalise → dedupe → filter → score → ids.
 // Ids go to kept places only, so a chain's records never claim a cs_ id.
-export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Record<string, string>; report: Report } {
+export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Record<string, string>; report: Report & { roasters: RoasterReport } } {
   const sources = [...input.overture.map(fromOverture), ...input.osm.map(fromOsm)].filter((p): p is SourcePlace => p !== null);
   const all = clusterPlaces(sources, config.dedupeRadiusM, config.similarNameMin).map(mergeCluster);
   const learned = learnChainSignals(all, input.chains);
@@ -32,17 +36,18 @@ export function buildIndex(input: BuildInput): { places: IndexPlace[]; idMap: Re
   // brings the same id back.
   const { ids, idMap } = assignIds(merged.map((p) => p.sourceIds), input.prevIdMap);
   const override = new Map((input.overrides ?? []).map((o) => [o.placeId, o.action]));
-  const places = merged
-    .map((p, i) => ({ p, id: ids[i] }))
-    .filter(({ id }) => override.get(id) !== "hide")
-    .map(({ p, id }) => ({
-      ...p,
-      id,
-      ...(override.get(id) === "show"
+  const kept = merged.map((p, i) => ({ ...p, id: ids[i] })).filter((p) => override.get(p.id) !== "hide");
+  const roasters = matchRoasters(kept, input.roasters ?? [], input.stockists ?? []);
+  // In place: the worldwide list is too big to copy twice.
+  const places: IndexPlace[] = kept.map((p) =>
+    Object.assign(
+      p,
+      override.get(p.id) === "show"
         ? { visibility: "show" as const, why: ["picked by Coffee Snob"] }
-        : scorePlace(p, input.notSpecialty?.[id] ?? 0)),
-    }));
-  return { places, idMap, report: buildReport(places, input.prevIds, input.chains, input.decided) };
+        : scorePlace(p, input.notSpecialty?.[p.id] ?? 0, roasters.why.get(p.id)),
+    ),
+  );
+  return { places, idMap, report: { ...buildReport(places, input.prevIds, input.chains, input.decided), roasters: roasters.report } };
 }
 
 // OSM-only places carry no address. Borrow the country of the nearest place

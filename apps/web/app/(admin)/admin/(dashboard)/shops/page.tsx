@@ -13,11 +13,14 @@ import {
   getOpenPlaceFlags,
   getPlaceOverrides,
   getLeads,
+  getRoasters,
+  getRoasterStockists,
 } from "@coffeesnob/supabase";
 import { LeadsTab, readyLeadCount } from "./leads-tab";
 import { BuildTab } from "./build-tab";
 import { ChainsTab, pendingChainCount } from "./chains-tab";
 import { FlagsTab, groupFlags } from "./flags-tab";
+import { RoastersTab, unmatchedStockistCount } from "./roasters-tab";
 import { getLiveIndex } from "./live-index";
 
 async function saveAction(formData: FormData) {
@@ -65,10 +68,11 @@ async function rejectAction(formData: FormData) {
 }
 
 type Filter = "all" | "flagged";
-type Tab = "shops" | "leads" | "chains" | "flags" | "build";
+type Tab = "shops" | "leads" | "roasters" | "chains" | "flags" | "build";
 const TABS: { id: Tab; label: string }[] = [
   { id: "shops", label: "Shops" },
   { id: "leads", label: "Leads" },
+  { id: "roasters", label: "Roasters" },
   { id: "chains", label: "Chains" },
   { id: "flags", label: "Flags" },
   { id: "build", label: "Build" },
@@ -77,11 +81,11 @@ const TABS: { id: Tab; label: string }[] = [
 export default async function AdminShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string }>;
+  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string; roaster?: string }>;
 }) {
-  const { tab = "shops", search, filter = "all", edit, chain: chainQuery } = await searchParams;
+  const { tab = "shops", search, filter = "all", edit, chain: chainQuery, roaster } = await searchParams;
   const supabase = await getSupabaseServer();
-  const [shops, cities, decisions, flags, overrides, live, leads] = await Promise.all([
+  const [shops, cities, decisions, flags, overrides, live, leads, roasters, stockists] = await Promise.all([
     getAdminShops(supabase, { search, filter }),
     getCities(supabase),
     getChainDecisions(supabase),
@@ -89,11 +93,14 @@ export default async function AdminShopsPage({
     getPlaceOverrides(supabase),
     getLiveIndex(),
     getLeads(supabase),
+    getRoasters(supabase),
+    getRoasterStockists(supabase),
   ]);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
   const counts: Record<Tab, number> = {
     shops: 0,
     leads: readyLeadCount(leads),
+    roasters: unmatchedStockistCount(stockists, live),
     chains: pendingChainCount(live, decisions),
     flags: groupFlags(flags).length,
     build: typeof live !== "string" && live.report.alarm ? 1 : 0,
@@ -127,6 +134,7 @@ export default async function AdminShopsPage({
       </nav>
 
       {tab === "leads" ? <LeadsTab leads={leads} /> : null}
+      {tab === "roasters" ? <RoastersTab roasters={roasters} stockists={stockists} live={live} open={roaster} /> : null}
       {tab === "chains" ? <ChainsTab live={live} decisions={decisions} lookup={chainQuery} /> : null}
       {tab === "flags" ? <FlagsTab flags={flags} overrides={overrides} /> : null}
       {tab === "build" ? <BuildTab live={live} /> : null}

@@ -60,3 +60,23 @@ export function isChain(tags: Record<string, string>, chains: ChainEntry[]): boo
   const names = [tags.name, tags.brand, tags["brand:en"], tags["name:en"]].filter(Boolean).map(normalizeChainName);
   return names.some((n) => chains.some((c) => n === c.name || ((!c.wikidata || c.prefix) && n.startsWith(c.name + " "))));
 }
+
+// Roasters and the stockist lines pasted in at /admin/shops?tab=roasters.
+// matchedId is only an admin's pin; the build finds the rest.
+export type Roaster = { id: string; name: string; website: string | null; countryCode: string | null };
+export type Stockist = { id: string; roasterId: string; rawName: string; rawAddress: string; matchedId: string | null };
+
+// One stockist per line: "Name, address" or tab-separated from a spreadsheet.
+// Blank lines and repeats are dropped.
+export function parseStockists(text: string): { rawName: string; rawAddress: string }[] {
+  const seen = new Set<string>();
+  return text.split(/\r?\n/).flatMap((line) => {
+    const cells = line.includes("\t") ? line.split("\t") : line.split(/,(.*)/s);
+    const rawName = cells[0].trim().slice(0, 200);
+    const rawAddress = cells.slice(1).map((c) => c.trim()).filter(Boolean).join(", ").slice(0, 500);
+    const key = `${rawName.toLowerCase()}|${rawAddress.toLowerCase()}`;
+    if (!rawName || seen.has(key)) return [];
+    seen.add(key);
+    return [{ rawName, rawAddress }];
+  });
+}

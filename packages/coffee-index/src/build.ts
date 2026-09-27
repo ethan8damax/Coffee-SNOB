@@ -4,7 +4,7 @@ import { createInterface } from "node:readline";
 import { pipeline } from "node:stream/promises";
 import { parseArgs } from "node:util";
 import { createGunzip, createGzip, gzipSync } from "node:zlib";
-import { createSupabaseClient, getChainDecisions, getPlaceFlagCounts, getPlaceOverrides } from "@coffeesnob/supabase";
+import { createSupabaseClient, getChainDecisions, getPlaceFlagCounts, getPlaceOverrides, getRoasters, getRoasterStockists } from "@coffeesnob/supabase";
 import { config } from "./config";
 import { extractOsm, extractOverture, sourceVersions, type BBox } from "./extract";
 import { buildIndex } from "./pipeline";
@@ -66,10 +66,12 @@ async function main() {
   // One source at a time: the download is the bottleneck, and two worldwide
   // scans side by side doubled memory without finishing any sooner.
   const supabase = createSupabaseClient(url, key);
-  const [decided, overrides, flagCounts] = await Promise.all([getChainDecisions(supabase), getPlaceOverrides(supabase), getPlaceFlagCounts(supabase)]);
+  const [decided, overrides, flagCounts, roasters, stockists] = await Promise.all([
+    getChainDecisions(supabase), getPlaceOverrides(supabase), getPlaceFlagCounts(supabase), getRoasters(supabase), getRoasterStockists(supabase),
+  ]);
   const chains = decided.filter((c) => c.status === "blocked");
   const notSpecialty = Object.fromEntries(flagCounts.map((f) => [f.placeId, f.notSpecialty]));
-  console.log(`controls: ${chains.length} chains blocked, ${decided.length - chains.length} allowed, ${overrides.length} overrides, ${flagCounts.length} flagged places`);
+  console.log(`controls: ${chains.length} chains blocked, ${decided.length - chains.length} allowed, ${overrides.length} overrides, ${flagCounts.length} flagged places, ${roasters.length} roasters with ${stockists.length} stockists`);
   const osm = await extractOsm(versions.layercake, cacheDir, bbox);
   console.log(`osm ${osm.length} (${secs()}s)`);
   const overture = await extractOverture(versions.overture, cacheDir, bbox);
@@ -79,7 +81,7 @@ async function main() {
   const prevIdMap: Record<string, string> = prevDir ? JSON.parse(readFileSync(join(prevDir, "id_map.json"), "utf8")) : {};
   const prevIds = prevDir ? await readIds(join(prevDir, "places.ndjson.gz")) : null;
 
-  const { places, idMap, report } = buildIndex({ osm, overture, chains, prevIdMap, prevIds, overrides, notSpecialty, decided });
+  const { places, idMap, report } = buildIndex({ osm, overture, chains, prevIdMap, prevIds, overrides, notSpecialty, decided, roasters, stockists });
   const builtAt = new Date().toISOString();
   const version = builtAt.slice(0, 16).replace(/:/g, "") + (bbox ? "-bbox" : "");
   const rootDir = resolve(values.out!, version);

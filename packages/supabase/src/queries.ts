@@ -1212,3 +1212,60 @@ export async function removeCurationVisit(client: Client, visitId: string): Prom
   const { error } = await client.from("curation_visits").delete().eq("id", visitId);
   if (error) throw error;
 }
+
+// ── Roasters (Curation Phase 5) ─────────────────────────────────────────
+// Public read (the monthly build uses the anon key); admin writes via RLS.
+export type Roaster = { id: string; name: string; website: string | null; countryCode: string | null; notes: string | null };
+export type RoasterStockist = { id: string; roasterId: string; rawName: string; rawAddress: string; matchedId: string | null; addedAt: string };
+
+export async function getRoasters(client: Client): Promise<Roaster[]> {
+  const { data, error } = await client.from("roasters").select("id, name, website, country_code, notes").order("name");
+  if (error) throw error;
+  return data.map((r) => ({ id: r.id, name: r.name, website: r.website, countryCode: r.country_code, notes: r.notes }));
+}
+
+export async function getRoasterStockists(client: Client, roasterId?: string): Promise<RoasterStockist[]> {
+  let q = client.from("roaster_stockists").select("id, roaster_id, raw_name, raw_address, matched_id, added_at").order("raw_name");
+  if (roasterId) q = q.eq("roaster_id", roasterId);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data.map((r) => ({ id: r.id, roasterId: r.roaster_id, rawName: r.raw_name, rawAddress: r.raw_address, matchedId: r.matched_id, addedAt: r.added_at }));
+}
+
+export async function addRoaster(client: Client, fields: { name: string; website: string | null; countryCode: string | null; notes: string | null }): Promise<string> {
+  const { data, error } = await client
+    .from("roasters")
+    .insert({ name: fields.name, website: fields.website, country_code: fields.countryCode, notes: fields.notes })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function removeRoaster(client: Client, id: string): Promise<void> {
+  const { error } = await client.from("roasters").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// Pasting the same line twice is a no-op (unique per roaster + name + address).
+export async function addStockists(client: Client, roasterId: string, lines: { rawName: string; rawAddress: string }[]): Promise<void> {
+  if (!lines.length) return;
+  const { error } = await client
+    .from("roaster_stockists")
+    .upsert(lines.map((l) => ({ roaster_id: roasterId, raw_name: l.rawName, raw_address: l.rawAddress })), {
+      onConflict: "roaster_id,raw_name,raw_address",
+      ignoreDuplicates: true,
+    });
+  if (error) throw error;
+}
+
+// The admin's hand fix: this line is that index place (null unpins).
+export async function pinStockist(client: Client, id: string, placeId: string | null): Promise<void> {
+  const { error } = await client.from("roaster_stockists").update({ matched_id: placeId }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function removeStockist(client: Client, id: string): Promise<void> {
+  const { error } = await client.from("roaster_stockists").delete().eq("id", id);
+  if (error) throw error;
+}

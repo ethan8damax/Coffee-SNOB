@@ -1,5 +1,6 @@
 import { config } from "./config";
 import { isChain, normalizeChainName, type ChainEntry } from "./index";
+import type { RoasterReport } from "./roasters";
 
 type Reportable = { id: string; countryCode: string | null; name: string; brand?: string | null; brandWikidata: string | null };
 
@@ -61,7 +62,7 @@ export function buildReport(places: Reportable[], prevIds: Set<string> | null, c
   return { count: places.length, byCountry, added, removed, suggestedChains, alarm };
 }
 
-export function reportMarkdown(r: Report, meta: { builtAt: string; sources: Record<string, string> }): string {
+export function reportMarkdown(r: Report & { roasters?: RoasterReport }, meta: { builtAt: string; sources: Record<string, string> }): string {
   const countries = Object.entries(r.byCountry).sort((a, b) => b[1] - a[1]).slice(0, 30);
   return [
     `# Coffee index build ${meta.builtAt}`,
@@ -76,5 +77,8 @@ export function reportMarkdown(r: Report, meta: { builtAt: string; sources: Reco
     `## Suggested chains (${r.suggestedChains.length})`,
     ...r.suggestedChains.slice(0, 100).map((g) => `- ${g.name} (${g.countryCode}, ${g.count})${/^Q\d+$/.test(g.key) ? ` ${g.key}` : ""}`),
     "",
+    ...(r.roasters?.stockists.length
+      ? [`## Roaster stockists: ${r.roasters.stockists.filter((s) => s.matchedId).length} of ${r.roasters.stockists.length} matched`, ""]
+      : []),
   ].join("\n");
 }

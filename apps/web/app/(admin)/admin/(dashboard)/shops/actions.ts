@@ -5,6 +5,11 @@ import { redirect } from "next/navigation";
 import {
   addChainBlock,
   addCurationVisit,
+  addRoaster,
+  addStockists,
+  pinStockist,
+  removeRoaster,
+  removeStockist,
   rejectShopPromotion,
   removeCurationVisit,
   allowChain,
@@ -14,7 +19,7 @@ import {
   setChainPrefix,
   setPlaceOverride,
 } from "@coffeesnob/supabase";
-import { normalizeChainName } from "@coffeesnob/coffee-index";
+import { normalizeChainName, parseStockists } from "@coffeesnob/coffee-index";
 import { getSupabaseServer } from "@/lib/supabase-server";
 
 // Every write goes through the signed-in admin's session; RLS (is_admin())
@@ -91,5 +96,42 @@ export async function removeVisitAction(formData: FormData) {
 // "Not a fit": the clout trigger never flags this shop again.
 export async function rejectLeadAction(formData: FormData) {
   await rejectShopPromotion(await getSupabaseServer(), str(formData, "id"));
+  revalidatePath("/admin/shops");
+}
+
+// ── Roasters (Phase 5): matches show up after the next monthly build ────
+const website = (s: string) => (!s ? null : /^https?:\/\//i.test(s) ? s : `https://${s}`);
+
+export async function addRoasterAction(formData: FormData) {
+  const name = str(formData, "name");
+  if (!name) return;
+  const country = str(formData, "countryCode").toUpperCase();
+  const id = await addRoaster(await getSupabaseServer(), {
+    name,
+    website: website(str(formData, "website")),
+    countryCode: /^[A-Z]{2}$/.test(country) ? country : null,
+    notes: str(formData, "notes") || null,
+  });
+  redirect(`/admin/shops?tab=roasters&roaster=${id}`);
+}
+
+export async function removeRoasterAction(formData: FormData) {
+  await removeRoaster(await getSupabaseServer(), str(formData, "roasterId"));
+  redirect("/admin/shops?tab=roasters");
+}
+
+export async function addStockistsAction(formData: FormData) {
+  await addStockists(await getSupabaseServer(), str(formData, "roasterId"), parseStockists(String(formData.get("lines") ?? "")));
+  revalidatePath("/admin/shops");
+}
+
+export async function pinStockistAction(formData: FormData) {
+  const placeId = str(formData, "placeId");
+  await pinStockist(await getSupabaseServer(), str(formData, "stockistId"), /^cs_[0-9a-f]{12}$/.test(placeId) ? placeId : null);
+  revalidatePath("/admin/shops");
+}
+
+export async function removeStockistAction(formData: FormData) {
+  await removeStockist(await getSupabaseServer(), str(formData, "stockistId"));
   revalidatePath("/admin/shops");
 }

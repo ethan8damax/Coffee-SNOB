@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, Switch, View } from "react-native";
 import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
-import { getPublicProfileByUsername, type PublicProfile } from "@coffeesnob/supabase";
-import { Body, ButtonLine, IconBack, Label } from "@/components/primitives";
+import { getPublicProfileByUsername, setFavesPublic, type PublicProfile } from "@coffeesnob/supabase";
+import { Body, BodySm, ButtonLine, IconBack, Label } from "@/components/primitives";
 import { useAuth } from "@/context/auth";
 import { EditProfileForm } from "@/components/profile/edit-profile-form";
 
@@ -16,6 +16,21 @@ export default function SettingsScreen() {
   const [profile, setProfile] = useState<PublicProfile | null>(null);
   const [failed, setFailed] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [favesFailed, setFavesFailed] = useState(false);
+
+  // Optimistic: flip now, put it back if the write fails.
+  async function toggleFaves(next: boolean) {
+    if (!profile) return;
+    setProfile({ ...profile, favesPublic: next });
+    setFavesFailed(false);
+    try {
+      const { supabase } = require("@/lib/supabase");
+      await setFavesPublic(supabase, profile.id, next);
+    } catch {
+      setProfile({ ...profile, favesPublic: !next });
+      setFavesFailed(true);
+    }
+  }
   const back = () => (router.canGoBack() ? router.back() : router.replace("/profile"));
 
   useEffect(() => {
@@ -55,6 +70,20 @@ export default function SettingsScreen() {
           ) : (
             <>
               <ButtonLine title="Edit profile" onPress={() => setEditing(true)} accessibilityRole="button" accessibilityLabel="Edit profile" style={{ alignSelf: "flex-start" }} />
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 16, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule, paddingVertical: 14 }}>
+                <View style={{ flex: 1, gap: 3 }}>
+                  <Label style={{ color: colors.ink }}>Show my Faves on my profile</Label>
+                  <BodySm style={{ color: colors.ink3 }}>Your saved shops and collections. Off means only you see them.</BodySm>
+                  {favesFailed ? <BodySm style={{ color: colors.oxblood }}>{"Couldn't save that. Try again."}</BodySm> : null}
+                </View>
+                <Switch
+                  value={profile.favesPublic}
+                  onValueChange={toggleFaves}
+                  accessibilityLabel="Show my Faves on my profile"
+                  trackColor={{ true: colors.oxblood, false: colors.rule }}
+                  thumbColor={colors.card}
+                />
+              </View>
               <Tap
                 onPress={signOut}
                 accessibilityRole="button"

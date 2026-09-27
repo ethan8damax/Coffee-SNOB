@@ -16,7 +16,7 @@ Spec: `docs/superpowers/specs/2026-09-27-user-collections-design.md`.
 
 | File | Responsibility |
 | --- | --- |
-| `supabase/migrations/0033_user_collections.sql` | Schema, RLS, triggers, `ensure_shop` |
+| `supabase/migrations/0034_user_collections.sql` | Schema, RLS, triggers, `ensure_shop` |
 | `packages/supabase/test/collections-sql.test.ts` | PGlite: RLS and trigger behaviour |
 | `packages/supabase/src/types.ts` | Hand-patched table / RPC types |
 | `packages/supabase/src/collections.ts` | Collection, Faves, Top 4, `ensureShop` queries (new file: queries.ts is 1,300+ lines) |
@@ -39,7 +39,7 @@ Spec: `docs/superpowers/specs/2026-09-27-user-collections-design.md`.
 ### Task 1: Migration 0033 with PGlite tests
 
 **Files:**
-- Create: `supabase/migrations/0033_user_collections.sql`
+- Create: `supabase/migrations/0034_user_collections.sql`
 - Test: `packages/supabase/test/collections-sql.test.ts`
 
 - [ ] **Step 1: Write the failing test.** Stand-in schema mirrors the real columns; `auth.uid()` reads a session setting so tests can switch users; statements run as role `authenticated` so RLS applies.
@@ -50,7 +50,7 @@ import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { beforeEach, describe, expect, it } from "vitest";
 
-const MIGRATION = readFileSync(join(__dirname, "../../../supabase/migrations/0033_user_collections.sql"), "utf8");
+const MIGRATION = readFileSync(join(__dirname, "../../../supabase/migrations/0034_user_collections.sql"), "utf8");
 const SCHEMA = `
   create schema auth;
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;
@@ -383,12 +383,12 @@ Note for production: `shops.external_id`'s unique index is partial (`where exter
 
 - [ ] **Step 4: Run — expect PASS.** Fix and re-run until green.
 
-- [ ] **Step 5: Commit** — `git add supabase/migrations/0033_user_collections.sql packages/supabase/test/collections-sql.test.ts && git commit -m "Collections: migration 0033 with RLS tests"`
+- [ ] **Step 5: Commit** — `git add supabase/migrations/0034_user_collections.sql packages/supabase/test/collections-sql.test.ts && git commit -m "Collections: migration 0033 with RLS tests"`
 
 ### Task 2: Apply to production, advisors, types
 
 - [ ] Check production policy names match the stand-in (`select policyname, tablename from pg_policies where tablename in ('lists','list_items','list_saves','shop_saves')`). Adjust `drop policy` names if needed.
-- [ ] Apply via Supabase MCP `apply_migration` (name `0033_user_collections`). Run security + performance advisors; nothing new for these objects.
+- [ ] Apply via Supabase MCP `apply_migration` (name `0034_user_collections`). Run security + performance advisors; nothing new for these objects.
 - [ ] Patch `packages/supabase/src/types.ts`: `lists.is_public` (Row/Insert/Update, `slug` optional on Insert), `profiles.faves_public`, `profile_top_shops` table with FKs to profiles and shops, `ensure_shop` in `Functions` (Args as the SQL signature, optional `p_address…p_country_code`, Returns `string`).
 - [ ] `npx tsc --noEmit -p packages/supabase`; commit.
 

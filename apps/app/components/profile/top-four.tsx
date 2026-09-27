@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, Modal, Pressable, ScrollView, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Modal, ScrollView, TextInput, View, useWindowDimensions } from "react-native";
+import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
 import { clearTopShop, getProfileEntries, setTopShop, type TopShop } from "@coffeesnob/supabase";
@@ -17,25 +18,27 @@ function Sheet({ onClose, children, title }: { onClose: () => void; children: Re
   const desktop = isDesktopWidth(width);
   return (
     <Modal transparent animationType="fade" visible onRequestClose={onClose}>
-      <Pressable
+      <Tap
+        feedback="none"
         onPress={onClose}
         accessibilityLabel="Close"
         style={{ flex: 1, backgroundColor: "rgba(26,20,16,0.45)", justifyContent: desktop ? "center" : "flex-end", alignItems: "center" }}
       >
-        <Pressable
+        <Tap
+          feedback="none"
           onPress={() => {}}
           accessible={false}
           style={{ width: desktop ? 420 : "100%", maxHeight: "80%", backgroundColor: colors.paper, borderTopWidth: 2, borderColor: colors.ink, borderWidth: desktop ? 2 : 0, borderRadius: 2, padding: 20, gap: 14 }}
         >
           <View style={{ flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" }}>
             <D4 accessibilityRole="header">{title}</D4>
-            <Pressable onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={10}>
+            <Tap onPress={onClose} accessibilityRole="button" accessibilityLabel="Close" hitSlop={10}>
               <Label style={{ color: colors.ink }}>Close</Label>
-            </Pressable>
+            </Tap>
           </View>
           {children}
-        </Pressable>
-      </Pressable>
+        </Tap>
+      </Tap>
     </Modal>
   );
 }
@@ -83,7 +86,8 @@ function Picker({ userId, slot, onPicked, onClose }: { userId: string; slot: num
       {shops && shops.length === 0 ? <Body style={{ color: colors.ink3 }}>{"Log a visit first. Your favourites come from places you've been."}</Body> : null}
       <ScrollView style={{ maxHeight: 320 }}>
         {shown.map((s) => (
-          <Pressable
+          <Tap
+            feedback="tint"
             key={s.shopId}
             onPress={() => pick(s.shopId)}
             accessibilityRole="button"
@@ -92,7 +96,7 @@ function Picker({ userId, slot, onPicked, onClose }: { userId: string; slot: num
           >
             <Body style={{ fontFamily: "Area-Bold", color: colors.ink }}>{s.name}</Body>
             {s.area ? <Label>{s.area}</Label> : null}
-          </Pressable>
+          </Tap>
         ))}
       </ScrollView>
       {failed ? <BodySm style={{ color: colors.oxblood }}>{"Couldn't save that. Try again."}</BodySm> : null}
@@ -115,7 +119,7 @@ export function TopFour({ userId, isOwn }: { userId: string; isOwn: boolean }) {
       <View style={{ flexDirection: "row", gap: 6, flexWrap: "wrap", opacity: top.data ? 1 : 0.4 }}>
         {slots.map(({ slot, pick }, i) =>
           pick ? (
-            <Pressable
+            <Tap
               key={slot}
               onPress={() => (isOwn ? setMenu(pick) : router.push(`/shop/${pick.shopId}`))}
               accessibilityRole={isOwn ? "button" : "link"}
@@ -125,9 +129,9 @@ export function TopFour({ userId, isOwn }: { userId: string; isOwn: boolean }) {
               <Label numberOfLines={3} style={{ color: colors.cream, fontSize: 8, lineHeight: 11 }}>
                 {pick.name}
               </Label>
-            </Pressable>
+            </Tap>
           ) : (
-            <Pressable
+            <Tap
               key={slot}
               onPress={() => setPicking(slot)}
               accessibilityRole="button"
@@ -135,7 +139,7 @@ export function TopFour({ userId, isOwn }: { userId: string; isOwn: boolean }) {
               style={{ ...TILE, borderWidth: 1.5, borderStyle: "dashed", borderColor: colors.rule, alignItems: "center", justifyContent: "center" }}
             >
               <Label style={{ fontSize: 20, lineHeight: 22, color: colors.ink3 }}>+</Label>
-            </Pressable>
+            </Tap>
           ),
         )}
       </View>
@@ -177,9 +181,9 @@ export function TopFour({ userId, isOwn }: { userId: string; isOwn: boolean }) {
               style={{ flex: 1 }}
             />
           </View>
-          <Pressable onPress={() => router.push(`/shop/${menu.shopId}`)} accessibilityRole="link" hitSlop={8}>
+          <Tap onPress={() => router.push(`/shop/${menu.shopId}`)} accessibilityRole="link" hitSlop={8}>
             <Label style={{ color: colors.oxblood }}>Open the shop</Label>
-          </Pressable>
+          </Tap>
         </Sheet>
       ) : null}
     </View>

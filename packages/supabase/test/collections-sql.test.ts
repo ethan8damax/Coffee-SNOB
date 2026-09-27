@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { PGlite } from "@electric-sql/pglite";
 import { beforeEach, describe, expect, it } from "vitest";
 
-const MIGRATION = readFileSync(join(__dirname, "../../../supabase/migrations/0033_user_collections.sql"), "utf8");
+const MIGRATION = readFileSync(join(__dirname, "../../../supabase/migrations/0034_user_collections.sql"), "utf8");
 const SCHEMA = `
   create schema auth;
   create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.uid', true), '')::uuid $$;

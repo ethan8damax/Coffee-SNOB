@@ -89,7 +89,8 @@ export default function MapScreen() {
   const nonce = useRef(0);
   // Pin mode for a café the map doesn't have: null = off, else the name so far.
   // The log screen's "Which shop?" opens it with ?add=1.
-  const { add } = useLocalSearchParams<{ add?: string }>();
+  // ?lat=&lng= flies to a spot: a collection's unrated café opens here.
+  const { add, lat: goLat, lng: goLng } = useLocalSearchParams<{ add?: string; lat?: string; lng?: string }>();
   const [adding, setAdding] = useState<string | null>(null);
   useEffect(() => {
     if (add) {
@@ -110,6 +111,15 @@ export default function MapScreen() {
   // The map opened before the fix (last location or fallback); move once it
   // arrives — unless they've already searched somewhere (see search* below).
   const flewToFix = useRef(false);
+  useEffect(() => {
+    const la = Number(goLat);
+    const ln = Number(goLng);
+    if (!goLat || !goLng || !Number.isFinite(la) || !Number.isFinite(ln)) return;
+    flewToFix.current = true;
+    flyTo(la, ln, 17);
+    router.setParams({ lat: undefined, lng: undefined });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [goLat, goLng]);
   useEffect(() => {
     if (!userCenter) return;
     saveLastLocation(userCenter);

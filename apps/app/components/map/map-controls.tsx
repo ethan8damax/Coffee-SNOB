@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { View, Text, Pressable } from "react-native";
+import { useRef, useState } from "react";
+import { Modal, View, Text, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors } from "@coffeesnob/design-tokens";
 import { EFFORT_OPTIONS, YOU_OPTIONS, type MapFilter } from "../../lib/map/shop-list";
@@ -24,12 +24,23 @@ function FilterMenu<T extends string>({
   onChange: (v: T) => void;
 }) {
   const on = value !== "any";
+  // The menu opens in a transparent modal so a tap anywhere outside it (list,
+  // map, header) closes it; it's placed under the chip by measuring the chip.
+  const chip = useRef<View>(null);
+  const [anchor, setAnchor] = useState<{ x: number; y: number } | null>(null);
   const current = options.find((o) => o.id === value)?.label ?? "";
   const s = chipStyleForVariant(on ? "ox" : "default");
   return (
-    <View style={{ zIndex: open ? 40 : 1 }}>
+    <View>
       <Pressable
-        onPress={onToggle}
+        ref={chip}
+        onPress={() => {
+          if (open) return onToggle();
+          chip.current?.measureInWindow((x, y, _w, h) => {
+            setAnchor({ x, y: y + h + 4 });
+            onToggle();
+          });
+        }}
         accessibilityRole="button"
         accessibilityLabel={`${title}: ${current}`}
         accessibilityState={{ expanded: open }}
@@ -41,10 +52,11 @@ function FilterMenu<T extends string>({
         </Text>
         <Text style={{ fontSize: 9, color: s.text }}>▾</Text>
       </Pressable>
-      {open ? (
+      <Modal visible={open && anchor !== null} transparent animationType="none" onRequestClose={onToggle}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onToggle} accessibilityLabel={`Close ${title} menu`} />
         <View
           accessibilityRole="menu"
-          style={{ position: "absolute", top: 36, left: 0, minWidth: 200, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rule, borderRadius: 2, paddingVertical: 4 }}
+          style={{ position: "absolute", top: anchor?.y ?? 0, left: anchor?.x ?? 0, minWidth: 200, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.rule, borderRadius: 2, paddingVertical: 4 }}
         >
           {options.map((o) => {
             const selected = o.id === value;
@@ -62,7 +74,7 @@ function FilterMenu<T extends string>({
             );
           })}
         </View>
-      ) : null}
+      </Modal>
     </View>
   );
 }
@@ -72,7 +84,7 @@ function FilterMenu<T extends string>({
 export function FilterChips({ value, onChange, signedIn, padding = 20 }: { value: MapFilter; onChange: (f: MapFilter) => void; signedIn: boolean; padding?: number }) {
   const [open, setOpen] = useState<"effort" | "you" | null>(null);
   return (
-    <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: padding, zIndex: open ? 40 : 1 }}>
+    <View style={{ flexDirection: "row", gap: 6, paddingHorizontal: padding }}>
       <FilterMenu
         title="Effort"
         value={value.effort}

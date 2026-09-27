@@ -371,8 +371,7 @@ export default function MapScreen() {
       <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.paper }}>
         {!listCollapsed && (
           <View style={{ width: PANEL_WIDTH, borderRightWidth: 1, borderRightColor: colors.rule, backgroundColor: colors.paper }}>
-            {/* zIndex: the filter menus drop over the list, a later sibling. */}
-            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule, zIndex: 30 }}>
+            <View style={{ paddingTop: 16, paddingBottom: 12, gap: 13, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
               {/* Row, like the mobile controls bar — MapSearch's flex: 1 collapses its height in a column. */}
               <View style={{ flexDirection: "row", paddingHorizontal: 20 }}>
                 <MapSearch areaLabel={areaLabel} count={total} value={query} onChangeText={setQuery} onClear={clearSearch} />
@@ -428,8 +427,7 @@ export default function MapScreen() {
       {map}
       {adding !== null ? <Crosshair /> : null}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
-        {/* zIndex: the filter menus drop over the sheet, a later sibling. */}
-        <View pointerEvents="box-none" style={{ zIndex: 30 }}>
+        <View pointerEvents="box-none">
           <MapTopBar
             areaLabel={areaLabel}
             count={total}

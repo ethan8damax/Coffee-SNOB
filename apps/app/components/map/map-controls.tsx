@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { useRef, useState } from "react";
 import { Modal, View, Text, StyleSheet, type ViewStyle } from "react-native";
 import { Tap, type TapFeedback } from "@/components/tap";
@@ -235,37 +236,47 @@ export function RefreshButton({ onPress, size = 44 }: { onPress: () => void; siz
   );
 }
 
-// Phone top bar: where you are + how many shops are in view, and locate-me.
-// (The design's city pill becomes an area pill — v1 has no cities.)
+// The phone's top bar: the search pill full width, plus whatever the view
+// needs beside it (List view puts its Map/List switch there). Map controls
+// (locate, refresh) live on the map itself — see MapButtons.
 export function MapTopBar({
   areaLabel,
   count,
-  onLocate,
-  locateDisabled,
-  onRefresh,
   query,
   onQueryChange,
   onSearchFocus,
   onSearchClear,
+  trailing,
+  startEditing,
 }: {
   areaLabel: string | null;
   count: number;
-  onLocate: () => void;
-  locateDisabled: boolean;
-  onRefresh: () => void;
   query: string;
   onQueryChange: (text: string) => void;
   onSearchFocus: () => void;
   onSearchClear: () => void;
+  trailing?: ReactNode;
+  startEditing?: boolean;
 }) {
-  // The map itself now draws edge-to-edge under the status bar/notch (see
+  // The map draws edge-to-edge under the status bar/notch (see
   // public/index.html), so this bar needs a real inset-aware top padding —
   // a fixed one would either float in the notch's cutout on a phone with a
   // tall one (Dynamic Island) or leave dead space on one without.
   const insets = useSafeAreaInsets();
   return (
-    <View style={{ flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: insets.top + 12, paddingBottom: 10, zIndex: 30 }}>
-      <MapSearch areaLabel={areaLabel} count={count} value={query} onChangeText={onQueryChange} onFocus={onSearchFocus} onClear={onSearchClear} />
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 10 }}>
+      <MapSearch areaLabel={areaLabel} count={count} value={query} onChangeText={onQueryChange} onFocus={onSearchFocus} onClear={onSearchClear} startEditing={startEditing} />
+      {trailing}
+    </View>
+  );
+}
+
+// Locate + refresh on the phone's map: a small stack at the right edge, just
+// above the sheet, where a thumb reaches — the phone's version of the desktop
+// map's control stack.
+export function MapButtons({ onLocate, locateDisabled, onRefresh }: { onLocate: () => void; locateDisabled: boolean; onRefresh: () => void }) {
+  return (
+    <View style={{ gap: 8 }}>
       <RefreshButton onPress={onRefresh} />
       <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>

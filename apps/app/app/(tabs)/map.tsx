@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Linking, View, StyleSheet, useWindowDimensions } from "react-native";
+import { Linking, ScrollView, View, StyleSheet, useWindowDimensions } from "react-native";
 import { Tap } from "@/components/tap";
 import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
-import { FilterChips, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { FilterChips, MapButtons, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
 import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
@@ -71,6 +71,11 @@ export default function MapScreen() {
   const everywhere = filter.you === "saved" || filter.you === "been";
   const my = useMyShops(userId, filter.you !== "any");
   const [mode, setMode] = useState<"Map" | "List">("Map");
+  // Phone: tapping search in Map view opens List view already typing.
+  const [searchFocusPending, setSearchFocusPending] = useState(false);
+  useEffect(() => {
+    if (mode === "Map") setSearchFocusPending(false);
+  }, [mode]);
   const [listCollapsed, setListCollapsed] = useState(false);
   // null = automatic ("Near you" / the fallback city); set once someone searches a
   // place or a shop, cleared back to automatic by Locate.
@@ -301,13 +306,16 @@ export default function MapScreen() {
   const addBar = adding !== null ? <AddShopBar initialName={adding} onCancel={() => setAdding(null)} onConfirm={confirmAdd} /> : null;
 
   const areaHeight = height - tabBarHeight;
-  // List mode takes the whole page — nothing useful shows through the sliver of map
-  // behind a partial sheet once you've chosen to browse the list instead of the pins.
-  const sheetHeight = mode === "List" ? areaHeight : Math.min(316, Math.round(areaHeight * 0.42));
+  // Phone Map view: the sheet is its header row (filters + Map/List) plus the
+  // list. With a shop selected it drops to just the header, so the preview
+  // card and the map share the room instead of stacking over a half-height list.
+  // (List view is a separate full-screen page, not a taller sheet.)
+  const SHEET_HEADER = 52;
+  const sheetHeight = selectedRow ? SHEET_HEADER : Math.min(316, Math.round(areaHeight * 0.42));
 
   const map = (
     <MapView
-      bottomInset={desktop || adding !== null ? 0 : sheetHeight}
+      bottomInset={desktop || adding !== null || mode === "List" ? 0 : sheetHeight}
       ratedShops={visible.rated}
       nearbyShops={visible.nearby}
       initialCenter={center}
@@ -391,13 +399,6 @@ export default function MapScreen() {
       </>
     );
 
-  const countLabel = searching
-    ? "Search"
-    : filter.you === "saved"
-      ? `${total} saved`
-      : filter.you === "been"
-        ? `${total} logged`
-        : `${total} ${total === 1 ? "shop" : "shops"} nearby`;
   // null until something's actually been searched — the bar shows the "Search a
   // city or a shop" invite by default, not a "Near you" label nobody asked for.
   const areaLabel = searchedAreaLabel;
@@ -459,40 +460,66 @@ export default function MapScreen() {
     );
   }
 
+  const topBar = (trailing?: React.ReactNode) => (
+    <MapTopBar
+      startEditing={mode === "List" && searchFocusPending}
+      areaLabel={areaLabel}
+      count={total}
+      query={query}
+      onQueryChange={setQuery}
+      onSearchFocus={() => {
+        if (mode === "Map") setSearchFocusPending(true);
+        setMode("List");
+      }}
+      onSearchClear={clearSearch}
+      trailing={trailing}
+    />
+  );
+
+  // Phone List view: the desktop panel, full screen — search, filters, then the
+  // list or search results. The map stays mounted underneath so switching back
+  // is instant and keeps its place.
+  if (mode === "List" && adding === null) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.paper }}>
+        {collectSheet}
+        {map}
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.paper }]}>
+          <View style={{ paddingBottom: 10, gap: 2, borderBottomWidth: 1, borderBottomColor: colors.rule }}>
+            {topBar(<ViewToggle value="List" onChange={setMode} />)}
+            <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} padding={16} />
+          </View>
+          <View style={{ flex: 1 }}>{list(false)}</View>
+        </View>
+      </View>
+    );
+  }
+
+  // Phone Map view: search on top; locate/refresh on the map by your thumb; the
+  // sheet's header carries the filters and the switch to List.
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
       {collectSheet}
       {map}
       {adding !== null ? <Crosshair /> : null}
       <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, { justifyContent: "space-between" }]}>
-        <View pointerEvents="box-none">
-          <MapTopBar
-            areaLabel={areaLabel}
-            count={total}
-            onLocate={locate}
-            locateDisabled={!userCenter}
-            onRefresh={reload}
-            query={query}
-            onQueryChange={setQuery}
-            onSearchFocus={() => setMode("List")}
-            onSearchClear={clearSearch}
-          />
-          <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} />
-        </View>
+        <View pointerEvents="box-none">{topBar()}</View>
         {addBar ?? (
-        <View pointerEvents="box-none">
-          {preview && mode === "Map" ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}
-          <View style={{ height: sheetHeight, backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink }}>
-            <View style={{ paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10 }}>
-              <View style={{ width: 34, height: 2, backgroundColor: colors.rule, alignSelf: "center", marginBottom: 10 }} />
-              <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                <Label style={{ color: colors.ink }}>{countLabel}</Label>
-                <ViewToggle value={mode} onChange={setMode} />
-              </View>
+          <View pointerEvents="box-none">
+            <View pointerEvents="box-none" style={{ alignItems: "flex-end", paddingHorizontal: 16, marginBottom: 12 }}>
+              <MapButtons onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
             </View>
-            <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: colors.rule }}>{list(false)}</View>
+            {preview ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}
+            <View style={{ height: sheetHeight, backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink }}>
+              <View style={{ height: SHEET_HEADER - 2, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingHorizontal: 16 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ alignItems: "center" }}>
+                  <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} padding={0} />
+                </ScrollView>
+                <ViewToggle value="Map" onChange={setMode} />
+              </View>
+              {selectedRow ? null : <View style={{ flex: 1, borderTopWidth: 1, borderTopColor: colors.rule }}>{list(false)}</View>}
+            </View>
           </View>
-        </View>
         )}
       </View>
     </View>

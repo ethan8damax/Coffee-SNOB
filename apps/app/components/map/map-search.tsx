@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Text, TextInput } from "react-native";
 import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
@@ -17,6 +17,7 @@ export function MapSearch({
   onChangeText,
   onFocus,
   onClear,
+  startEditing = false,
 }: {
   // null = nothing searched yet, shows the SEARCH_LABEL invite.
   areaLabel: string | null;
@@ -25,9 +26,15 @@ export function MapSearch({
   onChangeText: (text: string) => void;
   onFocus?: () => void;
   onClear: () => void;
+  // Arrive already typing: the phone's List view mounts a fresh bar after you
+  // tap search in Map view, and it should pick up the keyboard, not ask again.
+  startEditing?: boolean;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(startEditing);
   const inputRef = useRef<TextInput>(null);
+  useEffect(() => {
+    if (startEditing) inputRef.current?.focus();
+  }, [startEditing]);
   const active = editing || value !== "";
 
   const pillBase = {

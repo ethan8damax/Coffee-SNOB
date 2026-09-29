@@ -43,7 +43,7 @@ export function SearchResults({
 }) {
   const empty = !pending && places.length === 0 && shops.length === 0;
   return (
-    <ScrollView keyboardShouldPersistTaps="handled">
+    <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
       {places.length > 0 ? <SectionLabel>Places</SectionLabel> : null}
       {places.map((place) => (
         <View key={place.id} style={{ flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.rule2 }}>

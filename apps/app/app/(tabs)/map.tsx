@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
-import { FilterChips, MapButtons, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { FilterChips, LocateButton, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
 import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
@@ -444,7 +444,7 @@ export default function MapScreen() {
               <ChevronIcon direction={listCollapsed ? "right" : "left"} color={colors.ink} size={11} />
             </Tap>
             <View style={{ position: "absolute", top: 16, right: 16 }}>
-              <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
+              <ZoomControls onZoom={zoom} onLocate={locate} locateDisabled={!userCenter} />
             </View>
             {adding !== null ? (
               <>
@@ -495,7 +495,7 @@ export default function MapScreen() {
     );
   }
 
-  // Phone Map view: search on top; locate/refresh on the map by your thumb; the
+  // Phone Map view: search on top; locate on the map by your thumb; the
   // sheet's header carries the filters and the switch to List.
   return (
     <View style={{ flex: 1, backgroundColor: colors.paper }}>
@@ -507,7 +507,7 @@ export default function MapScreen() {
         {addBar ?? (
           <View pointerEvents="box-none">
             <View pointerEvents="box-none" style={{ alignItems: "flex-end", paddingHorizontal: 16, marginBottom: 12 }}>
-              <MapButtons onLocate={locate} locateDisabled={!userCenter} onRefresh={reload} />
+              <LocateButton onPress={locate} disabled={!userCenter} />
             </View>
             {preview ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}
             <View style={{ height: sheetHeight, backgroundColor: colors.paper, borderTopWidth: 2, borderTopColor: colors.ink }}>

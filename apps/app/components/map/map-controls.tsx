@@ -9,7 +9,7 @@ import { chipStyleForVariant } from "../chip-style";
 import { Enter } from "../enter";
 import { LocateIcon } from "./locate-icon";
 import { MapSearch } from "./map-search";
-import { MinusIcon, PinIcon, PlusIcon, RefreshIcon } from "./map-icons";
+import { MinusIcon, PinIcon, PlusIcon } from "./map-icons";
 
 function FilterMenu<T extends string>({
   title,
@@ -184,12 +184,10 @@ export function ZoomControls({
   onZoom,
   onLocate,
   locateDisabled,
-  onRefresh,
 }: {
   onZoom: (delta: 1 | -1) => void;
   onLocate: () => void;
   locateDisabled: boolean;
-  onRefresh?: () => void;
 }) {
   // One flat look for the whole stack; hover lifts each to card + ink border.
   const box = { width: 40, height: 40, alignItems: "center" as const, justifyContent: "center" as const, backgroundColor: colors.paper, borderWidth: 1, borderColor: colors.rule };
@@ -202,43 +200,13 @@ export function ZoomControls({
         <MinusIcon color={colors.ink} />
       </Tap>
       <LocateButton onPress={onLocate} disabled={locateDisabled} size={40} style={box} feedback="outline" />
-      {onRefresh && (
-        <Tap feedback="outline" onPress={onRefresh} accessibilityRole="button" accessibilityLabel="Search this area again" style={box}>
-          <RefreshIcon color={colors.ink} />
-        </Tap>
-      )}
     </View>
   );
 }
 
-// A manual "search this area again" affordance next to Locate — bounds changes already
-// refetch on their own once you pan past the cached area, but this gives an explicit,
-// always-available way to force a fresh look without waiting on that.
-export function RefreshButton({ onPress, size = 44 }: { onPress: () => void; size?: number }) {
-  return (
-    <Tap
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="Search this area again"
-      style={{
-        width: size,
-        height: size,
-        alignItems: "center",
-        justifyContent: "center",
-        borderRadius: 2,
-        borderWidth: 1,
-        borderColor: colors.ink,
-        backgroundColor: colors.card,
-      }}
-    >
-      <RefreshIcon color={colors.ink} />
-    </Tap>
-  );
-}
-
 // The phone's top bar: the search pill full width, plus whatever the view
-// needs beside it (List view puts its Map/List switch there). Map controls
-// (locate, refresh) live on the map itself — see MapButtons.
+// needs beside it (List view puts its Map/List switch there). Locate lives
+// on the map itself, by the thumb.
 export function MapTopBar({
   areaLabel,
   count,
@@ -267,18 +235,6 @@ export function MapTopBar({
     <View style={{ flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 16, paddingTop: insets.top + 12, paddingBottom: 10 }}>
       <MapSearch areaLabel={areaLabel} count={count} value={query} onChangeText={onQueryChange} onFocus={onSearchFocus} onClear={onSearchClear} startEditing={startEditing} />
       {trailing}
-    </View>
-  );
-}
-
-// Locate + refresh on the phone's map: a small stack at the right edge, just
-// above the sheet, where a thumb reaches — the phone's version of the desktop
-// map's control stack.
-export function MapButtons({ onLocate, locateDisabled, onRefresh }: { onLocate: () => void; locateDisabled: boolean; onRefresh: () => void }) {
-  return (
-    <View style={{ gap: 8 }}>
-      <RefreshButton onPress={onRefresh} />
-      <LocateButton onPress={onLocate} disabled={locateDisabled} />
     </View>
   );
 }

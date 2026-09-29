@@ -11,7 +11,6 @@ import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
 import { AddShopBar, Crosshair } from "../../components/map/add-shop";
 import { AddToCollection, type CollectTarget } from "../../components/collections/add-to-collection";
-import { newShopId } from "../../lib/log/new-shop";
 import { ShopListView } from "../../components/map/shop-list-view";
 import { SearchResults } from "../../components/map/search-results";
 import { Enter } from "../../components/enter";
@@ -95,13 +94,14 @@ export default function MapScreen() {
   const [zoomRequest, setZoomRequest] = useState<ZoomRequest | null>(null);
   const nonce = useRef(0);
   // Pin mode for a café the map doesn't have: null = off, else the name so far.
-  // The log screen's "Which shop?" opens it with ?add=1.
+  // The log screen's "Which shop?" opens it with ?add=1; the Add a shop form's
+  // "Move" comes back with ?add=<name>.
   // ?lat=&lng= flies to a spot: a collection's unrated café opens here.
   const { add, lat: goLat, lng: goLng } = useLocalSearchParams<{ add?: string; lat?: string; lng?: string }>();
   const [adding, setAdding] = useState<string | null>(null);
   useEffect(() => {
     if (add) {
-      setAdding("");
+      setAdding(add === "1" ? "" : add);
       router.setParams({ add: undefined });
     }
   }, [add]);
@@ -300,7 +300,7 @@ export default function MapScreen() {
   const confirmAdd = (name: string) => {
     const at = bounds ? boundsCenter(bounds) : center;
     setAdding(null);
-    router.push({ pathname: "/log", params: { externalId: newShopId(), name, lat: String(at.lat), lng: String(at.lng) } });
+    router.push({ pathname: "/add-shop", params: { name, lat: at.lat.toFixed(6), lng: at.lng.toFixed(6) } });
   };
   const collectSheet = collecting ? <AddToCollection target={collecting} onClose={() => setCollecting(null)} /> : null;
   const addBar = adding !== null ? <AddShopBar initialName={adding} onCancel={() => setAdding(null)} onConfirm={confirmAdd} /> : null;

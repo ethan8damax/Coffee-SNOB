@@ -11,6 +11,13 @@ describe("locateShop", () => {
     expect(fetchSpy).toHaveBeenCalledWith("https://example.com/api/locate?lat=33.747&lng=-84.358");
   });
 
+  it("precise: keeps ~1 m and asks for the street address", async () => {
+    const fetchSpy = vi.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ address: "1 Main St" }) }));
+    vi.stubGlobal("fetch", fetchSpy);
+    expect(await locateShop(27.960012, -82.459004, "https://example.com", true)).toEqual({ address: "1 Main St" });
+    expect(fetchSpy).toHaveBeenCalledWith("https://example.com/api/locate?lat=27.96001&lng=-82.45900&precise=1");
+  });
+
   it("never blocks logging: failures and timeouts give an empty location", async () => {
     vi.stubGlobal("fetch", vi.fn(() => Promise.resolve({ ok: false, status: 502 })));
     expect(await locateShop(1, 2, "https://example.com")).toEqual({});

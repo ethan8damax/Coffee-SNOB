@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { searchRatedShops } from "@coffeesnob/supabase";
+import { searchAddedShops, searchRatedShops } from "@coffeesnob/supabase";
 import { dropHidden, dropNearDuplicates, searchIndex } from "./coffee-index";
 import { usePlaceHides } from "./place-hides";
 import { searchEverywhere, searchNearbyShops } from "./geocode";
-import { toRatedShopPin } from "./nearby-map-data";
+import { toAddedPin, toRatedShopPin } from "./nearby-map-data";
 import { mergeResults, rankResults, type SearchResult } from "./search-sort";
 import type { NearbyShopPin } from "../../components/map/types";
 
@@ -52,6 +52,10 @@ export function useMapSearch(query: string, origin: { lat: number; lng: number }
       const rated = searchRatedShops(supabase, q)
         .catch((): Awaited<ReturnType<typeof searchRatedShops>> => [])
         .then((rows) => add(rows.map((row): SearchResult => ({ kind: "shop", shop: toRatedShopPin(row), secondary: row.locality }))));
+      // 1b. Hand-added shops nobody has rated yet (Add a shop).
+      const added = searchAddedShops(supabase, q)
+        .catch((): Awaited<ReturnType<typeof searchAddedShops>> => [])
+        .then((rows) => add(rows.map((row): SearchResult => ({ kind: "nearby", shop: toAddedPin(row), secondary: row.locality }))));
       // 2. Places and cafés worldwide (Photon), then the coffee index — around
       //    you for the whole query, and around the named city for "muchacho
       //    atlanta" — minus cafés another source already found.
@@ -75,7 +79,7 @@ export function useMapSearch(query: string, origin: { lat: number; lng: number }
             ...dropHidden(dropNearDuplicates(there, found), hidden).map((shop): SearchResult => ({ kind: "nearby", shop, secondary: scopedLine })),
           ]);
         });
-      Promise.all([rated, wide]).then(() => {
+      Promise.all([rated, added, wide]).then(() => {
         if (!cancelled) setPending(false);
       });
     }, DEBOUNCE_MS);

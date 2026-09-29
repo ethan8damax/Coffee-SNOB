@@ -52,7 +52,7 @@ export function AddShopBar({ initialName, onCancel, onConfirm }: { initialName: 
         }}
       />
       <ButtonOx
-        title="Log it here"
+        title="Next"
         disabled={!ready}
         accessibilityRole="button"
         accessibilityState={{ disabled: !ready }}
@@ -60,7 +60,7 @@ export function AddShopBar({ initialName, onCancel, onConfirm }: { initialName: 
         style={{ opacity: ready ? 1 : 0.4 }}
       />
       <Text style={{ fontFamily: "Area-Regular", fontSize: 11.5, color: colors.ink3 }}>
-        {"Chains can't be added. Your first rating puts it on the map."}
+        {"Next, add what you know. We check every shop before it goes on the map."}
       </Text>
     </View>
   );

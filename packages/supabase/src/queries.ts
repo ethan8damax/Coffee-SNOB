@@ -1326,17 +1326,36 @@ export async function markShopOpen(client: Client, id: string): Promise<void> {
   if (error) throw error;
 }
 
-export type FinderNotification = { id: string; shopId: string; shopName: string; createdAt: string };
+// snob_approved: a shop you logged first earned the pin. shop_added /
+// shop_declined: an admin decided on a shop you sent (0036).
+export type FinderNotification = {
+  id: string;
+  kind: "snob_approved" | "shop_added" | "shop_declined";
+  shopId: string | null;
+  shopName: string;
+  reason: string | null;
+  createdAt: string;
+};
 
 // The signed-in user's unread notes (RLS: only their own).
 export async function getUnreadNotifications(client: Client): Promise<FinderNotification[]> {
   const { data, error } = await client
     .from("notifications")
-    .select("id, shop_id, created_at, shops(name)")
+    .select("id, kind, shop_id, created_at, shops(name), shop_submissions(name, decline_reason)")
     .is("read_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return data.map((r) => ({ id: r.id, shopId: r.shop_id, shopName: (r.shops as { name: string } | null)?.name ?? "", createdAt: r.created_at }));
+  return data.map((r) => {
+    const sub = r.shop_submissions as { name: string; decline_reason: string | null } | null;
+    return {
+      id: r.id,
+      kind: r.kind as FinderNotification["kind"],
+      shopId: r.shop_id,
+      shopName: (r.shops as { name: string } | null)?.name ?? sub?.name ?? "",
+      reason: sub?.decline_reason ?? null,
+      createdAt: r.created_at,
+    };
+  });
 }
 
 export async function markNotificationRead(client: Client, id: string): Promise<void> {

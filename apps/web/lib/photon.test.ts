@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { matchesQuery, placeTails, toSearchHit, toLocality, type PhotonFeature } from "./photon";
+import { matchesQuery, placeTails, toSearchHit, toLocality, toStreetAddress, type PhotonFeature } from "./photon";
 
 const feature = (properties: PhotonFeature["properties"], lon = -84.36, lat = 33.75): PhotonFeature => ({
   geometry: { coordinates: [lon, lat] },
@@ -89,4 +89,16 @@ describe("placeTails", () => {
     expect(placeTails("muchacho atlanta")).toEqual([{ name: "muchacho", place: "atlanta" }]);
     expect(placeTails("muchacho")).toEqual([]);
   });
+});
+
+describe("toStreetAddress", () => {
+  const base = { osm_type: "N" as const, osm_id: 1, osm_key: "building", osm_value: "yes" };
+  it("number + street", () => expect(toStreetAddress(feature({ ...base, street: "N Franklin St", housenumber: "1702" }))).toBe("1702 N Franklin St"));
+  it("street only", () => expect(toStreetAddress(feature({ ...base, street: "N Franklin St" }))).toBe("N Franklin St"));
+  it("nothing", () => expect(toStreetAddress(feature(base))).toBeNull());
+});
+
+describe("toStreetAddress on a street hit", () => {
+  it("uses the street's own name", () =>
+    expect(toStreetAddress(feature({ osm_type: "W", osm_id: 1, osm_key: "highway", osm_value: "residential", name: "East Henderson Avenue" }))).toBe("East Henderson Avenue"));
 });

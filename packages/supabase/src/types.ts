@@ -419,7 +419,8 @@ export type Database = {
           id: string
           kind: string
           read_at: string | null
-          shop_id: string
+          shop_id: string | null
+          submission_id: string | null
           user_id: string
         }
         Insert: {
@@ -427,7 +428,8 @@ export type Database = {
           id?: string
           kind: string
           read_at?: string | null
-          shop_id: string
+          shop_id?: string | null
+          submission_id?: string | null
           user_id: string
         }
         Update: {
@@ -435,7 +437,8 @@ export type Database = {
           id?: string
           kind?: string
           read_at?: string | null
-          shop_id?: string
+          shop_id?: string | null
+          submission_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -444,6 +447,13 @@ export type Database = {
             columns: ["shop_id"]
             isOneToOne: false
             referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "shop_submissions"
             referencedColumns: ["id"]
           },
         ]
@@ -652,6 +662,80 @@ export type Database = {
           },
         ]
       }
+      shop_submissions: {
+        Row: {
+          address: string | null
+          country_code: string | null
+          created_at: string
+          decline_reason: string | null
+          hours: string | null
+          id: string
+          lat: number
+          lng: number
+          locality: string | null
+          name: string
+          note: string | null
+          region: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          roaster: string | null
+          shop_id: string | null
+          status: string
+          user_id: string
+          website: string | null
+        }
+        Insert: {
+          address?: string | null
+          country_code?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          hours?: string | null
+          id?: string
+          lat: number
+          lng: number
+          locality?: string | null
+          name: string
+          note?: string | null
+          region?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roaster?: string | null
+          shop_id?: string | null
+          status?: string
+          user_id: string
+          website?: string | null
+        }
+        Update: {
+          address?: string | null
+          country_code?: string | null
+          created_at?: string
+          decline_reason?: string | null
+          hours?: string | null
+          id?: string
+          lat?: number
+          lng?: number
+          locality?: string | null
+          name?: string
+          note?: string | null
+          region?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          roaster?: string | null
+          shop_id?: string | null
+          status?: string
+          user_id?: string
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shop_submissions_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shops: {
         Row: {
           address: string | null
@@ -836,6 +920,38 @@ export type Database = {
       }
     }
     Functions: {
+      approve_shop_submission: {
+        Args: {
+          p_id: string
+          p_name: string
+          p_lat: number
+          p_lng: number
+          p_address?: string
+          p_hours?: string
+          p_website?: string
+        }
+        Returns: string
+      }
+      decline_shop_submission: {
+        Args: { p_id: string; p_reason?: string }
+        Returns: undefined
+      }
+      submit_shop: {
+        Args: {
+          p_name: string
+          p_lat: number
+          p_lng: number
+          p_address?: string
+          p_hours?: string
+          p_website?: string
+          p_roaster?: string
+          p_note?: string
+          p_locality?: string
+          p_region?: string
+          p_country_code?: string
+        }
+        Returns: { submission_id: string; shop_id: string | null }[]
+      }
       active_place_hides: { Args: never; Returns: string[] }
       place_flag_counts: {
         Args: never

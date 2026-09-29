@@ -18,10 +18,22 @@ export type PhotonFeature = {
     county?: string;
     state?: string;
     countrycode?: string;
+    street?: string;
+    housenumber?: string;
   };
 };
 
 export type Locality = { locality: string | null; region: string | null; countryCode: string | null };
+
+// The street line of a reverse hit ("1702 N Franklin St"), for prefilling an
+// added shop's address. null when the nearest feature has no street.
+export function toStreetAddress(f: PhotonFeature | undefined): string | null {
+  const p = f?.properties;
+  // When the nearest feature is the street itself, its name is the street.
+  const street = p?.street ?? (p?.osm_key === "highway" ? p.name : undefined);
+  if (!street) return null;
+  return p?.housenumber ? `${p.housenumber} ${street}` : street;
+}
 
 // A shop's city for its city page (/api/locate). Near a town's center the
 // nearest feature is often the town's own place node, which has no `city` —

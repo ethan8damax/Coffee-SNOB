@@ -109,3 +109,4 @@ export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./querie
 export type { Database } from "./types";
 
 export * from "./collections";
+export * from "./submissions";

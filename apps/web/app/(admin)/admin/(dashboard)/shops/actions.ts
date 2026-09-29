@@ -20,9 +20,14 @@ import {
   resolvePlaceFlags,
   setChainPrefix,
   setPlaceOverride,
+  approveSubmission,
+  declineSubmission,
+  submitShop,
 } from "@coffeesnob/supabase";
 import { normalizeChainName, parseStockists } from "@coffeesnob/coffee-index";
 import { getSupabaseServer } from "@/lib/supabase-server";
+import { parseLatLng } from "@/lib/lat-lng";
+import { toLocality, toStreetAddress, type PhotonFeature } from "@/lib/photon";
 
 // Every write goes through the signed-in admin's session; RLS (is_admin())
 // is the real gate. Changes reach the map within minutes (blocklist cache)
@@ -152,4 +157,69 @@ export async function reopenShopAction(formData: FormData) {
 export async function stillOpenAction(formData: FormData) {
   await markShopOpen(await getSupabaseServer(), str(formData, "shopId"));
   revalidatePath("/admin/shops");
+}
+
+// ── Add a shop (0036) ──────────────────────────────────────────────────
+
+const ADDED = "/admin/shops?tab=added";
+
+export async function approveSubmissionAction(formData: FormData) {
+  const at = parseLatLng(str(formData, "latLng"));
+  if (!at) redirect(`${ADDED}&sub=${str(formData, "id")}&error=spot`);
+  await approveSubmission(await getSupabaseServer(), str(formData, "id"), {
+    name: str(formData, "name"),
+    lat: at.lat,
+    lng: at.lng,
+    address: str(formData, "address"),
+    hours: str(formData, "hours"),
+    website: str(formData, "website"),
+  });
+  revalidatePath("/admin/shops");
+  redirect(`${ADDED}&done=approved`);
+}
+
+export async function declineSubmissionAction(formData: FormData) {
+  await declineSubmission(await getSupabaseServer(), str(formData, "id"), str(formData, "reason"));
+  revalidatePath("/admin/shops");
+  redirect(`${ADDED}&done=declined`);
+}
+
+// The spot's city (for its city page) and street, as /api/locate does.
+async function reverse(lat: number, lng: number) {
+  try {
+    const params = new URLSearchParams({ lat: lat.toFixed(5), lon: lng.toFixed(5), lang: "en" });
+    const res = await fetch(`https://photon.komoot.io/reverse?${params}`, {
+      headers: { "User-Agent": "coffeesnob.app admin (https://coffeesnob.app)" },
+      signal: AbortSignal.timeout(5000),
+    });
+    const { features } = (await res.json()) as { features: PhotonFeature[] };
+    return { ...toLocality(features[0]), address: toStreetAddress(features[0]) };
+  } catch {
+    return { locality: null, region: null, countryCode: null, address: null };
+  }
+}
+
+// An admin's own add goes live at once (submit_shop skips the queue for admins).
+export async function adminAddShopAction(formData: FormData) {
+  const name = str(formData, "name");
+  const at = parseLatLng(str(formData, "latLng"));
+  if (!at || name.length < 2) redirect(`${ADDED}&error=${at ? "name" : "spot"}`);
+  const place = await reverse(at.lat, at.lng);
+  try {
+    await submitShop(await getSupabaseServer(), {
+      name,
+      lat: at.lat,
+      lng: at.lng,
+      address: str(formData, "address") || place.address,
+      website: str(formData, "website"),
+      hours: str(formData, "hours"),
+      locality: place.locality,
+      region: place.region,
+      countryCode: place.countryCode,
+    });
+  } catch (e) {
+    redirect(`${ADDED}&error=${/chain/i.test(String((e as Error).message)) ? "chain" : "save"}`);
+  }
+  revalidatePath("/admin/shops");
+  redirect(`${ADDED}&done=added`);
 }

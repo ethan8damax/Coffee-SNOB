@@ -17,6 +17,9 @@ import {
   getRoasterStockists,
   getShopsByExternalIds,
   getClosedShops,
+  getPendingSubmissions,
+  getDecidedSubmissions,
+  getShopsNear,
 } from "@coffeesnob/supabase";
 import { LeadsTab, readyLeadCount } from "./leads-tab";
 import { BuildTab } from "./build-tab";
@@ -25,6 +28,9 @@ import { FlagsTab, groupFlags } from "./flags-tab";
 import { RoastersTab, unmatchedStockistCount } from "./roasters-tab";
 import { ClosedTab, closedCandidates, missingIds } from "./closed-tab";
 import { getLiveIndex } from "./live-index";
+import { AddedTab, indexNear, type Nearby } from "./added-tab";
+import { metersBetween } from "@/lib/lat-lng";
+import { APP_URL } from "@/lib/app-url";
 
 async function saveAction(formData: FormData) {
   "use server";
@@ -71,9 +77,10 @@ async function rejectAction(formData: FormData) {
 }
 
 type Filter = "all" | "flagged";
-type Tab = "shops" | "leads" | "roasters" | "chains" | "flags" | "closed" | "build";
+type Tab = "added" | "shops" | "leads" | "roasters" | "chains" | "flags" | "closed" | "build";
 const TABS: { id: Tab; label: string }[] = [
   { id: "shops", label: "Shops" },
+  { id: "added", label: "Added" },
   { id: "leads", label: "Leads" },
   { id: "roasters", label: "Roasters" },
   { id: "chains", label: "Chains" },
@@ -85,11 +92,11 @@ const TABS: { id: Tab; label: string }[] = [
 export default async function AdminShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string; roaster?: string }>;
+  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string; roaster?: string; sub?: string; done?: string; error?: string }>;
 }) {
-  const { tab = "shops", search, filter = "all", edit, chain: chainQuery, roaster } = await searchParams;
+  const { tab = "shops", search, filter = "all", edit, chain: chainQuery, roaster, sub, done, error } = await searchParams;
   const supabase = await getSupabaseServer();
-  const [shops, cities, decisions, flags, overrides, live, leads, roasters, stockists] = await Promise.all([
+  const [shops, cities, decisions, flags, overrides, live, leads, roasters, stockists, pending, decided] = await Promise.all([
     getAdminShops(supabase, { search, filter }),
     getCities(supabase),
     getChainDecisions(supabase),
@@ -99,11 +106,27 @@ export default async function AdminShopsPage({
     getLeads(supabase),
     getRoasters(supabase),
     getRoasterStockists(supabase),
+    getPendingSubmissions(supabase),
+    tab === "added" ? getDecidedSubmissions(supabase) : Promise.resolve([]),
   ]);
+  // The submission under review, and what's already within reach of its pin.
+  const openSub = tab === "added" && sub ? pending.find((p) => p.id === sub) ?? null : null;
+  const nearby: Nearby[] = openSub
+    ? [
+        ...(await getShopsNear(supabase, openSub.lat, openSub.lng)).map((n) => ({
+          name: n.name,
+          meters: metersBetween(openSub, n),
+          source: "ours" as const,
+          href: `${APP_URL}/shop/${n.id}`,
+        })),
+        ...(await indexNear(live, openSub.lat, openSub.lng)),
+      ].sort((a, b) => a.meters - b.meters)
+    : [];
   const [missingShops, closedShops] = await Promise.all([getShopsByExternalIds(supabase, [...missingIds(live).keys()]), getClosedShops(supabase)]);
   const closedList = closedCandidates(missingShops, live);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
   const counts: Record<Tab, number> = {
+    added: pending.length,
     shops: 0,
     leads: readyLeadCount(leads),
     roasters: unmatchedStockistCount(stockists, live),
@@ -140,6 +163,7 @@ export default async function AdminShopsPage({
         ))}
       </nav>
 
+      {tab === "added" ? <AddedTab pending={pending} decided={decided} open={openSub} nearby={nearby} flash={{ done, error }} /> : null}
       {tab === "leads" ? <LeadsTab leads={leads} /> : null}
       {tab === "roasters" ? <RoastersTab roasters={roasters} stockists={stockists} live={live} open={roaster} /> : null}
       {tab === "chains" ? <ChainsTab live={live} decisions={decisions} lookup={chainQuery} /> : null}

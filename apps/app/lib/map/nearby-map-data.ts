@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getRatedShopsInBounds } from "@coffeesnob/supabase";
+import { getAddedShopsInBounds, getRatedShopsInBounds, type AddedShop } from "@coffeesnob/supabase";
 import { containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
 import { dropHidden, fetchIndexShops } from "./coffee-index";
 import { usePlaceHides } from "./place-hides";
@@ -62,6 +62,23 @@ export function toRatedShopPin(row: RatedShopRow): RatedShopPin {
   };
 }
 
+// A hand-added shop (Add a shop, admin-approved) nobody has logged yet: an
+// ordinary café dot, drawn at full strength since a person vouched for it.
+export function toAddedPin(s: AddedShop): NearbyShopPin {
+  return {
+    externalId: s.externalId,
+    name: s.name,
+    lat: s.lat,
+    lng: s.lng,
+    address: s.address,
+    hours: s.hours,
+    website: s.website,
+    phone: s.phone,
+    visibility: "show",
+    why: ["added by hand", "checked by Coffee Snob"],
+  };
+}
+
 // ponytail: debounce/fetch-on-bounds-change wiring only — the pure
 // fetch/mapping functions above are what's unit tested; this hook is
 // framework glue (useState/useEffect/setTimeout), not branching logic.
@@ -74,6 +91,7 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   // Full padded-box fetch, kept as-is to avoid re-hitting the network on every small pan.
   const [fetchedRated, setFetchedRated] = useState<RatedShopPin[]>([]);
   const [fetchedNearby, setFetchedNearby] = useState<NearbyShopPin[]>([]);
+  const [fetchedAdded, setFetchedAdded] = useState<NearbyShopPin[]>([]);
   // Status of the OpenStreetMap ("any shop nearby") request — the slow, flaky
   // one. Previously-loaded dots stay on screen while a new request is in flight.
   const [status, setStatus] = useState<NearbyStatus>("loading");
@@ -108,6 +126,13 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
         })
         .catch(() => {
           if (requestIdRef.current === requestId) setFetchedRated([]);
+        });
+      getAddedShopsInBounds(supabase, box)
+        .then((rows) => {
+          if (requestIdRef.current === requestId) setFetchedAdded(rows.map(toAddedPin));
+        })
+        .catch(() => {
+          if (requestIdRef.current === requestId) setFetchedAdded([]);
         });
       if (zoomedOut) {
         // Forget the last fetched box so zooming back in refetches the OSM layer.
@@ -147,9 +172,9 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
   const nearbyShops = useMemo(
     () =>
       bounds
-        ? visibleNearby(dropHidden(dropRatedDuplicates(fetchedNearby, fetchedRated), hidden), bounds).filter((s) => withinBounds(bounds, s.lat, s.lng))
+        ? visibleNearby(dropHidden(dropRatedDuplicates([...fetchedAdded, ...fetchedNearby], fetchedRated), hidden), bounds).filter((s) => withinBounds(bounds, s.lat, s.lng))
         : [],
-    [fetchedNearby, fetchedRated, bounds, hidden]
+    [fetchedAdded, fetchedNearby, fetchedRated, bounds, hidden]
   );
 
   return { ratedShops, nearbyShops, status, reload: () => {

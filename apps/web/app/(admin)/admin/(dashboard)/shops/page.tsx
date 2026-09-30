@@ -24,6 +24,8 @@ import {
   getDecidedMessages,
   markMessageSeen,
   getMessageSenderEmail,
+  getModerationPhotos,
+  getShopPhotoAdmin,
   type MessageKind,
 } from "@coffeesnob/supabase";
 import { LeadsTab, readyLeadCount } from "./leads-tab";
@@ -33,8 +35,9 @@ import { FlagsTab, groupFlags } from "./flags-tab";
 import { RoastersTab, unmatchedStockistCount } from "./roasters-tab";
 import { ClosedTab, closedCandidates, missingIds } from "./closed-tab";
 import { getLiveIndex } from "./live-index";
-import { AddedTab, indexNear, type Nearby } from "./added-tab";
+import { AddedTab, Flash, indexNear, type Nearby } from "./added-tab";
 import { MessagesTab } from "./messages-tab";
+import { PhotosTab, ShopPhotosPanel } from "./photos-tab";
 import { metersBetween } from "@/lib/lat-lng";
 import { APP_URL } from "@/lib/app-url";
 
@@ -94,10 +97,11 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "build", label: "Build" },
 ];
 // Inbox (Tell us, 0037): everything people send, one filter per kind.
-type Box = "added" | "flags" | MessageKind;
+type Box = "added" | "flags" | "photos" | MessageKind;
 const BOXES: { id: Box; label: string }[] = [
   { id: "added", label: "Missing shops" },
   { id: "flags", label: "Shop problems" },
+  { id: "photos", label: "Photos" },
   { id: "bug", label: "Bugs" },
   { id: "idea", label: "Ideas" },
   { id: "contact", label: "Messages" },
@@ -129,10 +133,12 @@ export default async function AdminShopsPage({
     tab === "inbox" ? getDecidedSubmissions(supabase) : Promise.resolve([]),
     getOpenMessages(supabase),
   ]);
+  const photos = await getModerationPhotos(supabase).catch(() => []);
   const flagGroups = groupFlags(flags);
   const boxCounts: Record<Box, number> = {
     added: pending.length,
     flags: flagGroups.length,
+    photos: photos.length,
     bug: messages.filter((m) => m.kind === "bug").length,
     idea: messages.filter((m) => m.kind === "idea").length,
     contact: messages.filter((m) => m.kind === "contact").length,
@@ -143,7 +149,7 @@ export default async function AdminShopsPage({
       : params.tab === "flags"
         ? "flags"
         : (BOXES.find((b) => boxCounts[b.id] > 0)?.id ?? "added");
-  const isMessageBox = box !== "added" && box !== "flags";
+  const isMessageBox = box !== "added" && box !== "flags" && box !== "photos";
   const [decidedMessages, currentEmail] =
     tab === "inbox" && isMessageBox
       ? await Promise.all([getDecidedMessages(supabase).then((d) => d.filter((m) => m.kind === box)), msg ? getMessageSenderEmail(supabase, msg).catch(() => null) : null])
@@ -165,6 +171,7 @@ export default async function AdminShopsPage({
   const [missingShops, closedShops] = await Promise.all([getShopsByExternalIds(supabase, [...missingIds(live).keys()]), getClosedShops(supabase)]);
   const closedList = closedCandidates(missingShops, live);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
+  const shopPhotos = editing?.id ? await getShopPhotoAdmin(supabase, editing.id).catch(() => null) : null;
   const counts: Record<Tab, number> = {
     inbox: Object.values(boxCounts).reduce((a, b) => a + b, 0),
     shops: 0,
@@ -214,6 +221,7 @@ export default async function AdminShopsPage({
           </nav>
           {box === "added" ? <AddedTab pending={pending} decided={decided} open={openSub} nearby={nearby} flash={{ done, error }} /> : null}
           {box === "flags" ? <FlagsTab flags={flags} overrides={overrides} flash={{ done, error }} /> : null}
+          {box === "photos" ? <PhotosTab photos={photos} flash={{ done, error }} /> : null}
           {isMessageBox ? (
             <MessagesTab
               kind={box}
@@ -348,6 +356,9 @@ export default async function AdminShopsPage({
               Save
             </button>
           </form>
+
+          {editing.id && (done === "pinned" || done === "unpinned" || done === "removed" || error === "photo") ? <Flash done={done} error={error} /> : null}
+          {editing.id && shopPhotos ? <ShopPhotosPanel shopId={editing.id} pinnedId={shopPhotos.pinnedId} photos={shopPhotos.photos} /> : null}
 
           {editing.id && editing.promotionStatus === "flagged" && (
             <form action={rejectAction} style={{ marginTop: 8 }}>

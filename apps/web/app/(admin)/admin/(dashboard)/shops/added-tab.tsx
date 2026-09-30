@@ -260,6 +260,11 @@ const FLASH: Record<string, string> = {
   hidden: "Hidden from the map. Everyone who reported it hears it's sorted.",
   fixed: "Done. The sender hears it's sorted.",
   passed: "Passed. The sender sees your line, or a thank-you if you left none.",
+  kept: "Kept. It's live, and anyone who reported it hears it stays.",
+  removed: "Removed. It's off the app, and anyone who reported it hears so.",
+  pinned: "Pinned. It's the header now.",
+  unpinned: "Unpinned. The header rotates daily again.",
+  photo: "Couldn't change that photo. Give it another go.",
 };
 
 export function Flash({ done, error }: { done?: string; error?: string }) {

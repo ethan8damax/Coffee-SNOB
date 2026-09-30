@@ -19,6 +19,8 @@ import {
   removePlaceOverride,
   decidePlaceFlags,
   decideMessage,
+  decidePhoto,
+  setShopHeader,
   setChainPrefix,
   setPlaceOverride,
   approveSubmission,
@@ -102,6 +104,33 @@ export async function decideMessageAction(formData: FormData) {
   await decideMessage(await getSupabaseServer(), str(formData, "id"), outcome, str(formData, "reason"));
   revalidatePath("/admin/shops");
   redirect(`/admin/shops?tab=inbox&box=${encodeURIComponent(str(formData, "box"))}&done=${outcome === "passed" ? "passed" : "fixed"}`);
+}
+
+// Photos (Phase 3): keep or remove a photo; pin one as a shop's header.
+export async function decidePhotoAction(formData: FormData) {
+  const outcome = str(formData, "outcome") === "kept" ? "kept" : "removed";
+  const back = str(formData, "back") || "/admin/shops?tab=inbox&box=photos";
+  let error = "";
+  try {
+    await decidePhoto(await getSupabaseServer(), str(formData, "photoId"), outcome);
+  } catch {
+    error = "photo";
+  }
+  revalidatePath("/admin/shops");
+  redirect(`${back}&${error ? `error=${error}` : `done=${outcome}`}`);
+}
+
+export async function pinPhotoAction(formData: FormData) {
+  const shopId = str(formData, "shopId");
+  const photoId = str(formData, "photoId") || null;
+  let error = "";
+  try {
+    await setShopHeader(await getSupabaseServer(), shopId, photoId);
+  } catch {
+    error = "photo";
+  }
+  revalidatePath("/admin/shops");
+  redirect(`/admin/shops?tab=shops&edit=${shopId}&${error ? `error=${error}` : `done=${photoId ? "pinned" : "unpinned"}`}`);
 }
 
 export async function removeOverrideAction(formData: FormData) {

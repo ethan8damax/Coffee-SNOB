@@ -18,6 +18,8 @@ export const PHOTO_LIMITS = {
   retryHours: 24,
   flagsToHide: 2,
   storageWarnRatio: 0.7,
+  // Cloudflare R2's free tier (Standard storage), checked 2026-09-30.
+  freeTier: { bytes: 10e9, writesPerMonth: 1e6 },
 } as const;
 
 export type PhotoExt = "webp" | "jpg";

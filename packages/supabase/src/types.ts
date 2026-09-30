@@ -404,6 +404,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          outcome: string | null
           photo_id: string
           reason: string
           resolved_at: string | null
@@ -412,6 +413,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          outcome?: string | null
           photo_id: string
           reason: string
           resolved_at?: string | null
@@ -420,6 +422,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          outcome?: string | null
           photo_id?: string
           reason?: string
           resolved_at?: string | null
@@ -992,6 +995,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "shops_header_photo_id_fkey"
+            columns: ["header_photo_id"]
+            isOneToOne: false
+            referencedRelation: "log_photos"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "shops_city_id_fkey"
             columns: ["city_id"]
             isOneToOne: false
@@ -1159,6 +1169,10 @@ export type Database = {
         Returns: { submission_id: string; shop_id: string | null }[]
       }
       active_place_hides: { Args: never; Returns: string[] }
+      decide_photo: {
+        Args: { p_photo_id: string; p_outcome: string }
+        Returns: number
+      }
       shop_headers: {
         Args: { p_shop_ids: string[]; p_day?: string }
         Returns: {

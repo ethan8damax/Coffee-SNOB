@@ -1402,9 +1402,10 @@ export async function markShopOpen(client: Client, id: string): Promise<void> {
 // snob_approved: a shop you logged first earned the pin. shop_added /
 // shop_declined: an admin decided on a shop you sent (0036). report_* and
 // message_*: an admin decided on a report or message you sent (0037).
+// photo_*: an admin kept or removed a photo you reported (0040).
 export type FinderNotification = {
   id: string;
-  kind: "snob_approved" | "shop_added" | "shop_declined" | "report_done" | "report_passed" | "message_done" | "message_passed";
+  kind: "snob_approved" | "shop_added" | "shop_declined" | "report_done" | "report_passed" | "message_done" | "message_passed" | "photo_kept" | "photo_removed";
   shopId: string | null;
   shopName: string;
   reason: string | null;

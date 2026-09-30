@@ -116,3 +116,4 @@ export * from "./collections";
 export * from "./submissions";
 export * from "./tell-us";
 export * from "./photos";
+export * from "./photo-moderation";

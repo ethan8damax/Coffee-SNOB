@@ -24,6 +24,10 @@ function copy(note: FinderNotification) {
       return { kicker: "Fixed", title: `We sorted ${note.shopName}.`, body: note.reason ?? "You flagged it, we checked, the map's right now.", open: note.shopId ? `/shop/${note.shopId}` : "/sent" };
     case "report_passed":
       return { kicker: "Checked", title: `${note.shopName} stays as it is.`, body: note.reason ?? "We looked into your report and it checks out. Thanks for flagging it.", open: "/sent" };
+    case "photo_removed":
+      return { kicker: "Removed", title: `We took down a photo of ${note.shopName}.`, body: "You reported it. It's gone.", open: note.shopId ? `/shop/${note.shopId}` : "/sent" };
+    case "photo_kept":
+      return { kicker: "Checked", title: `The photo of ${note.shopName} stays.`, body: "We looked at your report and it checks out. Thanks for flagging it.", open: note.shopId ? `/shop/${note.shopId}` : "/sent" };
     case "message_done":
       return { kicker: noun === "bug" ? "Fixed" : "Done", title: noun === "bug" ? "The bug you sent is fixed." : `Your ${noun} landed.`, body: note.reason ?? "Thanks for telling us.", open: "/sent" };
     case "message_passed":

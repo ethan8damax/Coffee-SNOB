@@ -7,7 +7,8 @@ import "@maplibre/maplibre-gl-leaflet";
 import "leaflet/dist/leaflet.css";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { BASEMAP } from "./basemap";
-import { brandStyle, type StyleLike } from "./brand-style";
+import { loadBaseStyle } from "./load-style";
+import { brandStyle } from "./brand-style";
 import { nearbyDotHtml, ratedPinHtml, userDotHtml } from "./pin-markup";
 import type { MapBounds, MapViewProps } from "./types";
 
@@ -34,21 +35,7 @@ function ensureMapStyles() {
   document.head.appendChild(el);
 }
 
-// One fetch of the style per page load, recolored to the design palette.
-let styleRequest: Promise<StyleLike> | null = null;
-function loadBrandStyle(): Promise<StyleLike> {
-  styleRequest ??= fetch(BASEMAP.styleUrl)
-    .then((response) => {
-      if (!response.ok) throw new Error(`basemap style request failed: ${response.status}`);
-      return response.json() as Promise<StyleLike>;
-    })
-    .then(brandStyle)
-    .catch((error) => {
-      styleRequest = null;
-      throw error;
-    });
-  return styleRequest;
-}
+const loadBrandStyle = () => loadBaseStyle().then(brandStyle);
 
 // Vector basemap drawn by MapLibre inside a Leaflet layer. If the style can't
 // load, the container's land-colored background stays and pins still work.

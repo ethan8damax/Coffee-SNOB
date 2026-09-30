@@ -31,6 +31,8 @@ export {
   getLiveCityGuides,
   getShopDetail,
   getShopReviews,
+  getShopHeaders,
+  getShopPhotos,
   logVisit,
   getPublicProfileByUsername,
   getProfileStats,
@@ -95,6 +97,8 @@ export { TIERS, snobStatus } from "./profile-status";
 export type {
   ShopDetail,
   ShopReview,
+  ShopHeader,
+  ShopPhoto,
   LogVisitInput,
   PublicProfile,
   ProfileStats,

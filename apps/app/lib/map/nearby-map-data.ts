@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getAddedShopsInBounds, getRatedShopsInBounds, type AddedShop } from "@coffeesnob/supabase";
+import { getAddedShopsInBounds, getRatedShopsInBounds, getShopHeaders, type AddedShop } from "@coffeesnob/supabase";
 import { containsBounds, latSpan, padBounds, snapToGrid, withinBounds } from "./bounds";
 import { dropHidden, fetchIndexShops } from "./coffee-index";
 import { usePlaceHides } from "./place-hides";
@@ -123,7 +123,17 @@ export function useNearbyMapData(bounds: MapBounds | null, webAppUrl: string) {
           // A Snob-Approved shop with no editorial_rating set yet and no
           // community logs has rating = null in the view — can't render
           // as a tiered pin, so drop it rather than show a broken value.
-          if (requestIdRef.current === requestId) setFetchedRated(rows.filter((r) => r.rating != null).map(toRatedShopPin));
+          if (requestIdRef.current !== requestId) return;
+          const pins = rows.filter((r) => r.rating != null).map(toRatedShopPin);
+          setFetchedRated(pins);
+          // Header photos come second so pins never wait on them.
+          getShopHeaders(supabase, pins.map((p) => p.id))
+            .then((headers) => {
+              if (requestIdRef.current === requestId && headers.size > 0) {
+                setFetchedRated(pins.map((p) => ({ ...p, header: headers.get(p.id) ?? null })));
+              }
+            })
+            .catch(() => {});
         })
         .catch(() => {
           if (requestIdRef.current === requestId) setFetchedRated([]);

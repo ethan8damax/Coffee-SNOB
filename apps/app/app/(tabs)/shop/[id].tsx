@@ -43,5 +43,5 @@ export default function ShopScreen() {
       </Centered>
     );
   }
-  return <ShopView shop={state.shop} reviews={state.reviews} />;
+  return <ShopView shop={state.shop} reviews={state.reviews} header={state.header} photos={state.photos} />;
 }

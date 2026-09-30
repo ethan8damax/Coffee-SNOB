@@ -1,9 +1,9 @@
-import { View, type ViewStyle } from "react-native";
+import { Image, StyleSheet, View, type ViewStyle } from "react-native";
 import { Tap } from "@/components/tap";
 import Svg, { Path } from "react-native-svg";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
-import type { ProfileEntry } from "@coffeesnob/supabase";
+import { photoUrl, type ProfileEntry } from "@coffeesnob/supabase";
 import { Label } from "@/components/primitives";
 import { DETOUR_LABELS } from "@/components/detour-style";
 import { entryNumber, tileGround } from "@/lib/profile/profile-helpers";
@@ -16,7 +16,10 @@ function Chevron({ filled }: { filled: boolean }) {
   );
 }
 
-// No photos in v1: a solid ground, a bottom scrim, the shop and its chevrons.
+const PHOTOS_URL = process.env.EXPO_PUBLIC_PHOTOS_URL ?? "";
+
+// The entry's own photo, else its shop's header photo, else a solid ground;
+// then a bottom scrim, the shop and its chevrons.
 // ponytail: CSS gradient via RN-web's style passthrough; native ignores it (v1 is web).
 const scrim = { backgroundImage: "linear-gradient(to bottom, rgba(22,19,16,0), rgba(22,19,16,0.72))" } as ViewStyle;
 
@@ -41,6 +44,9 @@ export function EntryTile({
         accessibilityLabel={`${entry.shopName}, ${DETOUR_LABELS[rating - 1]}, entry ${n}`}
         style={{ flex: 1, backgroundColor: tileGround(index), justifyContent: "flex-end", overflow: "hidden" }}
       >
+        {entry.photo ? (
+          <Image source={{ uri: photoUrl(PHOTOS_URL, entry.photo.thumbPath) }} accessibilityLabel="" resizeMode="cover" style={StyleSheet.absoluteFill} />
+        ) : null}
         <Label style={{ position: "absolute", top: 7, right: 8, color: colors.cream, opacity: 0.8 }}>№{n}</Label>
         <View style={[{ paddingHorizontal: 8, paddingBottom: 8, paddingTop: 28, gap: 5 }, scrim]}>
           <Label numberOfLines={2} style={{ color: colors.cream }}>

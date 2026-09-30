@@ -1,14 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { View, Text, Linking, Platform } from "react-native";
+import { Image, View, Text, Linking, Platform, StyleSheet, type ViewStyle } from "react-native";
 import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
-import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
+import { photoUrl, type ShopDetail, type ShopHeader, type ShopReview } from "@coffeesnob/supabase";
 import { Avatar, Body, ButtonBu, ButtonLine, D1, IconBack, Label } from "../primitives";
 import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
 import { LogPhoto } from "../photos/log-photo";
+import { CreditTag } from "../photos/tag";
+import { StreetBand } from "../photos/street-band";
+
+const PHOTOS_URL = process.env.EXPO_PUBLIC_PHOTOS_URL ?? "";
 import { useAuth } from "../../context/auth";
 import { useShopSaved } from "../../lib/profile/use-extras";
 import { AddToCollection } from "../collections/add-to-collection";
@@ -21,9 +25,22 @@ export function goBack() {
   else router.replace("/map");
 }
 
-export function Hero({ shop }: { shop: ShopDetail }) {
+// Web-only: react-native-web passes backgroundImage through; native ignores it.
+const heroScrim = { backgroundImage: "linear-gradient(to bottom, rgba(22,19,16,.35) 0%, rgba(22,19,16,0) 30%, rgba(22,19,16,.15) 55%, rgba(22,19,16,.8) 100%)" } as ViewStyle;
+
+// The band: the shop's header photo (pin, else today's rotation) darkened toward
+// the name, or its streets faint on oxblood (photos spec, section 7).
+export function Hero({ shop, header }: { shop: ShopDetail; header: ShopHeader | null }) {
   return (
-    <View style={{ backgroundColor: colors.oxblood, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24 }}>
+    <View style={{ backgroundColor: colors.oxblood, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 24, overflow: "hidden", minHeight: header ? 300 : undefined }}>
+      {header ? (
+        <>
+          <Image source={{ uri: photoUrl(PHOTOS_URL, header.path) }} accessibilityLabel={`Photo of ${shop.name}`} resizeMode="cover" style={StyleSheet.absoluteFill} />
+          <View style={[StyleSheet.absoluteFill, heroScrim]} />
+        </>
+      ) : (
+        <StreetBand lat={shop.lat} lng={shop.lng} />
+      )}
       <Tap
         onPress={goBack}
         accessibilityRole="button"
@@ -32,10 +49,11 @@ export function Hero({ shop }: { shop: ShopDetail }) {
       >
         <IconBack color={colors.cream} />
       </Tap>
-      <D1 accessibilityRole="header" style={{ color: colors.cream, marginTop: 28 }}>
+      <D1 accessibilityRole="header" style={{ color: colors.cream, marginTop: header ? "auto" : 28 }}>
         {shop.name}
       </D1>
       {shop.neighborhood ? <Label style={{ color: colors.sage, marginTop: 10 }}>{shop.neighborhood}</Label> : null}
+      {header ? <CreditTag username={header.username} style={{ position: "absolute", top: 12, right: 16 }} /> : null}
     </View>
   );
 }

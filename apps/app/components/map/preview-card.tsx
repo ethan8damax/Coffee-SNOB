@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
-import { View, Text } from "react-native";
+import { Image, View, Text } from "react-native";
+import { photoUrl } from "@coffeesnob/supabase";
+import { CreditTag } from "../photos/tag";
 import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ListRow } from "../../lib/map/shop-list";
@@ -47,6 +49,8 @@ function CloseButton({ onPress }: { onPress: () => void }) {
   );
 }
 
+const PHOTOS_URL = process.env.EXPO_PUBLIC_PHOTOS_URL ?? "";
+
 // Compact pin preview (design: map.jsx). A rated pin pushes through to the shop
 // page; an unrated dot has no record yet, so logging a visit is what creates one.
 export function PreviewCard({
@@ -66,10 +70,24 @@ export function PreviewCard({
   onDismiss: () => void;
 }) {
   if (row.kind === "rated") {
+    // With a header photo it sits on top of the card and replaces the letter tile.
+    const header = row.shop.header;
     return (
-      <View style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 2, padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
+      <View style={{ backgroundColor: colors.card, borderWidth: 2, borderColor: colors.ink, borderRadius: 2, overflow: "hidden" }}>
+        {header ? (
+          <Tap onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${row.shop.name}`}>
+            <Image source={{ uri: photoUrl(PHOTOS_URL, header.thumbPath) }} accessibilityLabel="" resizeMode="cover" style={{ width: "100%", aspectRatio: 2, backgroundColor: colors.paper2 }} />
+          </Tap>
+        ) : null}
+        {header ? <CreditTag username={header.username} style={{ position: "absolute", left: 10, top: 10 }} /> : null}
+        {header ? (
+          <View style={{ position: "absolute", top: 8, right: 8, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.ink, borderRadius: 2, width: 34, height: 34, alignItems: "center", justifyContent: "center" }}>
+            <CloseButton onPress={onDismiss} />
+          </View>
+        ) : null}
+      <View style={{ padding: 12, flexDirection: "row", gap: 12, alignItems: "center" }}>
         <Tap onPress={onOpen} accessibilityRole="button" accessibilityLabel={`Open ${row.shop.name}`} style={{ flex: 1, flexDirection: "row", gap: 12, alignItems: "center", minWidth: 0 }}>
-          <ShopTile row={row} size={56} />
+          {header ? null : <ShopTile row={row} size={56} />}
           <View style={{ flex: 1, minWidth: 0 }}>
             <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
               <D2 numberOfLines={1} style={{ flexShrink: 1, fontSize: 24, lineHeight: 30 }}>
@@ -88,7 +106,8 @@ export function PreviewCard({
             <ArrowIcon color={colors.cream} />
           </View>
         </Tap>
-        <CloseButton onPress={onDismiss} />
+        {header ? null : <CloseButton onPress={onDismiss} />}
+      </View>
       </View>
     );
   }

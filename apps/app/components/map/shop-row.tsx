@@ -1,4 +1,5 @@
-import { View, Text } from "react-native";
+import { Image, View, Text } from "react-native";
+import { photoUrl } from "@coffeesnob/supabase";
 import { Tap } from "@/components/tap";
 import { colors } from "@coffeesnob/design-tokens";
 import { formatDistance, rowSubtitle, type ListRow } from "../../lib/map/shop-list";
@@ -6,9 +7,22 @@ import { Detour } from "../detour";
 import { D4, Label } from "../primitives";
 import { pinStyleForRating } from "./pin-style";
 
-// v1 has no photos, so the design's photo tile becomes a lettered tile whose
+const PHOTOS_URL = process.env.EXPO_PUBLIC_PHOTOS_URL ?? "";
+
+// The shop's header thumbnail when it has one; otherwise a lettered tile whose
 // tone follows the verdict (same tiers as the map pins).
 export function ShopTile({ row, size }: { row: ListRow; size: number }) {
+  const header = row.kind === "rated" ? row.shop.header : null;
+  if (header) {
+    return (
+      <Image
+        source={{ uri: photoUrl(PHOTOS_URL, header.thumbPath) }}
+        accessibilityLabel=""
+        resizeMode="cover"
+        style={{ width: size, height: size, borderRadius: 2, backgroundColor: colors.paper2 }}
+      />
+    );
+  }
   const rated = row.kind === "rated";
   const tone = rated ? pinStyleForRating(row.shop.rating) : null;
   return (

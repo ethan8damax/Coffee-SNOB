@@ -15,9 +15,10 @@ export function LogPhoto({ photo, logId, mine }: { photo: Photo | null; logId: s
   const uri = photo ? photoUrl(PHOTOS_URL, photo.thumbPath) : preview;
   if (!uri) return null;
   // Wide photos keep their shape; tall ones crop to 4:3 so cards stay tight.
+  // Capped at 420 wide so a desktop column doesn't turn it into a poster.
   const aspectRatio = photo ? Math.max(photo.width / photo.height, 4 / 3) : 4 / 3;
   return (
-    <View style={{ gap: 6 }}>
+    <View style={{ gap: 6, width: "100%", maxWidth: 420 }}>
       <Image source={{ uri }} accessibilityLabel="Photo from this visit" resizeMode="cover" style={{ width: "100%", aspectRatio, borderRadius: 2, backgroundColor: colors.paper2 }} />
       {pending ? <Label style={{ color: colors.ink3 }}>Photo pending</Label> : null}
     </View>

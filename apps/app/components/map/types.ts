@@ -1,3 +1,4 @@
+import type { ShopHeader } from "@coffeesnob/supabase";
 export type MapBounds = { minLat: number; minLng: number; maxLat: number; maxLng: number };
 
 // A shop worth a tiered pin — either Snob-Approved or past the community
@@ -17,6 +18,8 @@ export type RatedShopPin = {
   // The OSM id this shop was logged from (null for admin-created shops) —
   // lets the map drop the matching unrated dot.
   externalId: string | null;
+  // Today's header photo (photos Phase 2), filled in just after the pins load.
+  header?: ShopHeader | null;
 };
 
 // A live OpenStreetMap result — unrated, no shops row exists for it yet.

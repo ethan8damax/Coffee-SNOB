@@ -75,6 +75,7 @@ describe("handleConfirm", () => {
     });
     expect(store.insertPhoto).toHaveBeenCalledWith({ id: PHOTO, log_id: LOG, user_id: "u1", path: FULL, thumb_path: THUMB, width: 1600, height: 1200 });
     expect(deps.r2.remove).not.toHaveBeenCalled();
+    expect(deps.r2.readStart).toHaveBeenCalledWith(FULL, 150_000);
   });
 
   it("refuses a missing upload and cleans up", async () => {
@@ -90,7 +91,7 @@ describe("handleConfirm", () => {
     expect(deps.r2.remove).toHaveBeenCalledWith(THUMB);
   });
 
-  it("refuses a file that still carries EXIF, and deletes it", async () => {
+  it("refuses a file that still carries location, and deletes it", async () => {
     vi.mocked(deps.r2.readStart).mockResolvedValueOnce(EXIF_JPEG);
     expect((await handleConfirm(deps, "good", body)).status).toBe(422);
     expect(deps.r2.remove).toHaveBeenCalledWith(FULL);

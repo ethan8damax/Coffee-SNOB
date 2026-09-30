@@ -37,7 +37,7 @@ Both routes are `POST` and require `Authorization: Bearer <Supabase access token
 **`/api/photos/confirm`** takes `{ logId, photoId, ext, width, height }` and returns the photo `{ id, path, thumbPath, width, height }`.
 1. Same auth and ownership checks as sign.
 2. Checks both objects exist with a HEAD request, with sizes within `maxFullBytes` and `maxThumbBytes`.
-3. Reads the first 64 KB of the full image and refuses it if it isn't a JPEG or WebP, or if it carries EXIF. JPEG: an `APP1` "Exif" segment. WebP: the `VP8X` EXIF flag. The pure `inspectImage(bytes)` function is Vitest-tested with byte fixtures, including a JPEG with a GPS EXIF block. This is the parent spec's server-side guarantee.
+3. Reads the full image (already size-capped) and refuses it if it isn't a JPEG or WebP, or if it carries **location**: a GPS pointer (tag `0x8825`) in EXIF, or GPS coordinates in XMP, in a JPEG `APP1` segment or a WebP `EXIF`/`XMP ` chunk. Plain EXIF is allowed: Apple's encoder, including iPhone Safari's canvas, writes a small EXIF block (pixel size, colour space) into every JPEG. Refusing all EXIF rejected every Safari photo (fixed 2026-09-30, tested against a real ImageIO JPEG). The pure `inspectImage(bytes)` function is Vitest-tested.
 4. Inserts the row with the **service role**. The 0038 trigger checks ownership and caps a final time.
 5. On any refusal after upload, it deletes both objects.
 

@@ -69,7 +69,8 @@ export async function handleConfirm(deps: PhotoDeps, token: string, body: unknow
   const [full, thumb] = await Promise.all([deps.r2.head(path), deps.r2.head(thumbPath)]);
   if (!full || !thumb) return discard(fail(400, "The upload didn't finish."));
   if (full.size > PHOTO_LIMITS.maxFullBytes || thumb.size > PHOTO_LIMITS.maxThumbBytes) return discard(fail(413, "That photo is too big."));
-  if (inspectImage(await deps.r2.readStart(path, 65_536)) !== "ok") return discard(fail(422, "That photo couldn't be used."));
+  // The whole file (already capped by the size check): WebP keeps metadata at the end.
+  if (inspectImage(await deps.r2.readStart(path, full.size)) !== "ok") return discard(fail(422, "That photo couldn't be used."));
 
   const inserted = await auth.store.insertPhoto({
     id: req.photoId, log_id: req.logId, user_id: auth.user.id, path, thumb_path: thumbPath, width: req.width, height: req.height,

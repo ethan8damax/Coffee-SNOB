@@ -413,6 +413,36 @@ export async function getShopDetail(client: Client, shopId: string): Promise<Sho
   };
 }
 
+// The photo heading each shop today: pin, else daily rotation (0039 shop_headers).
+export type ShopHeader = LogPhoto & { username: string | null; pinned: boolean };
+
+export async function getShopHeaders(client: Client, shopIds: string[]): Promise<Map<string, ShopHeader>> {
+  if (shopIds.length === 0) return new Map();
+  const { data, error } = await client.rpc("shop_headers", { p_shop_ids: shopIds });
+  if (error) throw error;
+  return new Map(
+    data.map((r) => [
+      r.shop_id,
+      { id: r.photo_id, path: r.path, thumbPath: r.thumb_path, width: r.width, height: r.height, username: r.username, pinned: r.pinned },
+    ]),
+  );
+}
+
+export type ShopPhoto = LogPhoto & { username: string | null };
+
+// A shop's gallery: live photos, newest first.
+export async function getShopPhotos(client: Client, shopId: string, limit = 30): Promise<ShopPhoto[]> {
+  const { data, error } = await client
+    .from("log_photos")
+    .select("id, path, thumb_path, width, height, profiles(username)")
+    .eq("shop_id", shopId)
+    .eq("status", "live")
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return data.map((p) => ({ id: p.id, path: p.path, thumbPath: p.thumb_path, width: p.width, height: p.height, username: p.profiles?.username ?? null }));
+}
+
 // Newest first (by created_at).
 export async function getShopReviews(client: Client, shopId: string, opts?: { limit?: number }): Promise<ShopReview[]> {
   const { data: logs, error } = await client
@@ -551,6 +581,8 @@ export type ProfileEntry = {
   drink: string | null;
   visitedAt: string;
   createdAt: string;
+  // The entry's own live photo, else its shop's header photo.
+  photo: LogPhoto | null;
 };
 
 export async function getPublicProfileByUsername(client: Client, username: string): Promise<PublicProfile | null> {
@@ -592,12 +624,14 @@ export async function getProfileEntries(
   const offset = opts?.offset ?? 0;
   const { data, error } = await client
     .from("logs")
-    .select("id, shop_id, rating, note, drink, visited_at, created_at, shops(name, neighborhood)")
+    .select("id, shop_id, rating, note, drink, visited_at, created_at, shops(name, neighborhood), log_photos(id, path, thumb_path, width, height, status)")
     .eq("user_id", userId)
     .order("visited_at", { ascending: false })
     .order("created_at", { ascending: false })
     .range(offset, offset + limit - 1);
   if (error) throw error;
+  const own = new Map(data.map((l) => [l.id, livePhoto(l.log_photos)]));
+  const headers = await getShopHeaders(client, [...new Set(data.filter((l) => !own.get(l.id)).map((l) => l.shop_id))]);
   return data.map((l) => ({
     id: l.id,
     shopId: l.shop_id,
@@ -608,6 +642,7 @@ export async function getProfileEntries(
     drink: l.drink,
     visitedAt: l.visited_at,
     createdAt: l.created_at,
+    photo: own.get(l.id) ?? headers.get(l.shop_id) ?? null,
   }));
 }
 

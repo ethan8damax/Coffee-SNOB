@@ -909,6 +909,7 @@ describe("getProfileEntries", () => {
           }),
         }),
       }),
+      rpc: async () => ({ data: [], error: null }),
     } as any;
     return { client, rangeSpy, orderSpy };
   }
@@ -916,7 +917,7 @@ describe("getProfileEntries", () => {
   it("maps rows, orders newest first and pages with offset/limit", async () => {
     const { client, rangeSpy, orderSpy } = entriesClient({ data: [row], error: null });
     expect(await getProfileEntries(client, "u1", { limit: 10, offset: 20 })).toEqual([
-      { id: "l1", shopId: "s1", shopName: "Corner", shopNeighborhood: "Alfama", rating: 4, note: null, drink: "drip", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z" },
+      { id: "l1", shopId: "s1", shopName: "Corner", shopNeighborhood: "Alfama", rating: 4, note: null, drink: "drip", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z", photo: null },
     ]);
     expect(orderSpy).toHaveBeenNthCalledWith(1, "visited_at", { ascending: false });
     expect(orderSpy).toHaveBeenNthCalledWith(2, "created_at", { ascending: false });

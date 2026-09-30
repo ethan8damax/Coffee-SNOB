@@ -385,6 +385,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "log_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "log_photos_shop_id_fkey"
             columns: ["shop_id"]
             isOneToOne: false
@@ -1152,6 +1159,19 @@ export type Database = {
         Returns: { submission_id: string; shop_id: string | null }[]
       }
       active_place_hides: { Args: never; Returns: string[] }
+      shop_headers: {
+        Args: { p_shop_ids: string[]; p_day?: string }
+        Returns: {
+          shop_id: string
+          photo_id: string
+          path: string
+          thumb_path: string
+          width: number
+          height: number
+          username: string | null
+          pinned: boolean
+        }[]
+      }
       place_flag_counts: {
         Args: never
         Returns: {

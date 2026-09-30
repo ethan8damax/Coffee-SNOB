@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { livePhoto, type LogPhoto } from "./photos";
 
 type Client = SupabaseClient<Database>;
 
@@ -267,7 +268,7 @@ export async function getFollowingFeedLogs(client: Client, followeeIds: string[]
   if (followeeIds.length === 0) return [];
   const { data, error } = await client
     .from("logs")
-    .select("id, user_id, shop_id, rating, note, visited_at, created_at, shops(name, neighborhood)")
+    .select("id, user_id, shop_id, rating, note, visited_at, created_at, shops(name, neighborhood), log_photos(id, path, thumb_path, width, height, status)")
     .in("user_id", followeeIds)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -365,6 +366,7 @@ export type ShopReview = {
   drink: string | null;
   visitedAt: string; // YYYY-MM-DD
   createdAt: string; // ISO timestamp
+  photo: LogPhoto | null;
 };
 
 export function summarizeVerdicts(ratings: number[]): { rating: number | null; logCount: number; topVerdict: number | null } {
@@ -415,7 +417,7 @@ export async function getShopDetail(client: Client, shopId: string): Promise<Sho
 export async function getShopReviews(client: Client, shopId: string, opts?: { limit?: number }): Promise<ShopReview[]> {
   const { data: logs, error } = await client
     .from("logs")
-    .select("id, user_id, rating, note, drink, visited_at, created_at")
+    .select("id, user_id, rating, note, drink, visited_at, created_at, log_photos(id, path, thumb_path, width, height, status)")
     .eq("shop_id", shopId)
     .order("created_at", { ascending: false })
     .limit(opts?.limit ?? 50);
@@ -436,6 +438,7 @@ export async function getShopReviews(client: Client, shopId: string, opts?: { li
     drink: l.drink,
     visitedAt: l.visited_at,
     createdAt: l.created_at,
+    photo: livePhoto(l.log_photos),
   }));
 }
 

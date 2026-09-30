@@ -30,3 +30,12 @@ export function photoPaths(logId: string, photoId: string, ext: PhotoExt) {
 export function photoUrl(baseUrl: string, path: string) {
   return `${baseUrl.replace(/\/+$/, "")}/${path}`;
 }
+
+export type PhotoRow = { id: string; path: string; thumb_path: string; width: number; height: number; status: string };
+export type LogPhoto = { id: string; path: string; thumbPath: string; width: number; height: number };
+
+// RLS also returns the viewer's own hidden photos; only a live one shows on a log.
+export function livePhoto(rows: PhotoRow[] | null | undefined): LogPhoto | null {
+  const r = rows?.find((p) => p.status === "live");
+  return r ? { id: r.id, path: r.path, thumbPath: r.thumb_path, width: r.width, height: r.height } : null;
+}

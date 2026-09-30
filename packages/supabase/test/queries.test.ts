@@ -696,9 +696,22 @@ describe("getShopReviews", () => {
       { data: [{ id: "u1", username: "mara", display_name: "Mara K.", avatar_url: null }], error: null }
     );
     expect(await getShopReviews(client, "s1", { limit: 5 })).toEqual([
-      { id: "l1", userId: "u1", username: "mara", displayName: "Mara K.", rating: 5, note: "great", drink: "flat white", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z" },
+      { id: "l1", userId: "u1", username: "mara", displayName: "Mara K.", rating: 5, note: "great", drink: "flat white", visitedAt: "2026-09-01", createdAt: "2026-09-01T10:00:00Z", photo: null },
     ]);
     expect(limitSpy).toHaveBeenCalledWith(5);
+  });
+
+  it("attaches the log's live photo", async () => {
+    const photos = [
+      { id: "p0", path: "logs/l1/p0.webp", thumb_path: "logs/l1/p0_t.webp", width: 1600, height: 1200, status: "removed" },
+      { id: "p1", path: "logs/l1/p1.webp", thumb_path: "logs/l1/p1_t.webp", width: 1600, height: 1200, status: "live" },
+    ];
+    const { client } = reviewsClient(
+      { data: [{ ...logRow, log_photos: photos }], error: null },
+      { data: [{ id: "u1", username: "mara", display_name: null, avatar_url: null }], error: null }
+    );
+    const [review] = await getShopReviews(client, "s1");
+    expect(review.photo).toEqual({ id: "p1", path: "logs/l1/p1.webp", thumbPath: "logs/l1/p1_t.webp", width: 1600, height: 1200 });
   });
 
   it("returns [] without querying profiles when there are no logs", async () => {

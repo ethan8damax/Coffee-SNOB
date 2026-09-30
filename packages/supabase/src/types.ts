@@ -336,6 +336,98 @@ export type Database = {
           },
         ]
       }
+      log_photos: {
+        Row: {
+          blurhash: string | null
+          created_at: string
+          height: number
+          id: string
+          log_id: string
+          path: string
+          shop_id: string
+          status: string
+          thumb_path: string
+          user_id: string
+          width: number
+        }
+        Insert: {
+          blurhash?: string | null
+          created_at?: string
+          height: number
+          id?: string
+          log_id: string
+          path: string
+          shop_id?: string
+          status?: string
+          thumb_path: string
+          user_id: string
+          width: number
+        }
+        Update: {
+          blurhash?: string | null
+          created_at?: string
+          height?: number
+          id?: string
+          log_id?: string
+          path?: string
+          shop_id?: string
+          status?: string
+          thumb_path?: string
+          user_id?: string
+          width?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "log_photos_log_id_fkey"
+            columns: ["log_id"]
+            isOneToOne: false
+            referencedRelation: "logs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "log_photos_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      photo_flags: {
+        Row: {
+          created_at: string
+          id: string
+          photo_id: string
+          reason: string
+          resolved_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          photo_id: string
+          reason: string
+          resolved_at?: string | null
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          photo_id?: string
+          reason?: string
+          resolved_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_flags_photo_id_fkey"
+            columns: ["photo_id"]
+            isOneToOne: false
+            referencedRelation: "log_photos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logs: {
         Row: {
           created_at: string
@@ -835,6 +927,7 @@ export type Database = {
           country_code: string | null
           created_at: string
           external_id: string | null
+          header_photo_id: string | null
           hours: string | null
           id: string
           lat: number | null
@@ -856,6 +949,7 @@ export type Database = {
           open_checked_at?: string | null
           created_at?: string
           external_id?: string | null
+          header_photo_id?: string | null
           hours?: string | null
           id?: string
           lat?: number | null
@@ -876,6 +970,7 @@ export type Database = {
           open_checked_at?: string | null
           created_at?: string
           external_id?: string | null
+          header_photo_id?: string | null
           hours?: string | null
           id?: string
           lat?: number | null

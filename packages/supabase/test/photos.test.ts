@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PHOTO_LIMITS, photoPaths, photoUrl } from "../src/photos";
+import { PHOTO_LIMITS, livePhoto, photoPaths, photoUrl } from "../src/photos";
 
 const LOG = "11111111-1111-4111-8111-111111111111";
 const PHOTO = "22222222-2222-4222-8222-222222222222";
@@ -28,5 +28,19 @@ describe("PHOTO_LIMITS", () => {
   it("keeps the thumbnail smaller than the full size", () => {
     expect(PHOTO_LIMITS.thumb.longEdge).toBeLessThan(PHOTO_LIMITS.full.longEdge);
     expect(PHOTO_LIMITS.headerMinShortEdge).toBeLessThanOrEqual(PHOTO_LIMITS.full.longEdge);
+  });
+});
+
+describe("livePhoto", () => {
+  const row = (status: string) => ({ id: "p1", path: "logs/l/p1.webp", thumb_path: "logs/l/p1_t.webp", width: 1600, height: 1200, status });
+
+  it("returns the log's live photo in camelCase", () => {
+    expect(livePhoto([row("hidden"), row("live")])).toEqual({ id: "p1", path: "logs/l/p1.webp", thumbPath: "logs/l/p1_t.webp", width: 1600, height: 1200 });
+  });
+
+  it("is null when nothing is live", () => {
+    expect(livePhoto([row("hidden"), row("removed")])).toBeNull();
+    expect(livePhoto(null)).toBeNull();
+    expect(livePhoto(undefined)).toBeNull();
   });
 });

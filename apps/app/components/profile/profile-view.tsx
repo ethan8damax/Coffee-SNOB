@@ -16,7 +16,7 @@ import { AddToCollection } from "@/components/collections/add-to-collection";
 import { EntryTile } from "./entry-tile";
 import { ProfileHeader } from "./profile-header";
 import { StatusBlock } from "./status-block";
-import { AddedShopsLink } from "../add-shop/added-shops-link";
+import { SentLink } from "../tell-us/sent-link";
 
 function Centered({ children }: { children: React.ReactNode }) {
   // See sign-in-prompt.tsx: the custom tab bar isn't auto-excluded from scene
@@ -244,7 +244,7 @@ export function ProfileView({ username, viewerId }: { username: string; viewerId
         />
 
         <StatusBlock userId={profile.id} entries={total} isOwn={isOwn} />
-        {isOwn ? <AddedShopsLink userId={profile.id} /> : null}
+        {isOwn ? <SentLink userId={profile.id} /> : null}
 
         <TabStrip
           tabs={isOwn || profile.favesPublic ? ["Entries", "Collections", "Faves"] : ["Entries", "Collections"]}

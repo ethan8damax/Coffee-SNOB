@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useBottomTabBarHeight } from "expo-router/build/react-navigation/bottom-tabs";
 import { colors } from "@coffeesnob/design-tokens";
 import { MapView } from "../../components/map/MapView";
-import { FilterChips, LocateButton, MapTopBar, ViewToggle, ZoomControls } from "../../components/map/map-controls";
+import { AddShopButton, FilterChips, LocateButton, MapTopBar, PanelFooter, ViewToggle, ZoomControls } from "../../components/map/map-controls";
 import { ChevronIcon } from "../../components/map/map-icons";
 import { MapSearch } from "../../components/map/map-search";
 import { PreviewCard } from "../../components/map/preview-card";
@@ -302,6 +302,7 @@ export default function MapScreen() {
     setAdding(null);
     router.push({ pathname: "/add-shop", params: { name, lat: at.lat.toFixed(6), lng: at.lng.toFixed(6) } });
   };
+  const footer = <PanelFooter onAdd={() => startAdding("")} onTell={() => router.push({ pathname: "/tell-us", params: { from: "/map" } })} />;
   const collectSheet = collecting ? <AddToCollection target={collecting} onClose={() => setCollecting(null)} /> : null;
   const addBar = adding !== null ? <AddShopBar initialName={adding} onCancel={() => setAdding(null)} onConfirm={confirmAdd} /> : null;
 
@@ -416,6 +417,7 @@ export default function MapScreen() {
               <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} />
             </View>
             <View style={{ flex: 1 }}>{list(true)}</View>
+            {footer}
           </View>
         )}
         <View style={{ flex: 1, minWidth: 0 }}>
@@ -490,6 +492,7 @@ export default function MapScreen() {
             <FilterChips value={filter} onChange={setFilter} signedIn={userId !== null} padding={16} />
           </View>
           <View style={{ flex: 1 }}>{list(false)}</View>
+          {footer}
         </View>
       </View>
     );
@@ -506,7 +509,8 @@ export default function MapScreen() {
         <View pointerEvents="box-none">{topBar()}</View>
         {addBar ?? (
           <View pointerEvents="box-none">
-            <View pointerEvents="box-none" style={{ alignItems: "flex-end", paddingHorizontal: 16, marginBottom: 12 }}>
+            <View pointerEvents="box-none" style={{ flexDirection: "row", justifyContent: "flex-end", gap: 8, paddingHorizontal: 16, marginBottom: 12 }}>
+              {preview ? null : <AddShopButton onPress={() => startAdding("")} />}
               <LocateButton onPress={locate} disabled={!userCenter} />
             </View>
             {preview ? <View style={{ marginHorizontal: 16, marginBottom: 12 }}>{preview}</View> : null}

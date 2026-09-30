@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, TextInput, View, useWindowDimensions, type TextInputProps } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
@@ -7,6 +7,7 @@ import { submitShop } from "@coffeesnob/supabase";
 import { supabase } from "@/lib/supabase";
 import { isDesktopWidth } from "@/lib/nav";
 import { Body, BodySm, ButtonBu, ButtonOx, D2, Label } from "../primitives";
+import { Field, Input } from "../form";
 import { HoursEditor } from "./hours-editor";
 import { emptyWeek, formatHours, toWebsite } from "../../lib/add-shop/form";
 import { locateShop, type ShopLocation } from "../../lib/log/locate";
@@ -238,46 +239,5 @@ export function AddShopForm({ initialName, lat, lng }: { initialName: string; la
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function Field({ label, required, hint, children }: { label: string; required?: boolean; hint?: string; children: ReactNode }) {
-  return (
-    <View style={{ gap: 10, marginTop: 24 }}>
-      <View style={{ flexDirection: "row", alignItems: "baseline", gap: 8 }}>
-        <Label>{label}</Label>
-        {required ? <Label style={{ color: colors.ink3, fontSize: 7.5 }}>Required</Label> : null}
-      </View>
-      {children}
-      {hint ? (
-        <BodySm accessibilityLiveRegion="polite" style={{ color: colors.oxblood }}>
-          {hint}
-        </BodySm>
-      ) : null}
-    </View>
-  );
-}
-
-function Input({ bad, style, ...props }: TextInputProps & { bad?: boolean }) {
-  return (
-    <TextInput
-      placeholderTextColor={colors.ink3}
-      {...props}
-      style={[
-        {
-          minHeight: 44,
-          paddingHorizontal: 12,
-          borderWidth: 1,
-          borderColor: bad ? colors.oxblood : colors.rule,
-          borderRadius: 2,
-          backgroundColor: colors.card,
-          fontFamily: "Area-Regular",
-          fontSize: 16, // 16+ stops iOS zooming on focus
-          lineHeight: 20,
-          color: colors.ink,
-        },
-        style,
-      ]}
-    />
   );
 }

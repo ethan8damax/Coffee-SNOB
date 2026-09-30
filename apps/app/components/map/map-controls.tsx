@@ -179,6 +179,37 @@ export function LocateButton({
   );
 }
 
+// Phone: Add a shop, beside locate by the thumb. Labelled, so it never reads
+// as zoom-in.
+export function AddShopButton({ onPress }: { onPress: () => void }) {
+  return (
+    <Tap
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel="Add a shop the map is missing"
+      style={{ height: 44, flexDirection: "row", alignItems: "center", gap: 8, paddingHorizontal: 14, borderRadius: 2, borderWidth: 1, borderColor: colors.ink, backgroundColor: colors.card }}
+    >
+      <PlusIcon size={13} color={colors.ink} />
+      <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 8.5, letterSpacing: 0.85, textTransform: "uppercase", color: colors.ink }}>Add a shop</Text>
+    </Tap>
+  );
+}
+
+// Desktop panel and phone List view: pinned under the list, whatever it shows.
+export function PanelFooter({ onAdd, onTell }: { onAdd: () => void; onTell: () => void }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 12, minHeight: 52, paddingHorizontal: 20, borderTopWidth: 1, borderTopColor: colors.rule, backgroundColor: colors.paper }}>
+      <Tap onPress={onAdd} accessibilityRole="button" accessibilityLabel="Missing a shop? Add it" style={{ flex: 1, minHeight: 44, flexDirection: "row", alignItems: "center", gap: 8 }}>
+        <Text style={{ fontFamily: "Area-Regular", fontSize: 14, color: colors.ink2 }}>Missing a shop?</Text>
+        <Text style={{ fontFamily: "AreaExtended-Black", fontSize: 8.5, letterSpacing: 0.85, textTransform: "uppercase", color: colors.oxblood }}>Add it</Text>
+      </Tap>
+      <Tap onPress={onTell} accessibilityRole="button" accessibilityLabel="Tell us something" style={{ minHeight: 44, justifyContent: "center" }}>
+        <Text style={{ fontFamily: "AreaExtended-Bold", fontSize: 8.5, letterSpacing: 0.85, textTransform: "uppercase", color: colors.ink3 }}>Tell us</Text>
+      </Tap>
+    </View>
+  );
+}
+
 // Desktop map controls (design: wide.jsx MapCanvas top-right stack).
 export function ZoomControls({
   onZoom,

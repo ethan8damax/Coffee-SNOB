@@ -30,7 +30,8 @@ export default function TabsLayout() {
             {/* Log a visit isn't a nav item anymore — reached from the map, a shop page, or a preview card. */}
             <Tabs.Screen name="log" options={{ href: null }} />
             <Tabs.Screen name="add-shop" options={{ href: null }} />
-            <Tabs.Screen name="my-shops" options={{ href: null }} />
+            <Tabs.Screen name="sent" options={{ href: null }} />
+            <Tabs.Screen name="tell-us" options={{ href: null }} />
             {/* Collections ship after launch; keep the route, hide it from navigation. */}
             <Tabs.Screen name="lists" options={{ href: null }} />
             <Tabs.Screen name="profile" options={{ title: "You" }} />

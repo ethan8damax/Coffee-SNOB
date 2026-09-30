@@ -34,6 +34,7 @@ export type NearbyShopPin = {
   sourceIds?: string[];
   visibility?: "show" | "dim";
   why?: string[]; // the build's reasons it's on the map ("in 3 sources")
+  shopId?: string; // a hand-added shop nobody has logged yet: its shops row
 };
 
 export type MapViewProps = {

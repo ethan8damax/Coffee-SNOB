@@ -384,9 +384,13 @@ export type Database = {
           kind: string
           lat: number
           lng: number
-          place_id: string
+          note: string | null
+          outcome: string | null
+          place_id: string | null
           place_name: string
+          reason: string | null
           resolved_at: string | null
+          shop_id: string | null
           user_id: string
         }
         Insert: {
@@ -395,9 +399,13 @@ export type Database = {
           kind: string
           lat: number
           lng: number
-          place_id: string
+          note?: string | null
+          outcome?: string | null
+          place_id?: string | null
           place_name: string
+          reason?: string | null
           resolved_at?: string | null
+          shop_id?: string | null
           user_id?: string
         }
         Update: {
@@ -406,18 +414,82 @@ export type Database = {
           kind?: string
           lat?: number
           lng?: number
-          place_id?: string
+          note?: string | null
+          outcome?: string | null
+          place_id?: string | null
           place_name?: string
+          reason?: string | null
           resolved_at?: string | null
+          shop_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "place_flags_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          body: string
+          context: Json
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          kind: string
+          reason: string | null
+          seen_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          context?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind: string
+          reason?: string | null
+          seen_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          context?: Json
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          kind?: string
+          reason?: string | null
+          seen_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
           created_at: string
+          flag_id: string | null
           id: string
           kind: string
+          message_id: string | null
           read_at: string | null
           shop_id: string | null
           submission_id: string | null
@@ -425,8 +497,10 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          flag_id?: string | null
           id?: string
           kind: string
+          message_id?: string | null
           read_at?: string | null
           shop_id?: string | null
           submission_id?: string | null
@@ -434,8 +508,10 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          flag_id?: string | null
           id?: string
           kind?: string
+          message_id?: string | null
           read_at?: string | null
           shop_id?: string | null
           submission_id?: string | null
@@ -454,6 +530,20 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "shop_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_flag_id_fkey"
+            columns: ["flag_id"]
+            isOneToOne: false
+            referencedRelation: "place_flags"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -935,6 +1025,20 @@ export type Database = {
       decline_shop_submission: {
         Args: { p_id: string; p_reason?: string }
         Returns: undefined
+      }
+      decide_message: {
+        Args: { p_id: string; p_outcome: string; p_reason?: string }
+        Returns: undefined
+      }
+      decide_place_flags: {
+        Args: { p_place_id: string | null; p_shop_id: string | null; p_outcome: string; p_reason?: string }
+        Returns: number
+      }
+      mark_message_seen: { Args: { p_id: string }; Returns: undefined }
+      message_sender_email: { Args: { p_id: string }; Returns: string | null }
+      send_message: {
+        Args: { p_kind: string; p_body: string; p_context?: Json }
+        Returns: string
       }
       submit_shop: {
         Args: {

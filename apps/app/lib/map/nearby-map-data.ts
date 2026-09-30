@@ -76,6 +76,7 @@ export function toAddedPin(s: AddedShop): NearbyShopPin {
     phone: s.phone,
     visibility: "show",
     why: ["added by hand", "checked by Coffee Snob"],
+    shopId: s.id,
   };
 }
 

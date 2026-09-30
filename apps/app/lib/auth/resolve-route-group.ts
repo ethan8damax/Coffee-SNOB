@@ -11,8 +11,8 @@ export function resolveRouteGroup(params: {
   return params.onboarded ? "(tabs)" : "(onboarding)";
 }
 
-// /log, /add-shop, /my-shops show their own sign-in prompt.
-export const PUBLIC_TAB_PATHS = ["/", "/map", "/log", "/add-shop", "/my-shops", "/lists", "/profile", "/people"];
+// /log, /add-shop, /sent, /tell-us show their own sign-in prompt.
+export const PUBLIC_TAB_PATHS = ["/", "/map", "/log", "/add-shop", "/sent", "/tell-us", "/lists", "/profile", "/people"];
 
 // Detail pages that live inside (tabs) so they keep the tab bar / rail.
 export const PUBLIC_TAB_PREFIXES = ["/shop/", "/u/", "/collection/"];

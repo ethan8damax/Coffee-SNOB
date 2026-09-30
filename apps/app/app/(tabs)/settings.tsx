@@ -11,6 +11,12 @@ import { EditProfileForm } from "@/components/profile/edit-profile-form";
 // Own-account management: edit profile + sign out. Reached from a "Settings"
 // link on your own profile header (find-people lives at the Followers/
 // Following stats instead — no separate entry point needed for it here).
+const TELL_US = [
+  { about: "bug", label: "Report a bug" },
+  { about: "idea", label: "Suggest something" },
+  { about: "contact", label: "Contact us" },
+] as const;
+
 export default function SettingsScreen() {
   const { profile: authProfile, signOut } = useAuth();
   const [profile, setProfile] = useState<PublicProfile | null>(null);
@@ -83,6 +89,30 @@ export default function SettingsScreen() {
                   trackColor={{ true: colors.oxblood, false: colors.rule }}
                   thumbColor={colors.card}
                 />
+              </View>
+              <View style={{ gap: 4 }}>
+                <Label style={{ color: colors.ink, marginBottom: 6 }}>Tell us</Label>
+                {TELL_US.map((t) => (
+                  <Tap
+                    key={t.about}
+                    feedback="tint"
+                    onPress={() => router.push({ pathname: "/tell-us", params: { about: t.about, from: "/settings" } })}
+                    accessibilityRole="button"
+                    style={{ minHeight: 48, flexDirection: "row", alignItems: "center", borderBottomWidth: 1, borderBottomColor: colors.rule2 }}
+                  >
+                    <Body style={{ flex: 1 }}>{t.label}</Body>
+                    <Body style={{ color: colors.ink3 }}>›</Body>
+                  </Tap>
+                ))}
+                <Tap
+                  feedback="tint"
+                  onPress={() => router.push("/sent")}
+                  accessibilityRole="button"
+                  style={{ minHeight: 48, flexDirection: "row", alignItems: "center" }}
+                >
+                  <Body style={{ flex: 1 }}>What you've sent</Body>
+                  <Body style={{ color: colors.ink3 }}>›</Body>
+                </Tap>
               </View>
               <Tap
                 onPress={signOut}

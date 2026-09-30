@@ -8,7 +8,7 @@ import { Detour } from "../detour";
 import { BodySm, D2, D4, Label } from "../primitives";
 import { ArrowIcon, CloseIcon, PlusIcon } from "./map-icons";
 import { ShopTile } from "./shop-row";
-import { ReportPlace } from "./report-place";
+import { SomethingOff } from "../tell-us/something-off";
 import { whyLine } from "../../lib/map/coffee-index";
 
 function ActionButton({ title, icon, solid, onPress, label }: { title: string; icon?: ReactNode; solid?: boolean; onPress: () => void; label: string }) {
@@ -113,9 +113,12 @@ export function PreviewCard({
         <ActionButton title="Directions" onPress={onDirections} label={`Directions to ${row.shop.name}`} />
         <ActionButton title="Collect" onPress={onCollect} label={`Add ${row.shop.name} to a collection`} />
       </View>
-      {row.shop.externalId.startsWith("cs_") ? (
+      {row.shop.shopId || row.shop.externalId.startsWith("cs_") ? (
         <View style={{ marginTop: 8 }}>
-          <ReportPlace shop={row.shop} />
+          <SomethingOff
+            shop={{ ...(row.shop.shopId ? { shopId: row.shop.shopId } : { placeId: row.shop.externalId }), name: row.shop.name, lat: row.shop.lat, lng: row.shop.lng }}
+            from="/map"
+          />
         </View>
       ) : null}
     </View>

@@ -80,7 +80,7 @@ export function AddedTab({
                   </td>
                   <td>
                     <div className="adm-actions">
-                      <Link href={`/admin/shops?tab=added&sub=${s.id}`} className="btn btn-sm btn-line" aria-label={`Review ${s.name}`}>
+                      <Link href={`/admin/shops?tab=inbox&box=added&sub=${s.id}`} className="btn btn-sm btn-line" aria-label={`Review ${s.name}`}>
                         Review
                       </Link>
                     </div>
@@ -153,7 +153,7 @@ function Review({ s, nearby }: { s: ShopSubmission; nearby: Nearby[] }) {
     <div className="adm-panel" style={{ marginTop: 20 }}>
       <div className="adm-row" style={{ justifyContent: "space-between", alignItems: "baseline" }}>
         <h3 className="d4">{s.name}</h3>
-        <Link href="/admin/shops?tab=added" className="label">Close</Link>
+        <Link href="/admin/shops?tab=inbox&box=added" className="label">Close</Link>
       </div>
       <p className="adm-meta">
         Sent by {sender(s)} {ago(s.createdAt)} · {where(s)}
@@ -257,9 +257,12 @@ const FLASH: Record<string, string> = {
   name: "A shop needs a name.",
   chain: "That's a chain. Chains can't be added.",
   save: "Couldn't save that. Give it another go.",
+  hidden: "Hidden from the map. Everyone who reported it hears it's sorted.",
+  fixed: "Done. The sender hears it's sorted.",
+  passed: "Passed. The sender sees your line, or a thank-you if you left none.",
 };
 
-function Flash({ done, error }: { done?: string; error?: string }) {
+export function Flash({ done, error }: { done?: string; error?: string }) {
   const key = error ?? done;
   if (!key || !FLASH[key]) return null;
   return (

@@ -2,29 +2,31 @@ import { ActivityIndicator, ScrollView, Text, View } from "react-native";
 import { Tap } from "@/components/tap";
 import { router } from "expo-router";
 import { colors } from "@coffeesnob/design-tokens";
-import type { ShopSubmission } from "@coffeesnob/supabase";
 import { Body, BodySm, ButtonOx, D2, IconBack, Label } from "@/components/primitives";
 import { Chip } from "@/components/chip";
 import { SignInPrompt } from "@/components/sign-in-prompt";
 import { useAuth } from "@/context/auth";
-import { useMySubmissions } from "@/lib/add-shop/use-my-submissions";
-import { STATUS_LABEL, submissionCounts } from "@/lib/add-shop/summary";
+import { useSent } from "@/lib/tell-us/use-sent";
+import { sentCounts, sentRows, type SentRow } from "@/lib/tell-us/sent";
 
 const day = (iso: string) => new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
 const addShop = () => router.push({ pathname: "/map", params: { add: "1" } });
 
-// Everything you've sent through Add a shop, and where each one stands.
-export default function MyShopsScreen() {
+// Everything you've told us (shops, shop reports, bugs, ideas, messages) and where each one stands.
+export default function SentScreen() {
   const { session } = useAuth();
-  if (!session) return <SignInPrompt message="Sign in to see the shops you've added." />;
-  return <MyShops userId={session.user.id} />;
+  if (!session) return <SignInPrompt message="Sign in to see what you've sent." />;
+  return <Sent userId={session.user.id} />;
 }
 
-function MyShops({ userId }: { userId: string }) {
-  const mine = useMySubmissions(userId);
-  const list = mine.data ?? [];
-  const counts = submissionCounts(list);
+function Sent({ userId }: { userId: string }) {
+  const sent = useSent(userId);
+  const shops = sent.data?.shops ?? [];
+  const rows = sent.data ? sentRows(sent.data.shops, sent.data.reports, sent.data.messages) : [];
+  const counts = sentCounts(shops, rows);
   const back = () => (router.canGoBack() ? router.back() : router.replace("/profile"));
+  const headline =
+    counts.onMap > 0 ? (counts.onMap === 1 ? "1 shop on the map because of you." : `${counts.onMap} shops on the map because of you.`) : "What you've told us.";
 
   return (
     <ScrollView style={{ flex: 1, backgroundColor: colors.paper }} contentContainerStyle={{ alignItems: "center", paddingBottom: 48 }}>
@@ -33,40 +35,48 @@ function MyShops({ userId }: { userId: string }) {
           <Tap onPress={back} accessibilityRole="button" accessibilityLabel="Back" style={{ width: 44, height: 44, marginLeft: -12, alignItems: "center", justifyContent: "center" }}>
             <IconBack />
           </Tap>
-          <Label style={{ color: colors.ink2 }}>Shops you added</Label>
-          <D2 accessibilityRole="header">{counts.onMap === 1 ? "1 shop on the map because of you." : `${counts.onMap} shops on the map because of you.`}</D2>
+          <Label style={{ color: colors.ink2 }}>What you've sent</Label>
+          <D2 accessibilityRole="header">{headline}</D2>
         </View>
 
         <View style={{ flexDirection: "row", marginTop: 20, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.rule }}>
           <Count value={counts.onMap} label="On the map" />
-          <Count value={counts.waiting} label="Waiting" />
-          <Count value={counts.passed} label="Passed" last />
+          <Count value={counts.fixed} label="Fixed" />
+          <Count value={counts.waiting} label="Waiting" last />
         </View>
 
-        {mine.status === "loading" && !mine.data ? (
+        {sent.status === "loading" && !sent.data ? (
           <ActivityIndicator color={colors.ink3} style={{ marginTop: 32 }} />
-        ) : mine.status === "error" ? (
+        ) : sent.status === "error" ? (
           <View style={{ padding: 16, gap: 8 }}>
-            <Body style={{ color: colors.ink2 }}>Couldn't load your shops.</Body>
-            <Tap onPress={mine.retry} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
+            <Body style={{ color: colors.ink2 }}>Couldn't load what you've sent.</Body>
+            <Tap onPress={sent.retry} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center", alignSelf: "flex-start" }}>
               <Label style={{ color: colors.oxblood }}>Try again</Label>
             </Tap>
           </View>
-        ) : list.length === 0 ? (
+        ) : rows.length === 0 ? (
           <View style={{ padding: 16, paddingTop: 28, gap: 14, alignItems: "flex-start" }}>
-            <Body style={{ color: colors.ink2 }}>Nothing yet. If the map is missing a shop you know, put it there.</Body>
+            <Body style={{ color: colors.ink2 }}>
+              Nothing yet. Shops you add, problems you flag, and notes you send all land here, with where each one stands.
+            </Body>
             <ButtonOx title="Add a shop" accessibilityRole="button" onPress={addShop} />
           </View>
         ) : (
           <View>
-            {list.map((s) => (
-              <Row key={s.id} s={s} />
+            {rows.map((r) => (
+              <Row key={r.key} r={r} />
             ))}
-            <Tap onPress={addShop} accessibilityRole="button" accessibilityLabel="Add another shop" style={{ minHeight: 52, justifyContent: "center", paddingHorizontal: 16 }}>
-              <Label style={{ color: colors.oxblood }}>+ Add another</Label>
-            </Tap>
           </View>
         )}
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 20, paddingHorizontal: 16, paddingTop: 16 }}>
+          <Tap onPress={addShop} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+            <Label style={{ color: colors.oxblood }}>+ Add a shop</Label>
+          </Tap>
+          <Tap onPress={() => router.push({ pathname: "/tell-us", params: { from: "/sent" } })} accessibilityRole="button" style={{ minHeight: 44, justifyContent: "center" }}>
+            <Label style={{ color: colors.oxblood }}>Tell us something</Label>
+          </Tap>
+        </View>
       </View>
     </ScrollView>
   );
@@ -81,29 +91,27 @@ function Count({ value, label, last }: { value: number; label: string; last?: bo
   );
 }
 
-function Row({ s }: { s: ShopSubmission }) {
-  const where = [s.locality, s.region].filter(Boolean).join(", ");
-  const meta = [where, `sent ${day(s.createdAt)}`].filter(Boolean).join(" · ");
-  const open = s.status === "approved" && s.shopId ? () => router.push(`/shop/${s.shopId}`) : undefined;
+function Row({ r }: { r: SentRow }) {
+  const open = r.shopId && r.good ? () => router.push(`/shop/${r.shopId}`) : undefined;
   const body = (
     <>
       <View style={{ flex: 1, gap: 4 }}>
         <Text numberOfLines={1} style={{ fontFamily: "Area-Bold", fontSize: 16, letterSpacing: -0.3, color: colors.ink }}>
-          {s.name}
+          {r.title}
         </Text>
-        <BodySm style={{ color: colors.ink3 }}>{meta}</BodySm>
-        {s.status === "declined" && s.declineReason ? <BodySm style={{ color: colors.ink2 }}>{s.declineReason}</BodySm> : null}
+        <BodySm style={{ color: colors.ink3 }}>{`${r.type} · ${day(r.createdAt)}`}</BodySm>
+        {r.reason ? <BodySm style={{ color: colors.ink2 }}>{r.reason}</BodySm> : null}
       </View>
-      <Chip label={STATUS_LABEL[s.status]} variant={s.status === "approved" ? "on" : "default"} />
+      <Chip label={r.status} variant={r.good ? "on" : "default"} />
     </>
   );
   const style = { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: colors.rule2 } as const;
   return open ? (
-    <Tap feedback="tint" onPress={open} accessibilityRole="link" accessibilityLabel={`${s.name}, on the map. Open the shop.`} style={style}>
+    <Tap feedback="tint" onPress={open} accessibilityRole="link" accessibilityLabel={`${r.title}, ${r.type}, ${r.status}. Open the shop.`} style={style}>
       {body}
     </Tap>
   ) : (
-    <View accessible accessibilityLabel={`${s.name}, ${STATUS_LABEL[s.status]}`} style={style}>
+    <View accessible accessibilityLabel={`${r.title}, ${r.type}, ${r.status}${r.reason ? `. ${r.reason}` : ""}`} style={style}>
       {body}
     </View>
   );

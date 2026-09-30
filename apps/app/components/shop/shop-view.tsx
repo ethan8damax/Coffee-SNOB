@@ -3,11 +3,13 @@ import { ScrollView, View, useWindowDimensions } from "react-native";
 import { colors } from "@coffeesnob/design-tokens";
 import type { ShopDetail, ShopReview } from "@coffeesnob/supabase";
 import { isDesktopWidth } from "@/lib/nav";
+import { SomethingOff } from "../tell-us/something-off";
 import { Actions, Consensus, Hero, HoursCard, ReviewsList, TabStrip, WhereCard, type ShopTab } from "./parts";
 
 export function ShopView({ shop, reviews }: { shop: ShopDetail; reviews: ShopReview[] }) {
   const { width } = useWindowDimensions();
   const [tab, setTab] = useState<ShopTab>("Reviews");
+  const ref = { shopId: shop.id, name: shop.name, lat: shop.lat, lng: shop.lng };
 
   if (isDesktopWidth(width)) {
     // WideShop: hero across the top, main column + 340px side column.
@@ -23,6 +25,7 @@ export function ShopView({ shop, reviews }: { shop: ShopDetail; reviews: ShopRev
           <View style={{ width: 340, gap: 16 }}>
             <HoursCard hours={shop.hours} />
             <WhereCard shop={shop} />
+            <SomethingOff shop={ref} from={`/shop/${shop.id}`} />
           </View>
         </View>
       </ScrollView>
@@ -41,6 +44,9 @@ export function ShopView({ shop, reviews }: { shop: ShopDetail; reviews: ShopRev
         {tab === "Reviews" && <ReviewsList reviews={reviews} />}
         {tab === "Hours" && <HoursCard hours={shop.hours} />}
         {tab === "About" && <WhereCard shop={shop} />}
+      </View>
+      <View style={{ paddingHorizontal: 16, paddingBottom: 32 }}>
+        <SomethingOff shop={ref} from={`/shop/${shop.id}`} />
       </View>
     </ScrollView>
   );

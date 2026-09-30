@@ -20,6 +20,11 @@ import {
   getPendingSubmissions,
   getDecidedSubmissions,
   getShopsNear,
+  getOpenMessages,
+  getDecidedMessages,
+  markMessageSeen,
+  getMessageSenderEmail,
+  type MessageKind,
 } from "@coffeesnob/supabase";
 import { LeadsTab, readyLeadCount } from "./leads-tab";
 import { BuildTab } from "./build-tab";
@@ -29,6 +34,7 @@ import { RoastersTab, unmatchedStockistCount } from "./roasters-tab";
 import { ClosedTab, closedCandidates, missingIds } from "./closed-tab";
 import { getLiveIndex } from "./live-index";
 import { AddedTab, indexNear, type Nearby } from "./added-tab";
+import { MessagesTab } from "./messages-tab";
 import { metersBetween } from "@/lib/lat-lng";
 import { APP_URL } from "@/lib/app-url";
 
@@ -77,26 +83,39 @@ async function rejectAction(formData: FormData) {
 }
 
 type Filter = "all" | "flagged";
-type Tab = "added" | "shops" | "leads" | "roasters" | "chains" | "flags" | "closed" | "build";
+type Tab = "inbox" | "shops" | "leads" | "roasters" | "chains" | "closed" | "build";
 const TABS: { id: Tab; label: string }[] = [
   { id: "shops", label: "Shops" },
-  { id: "added", label: "Added" },
+  { id: "inbox", label: "Inbox" },
   { id: "leads", label: "Leads" },
   { id: "roasters", label: "Roasters" },
   { id: "chains", label: "Chains" },
-  { id: "flags", label: "Flags" },
   { id: "closed", label: "Closed?" },
   { id: "build", label: "Build" },
+];
+// Inbox (Tell us, 0037): everything people send, one filter per kind.
+type Box = "added" | "flags" | MessageKind;
+const BOXES: { id: Box; label: string }[] = [
+  { id: "added", label: "Missing shops" },
+  { id: "flags", label: "Shop problems" },
+  { id: "bug", label: "Bugs" },
+  { id: "idea", label: "Ideas" },
+  { id: "contact", label: "Messages" },
 ];
 
 export default async function AdminShopsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: Tab; search?: string; filter?: Filter; edit?: string; chain?: string; roaster?: string; sub?: string; done?: string; error?: string }>;
+  searchParams: Promise<{ tab?: Tab | "added" | "flags"; box?: Box; msg?: string; search?: string; filter?: Filter; edit?: string; chain?: string; roaster?: string; sub?: string; done?: string; error?: string }>;
 }) {
-  const { tab = "shops", search, filter = "all", edit, chain: chainQuery, roaster, sub, done, error } = await searchParams;
+  const params = await searchParams;
+  const { search, filter = "all", edit, chain: chainQuery, roaster, sub, msg, done, error } = params;
+  // Old links (?tab=added, ?tab=flags) land in the matching Inbox box.
+  const tab: Tab = params.tab === "added" || params.tab === "flags" ? "inbox" : (params.tab ?? "shops");
   const supabase = await getSupabaseServer();
-  const [shops, cities, decisions, flags, overrides, live, leads, roasters, stockists, pending, decided] = await Promise.all([
+  // Opening a message is what tells its sender it's been seen.
+  if (tab === "inbox" && msg) await markMessageSeen(supabase, msg).catch(() => {});
+  const [shops, cities, decisions, flags, overrides, live, leads, roasters, stockists, pending, decided, messages] = await Promise.all([
     getAdminShops(supabase, { search, filter }),
     getCities(supabase),
     getChainDecisions(supabase),
@@ -107,10 +126,31 @@ export default async function AdminShopsPage({
     getRoasters(supabase),
     getRoasterStockists(supabase),
     getPendingSubmissions(supabase),
-    tab === "added" ? getDecidedSubmissions(supabase) : Promise.resolve([]),
+    tab === "inbox" ? getDecidedSubmissions(supabase) : Promise.resolve([]),
+    getOpenMessages(supabase),
   ]);
+  const flagGroups = groupFlags(flags);
+  const boxCounts: Record<Box, number> = {
+    added: pending.length,
+    flags: flagGroups.length,
+    bug: messages.filter((m) => m.kind === "bug").length,
+    idea: messages.filter((m) => m.kind === "idea").length,
+    contact: messages.filter((m) => m.kind === "contact").length,
+  };
+  const box: Box =
+    params.box && BOXES.some((b) => b.id === params.box)
+      ? params.box
+      : params.tab === "flags"
+        ? "flags"
+        : (BOXES.find((b) => boxCounts[b.id] > 0)?.id ?? "added");
+  const isMessageBox = box !== "added" && box !== "flags";
+  const [decidedMessages, currentEmail] =
+    tab === "inbox" && isMessageBox
+      ? await Promise.all([getDecidedMessages(supabase).then((d) => d.filter((m) => m.kind === box)), msg ? getMessageSenderEmail(supabase, msg).catch(() => null) : null])
+      : [[], null];
+  const currentMessage = isMessageBox && msg ? messages.find((m) => m.id === msg) ?? null : null;
   // The submission under review, and what's already within reach of its pin.
-  const openSub = tab === "added" && sub ? pending.find((p) => p.id === sub) ?? null : null;
+  const openSub = tab === "inbox" && box === "added" && sub ? pending.find((p) => p.id === sub) ?? null : null;
   const nearby: Nearby[] = openSub
     ? [
         ...(await getShopsNear(supabase, openSub.lat, openSub.lng)).map((n) => ({
@@ -126,12 +166,11 @@ export default async function AdminShopsPage({
   const closedList = closedCandidates(missingShops, live);
   const editing = edit === "new" ? emptyShop() : shops.find((s) => s.id === edit);
   const counts: Record<Tab, number> = {
-    added: pending.length,
+    inbox: Object.values(boxCounts).reduce((a, b) => a + b, 0),
     shops: 0,
     leads: readyLeadCount(leads),
     roasters: unmatchedStockistCount(stockists, live),
     chains: pendingChainCount(live, decisions),
-    flags: groupFlags(flags).length,
     closed: closedList.length,
     build: typeof live !== "string" && live.report.alarm ? 1 : 0,
   };
@@ -163,11 +202,33 @@ export default async function AdminShopsPage({
         ))}
       </nav>
 
-      {tab === "added" ? <AddedTab pending={pending} decided={decided} open={openSub} nearby={nearby} flash={{ done, error }} /> : null}
+      {tab === "inbox" ? (
+        <>
+          <nav className="adm-row" aria-label="Inbox" style={{ flexWrap: "wrap", gap: 8, marginTop: 20 }}>
+            {BOXES.map((b) => (
+              <Link key={b.id} href={`/admin/shops?tab=inbox&box=${b.id}`} className={`chip ${box === b.id ? "on" : ""}`} aria-current={box === b.id ? "true" : undefined}>
+                {b.label}
+                {boxCounts[b.id] ? <span aria-label={`${boxCounts[b.id]} waiting`}> · {boxCounts[b.id]}</span> : null}
+              </Link>
+            ))}
+          </nav>
+          {box === "added" ? <AddedTab pending={pending} decided={decided} open={openSub} nearby={nearby} flash={{ done, error }} /> : null}
+          {box === "flags" ? <FlagsTab flags={flags} overrides={overrides} flash={{ done, error }} /> : null}
+          {isMessageBox ? (
+            <MessagesTab
+              kind={box}
+              open={messages.filter((m) => m.kind === box)}
+              decided={decidedMessages}
+              current={currentMessage}
+              email={currentEmail}
+              flash={{ done, error }}
+            />
+          ) : null}
+        </>
+      ) : null}
       {tab === "leads" ? <LeadsTab leads={leads} /> : null}
       {tab === "roasters" ? <RoastersTab roasters={roasters} stockists={stockists} live={live} open={roaster} /> : null}
       {tab === "chains" ? <ChainsTab live={live} decisions={decisions} lookup={chainQuery} /> : null}
-      {tab === "flags" ? <FlagsTab flags={flags} overrides={overrides} /> : null}
       {tab === "closed" ? <ClosedTab candidates={closedList} closed={closedShops} live={live} /> : null}
       {tab === "build" ? <BuildTab live={live} /> : null}
       {tab === "shops" ? (

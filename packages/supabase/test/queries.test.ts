@@ -1463,6 +1463,17 @@ describe("coffee index controls", () => {
     expect(eqSpy).toHaveBeenCalledWith("status", "blocked");
   });
 
+  it("flagPlace reports one of our shops by shop id, with a note", async () => {
+    const upsertSpy = vi.fn(() => Promise.resolve({ error: null }));
+    const client = { from: () => ({ upsert: upsertSpy }) } as any;
+    const { flagPlace } = await import("../src/queries");
+    await flagPlace(client, { shopId: "s1", placeName: "Two Fold", lat: 1, lng: 2, kind: "wrong_info", note: "  Closes at 2 now " });
+    expect(upsertSpy).toHaveBeenCalledWith(
+      { shop_id: "s1", place_name: "Two Fold", lat: 1, lng: 2, kind: "wrong_info", note: "Closes at 2 now" },
+      { onConflict: "shop_id,user_id,kind", ignoreDuplicates: true },
+    );
+  });
+
   it("flagPlace ignores a repeat of the same report", async () => {
     const upsertSpy = vi.fn(() => Promise.resolve({ error: null }));
     const client = { from: () => ({ upsert: upsertSpy }) } as any;

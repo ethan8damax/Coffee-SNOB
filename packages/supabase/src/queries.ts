@@ -1096,8 +1096,19 @@ export async function removeChainBlock(client: Client, name: string): Promise<vo
 
 // ── Coffee index controls (curation Phase 3) ────────────────────────
 export type PlaceOverride = { placeId: string; action: "show" | "hide"; reason: string | null };
-export type PlaceFlagKind = "closed" | "not_specialty" | "wrong_location";
-export type PlaceFlag = { placeId: string; placeName: string; lat: number; lng: number; kind: PlaceFlagKind; createdAt: string };
+export type PlaceFlagKind = "closed" | "not_specialty" | "wrong_location" | "wrong_info" | "duplicate" | "other";
+// A report is about an index café (placeId) or a shop in our table (shopId), never both (0037).
+export type FlagTarget = { placeId: string; shopId?: undefined } | { shopId: string; placeId?: undefined };
+export type PlaceFlag = {
+  placeId: string | null;
+  shopId: string | null;
+  placeName: string;
+  lat: number;
+  lng: number;
+  kind: PlaceFlagKind;
+  note: string | null;
+  createdAt: string;
+};
 
 export async function getPlaceOverrides(client: Client): Promise<PlaceOverride[]> {
   const { data, error } = await client.from("place_overrides").select("place_id, action, reason");
@@ -1131,20 +1142,29 @@ export async function getPlaceFlagCounts(client: Client): Promise<{ placeId: str
 // A signed-in user's report. Reporting the same thing twice is a no-op.
 export async function flagPlace(
   client: Client,
-  flag: { placeId: string; placeName: string; lat: number; lng: number; kind: PlaceFlagKind },
+  flag: FlagTarget & { placeName: string; lat: number; lng: number; kind: PlaceFlagKind; note?: string | null },
 ): Promise<void> {
+  const note = flag.note?.trim() ? flag.note.trim().slice(0, 500) : undefined;
   const { error } = await client
     .from("place_flags")
     .upsert(
-      { place_id: flag.placeId, place_name: flag.placeName.slice(0, 200), lat: flag.lat, lng: flag.lng, kind: flag.kind },
-      { onConflict: "place_id,user_id,kind", ignoreDuplicates: true },
+      {
+        ...(flag.shopId ? { shop_id: flag.shopId } : { place_id: flag.placeId }),
+        place_name: flag.placeName.slice(0, 200),
+        lat: flag.lat,
+        lng: flag.lng,
+        kind: flag.kind,
+        ...(note ? { note } : {}),
+      },
+      { onConflict: flag.shopId ? "shop_id,user_id,kind" : "place_id,user_id,kind", ignoreDuplicates: true },
     );
   if (error) throw error;
 }
 
-// What the signed-in user already reported about one place (RLS: own rows).
-export async function getMyPlaceFlags(client: Client, placeId: string): Promise<PlaceFlagKind[]> {
-  const { data, error } = await client.from("place_flags").select("kind").eq("place_id", placeId);
+// What the signed-in user already reported about one place and hasn't heard back on (RLS: own rows).
+export async function getMyPlaceFlags(client: Client, target: FlagTarget): Promise<PlaceFlagKind[]> {
+  const q = client.from("place_flags").select("kind").is("resolved_at", null);
+  const { data, error } = await (target.shopId ? q.eq("shop_id", target.shopId) : q.eq("place_id", target.placeId!));
   if (error) throw error;
   return data.map((r) => r.kind as PlaceFlagKind);
 }
@@ -1153,16 +1173,31 @@ export async function getMyPlaceFlags(client: Client, placeId: string): Promise<
 export async function getOpenPlaceFlags(client: Client): Promise<PlaceFlag[]> {
   const { data, error } = await client
     .from("place_flags")
-    .select("place_id, place_name, lat, lng, kind, created_at")
+    .select("place_id, shop_id, place_name, lat, lng, kind, note, created_at")
     .is("resolved_at", null)
     .order("created_at", { ascending: false })
     .limit(1000);
   if (error) throw error;
-  return data.map((r) => ({ placeId: r.place_id, placeName: r.place_name, lat: r.lat, lng: r.lng, kind: r.kind as PlaceFlagKind, createdAt: r.created_at }));
+  return data.map((r) => ({
+    placeId: r.place_id,
+    shopId: r.shop_id,
+    placeName: r.place_name,
+    lat: r.lat,
+    lng: r.lng,
+    kind: r.kind as PlaceFlagKind,
+    note: r.note,
+    createdAt: r.created_at,
+  }));
 }
 
-export async function resolvePlaceFlags(client: Client, placeId: string): Promise<void> {
-  const { error } = await client.from("place_flags").update({ resolved_at: new Date().toISOString() }).eq("place_id", placeId).is("resolved_at", null);
+// Admin: close every open report on one place or shop; each sender gets one note.
+export async function decidePlaceFlags(client: Client, target: FlagTarget, outcome: "done" | "passed", reason?: string | null): Promise<void> {
+  const { error } = await client.rpc("decide_place_flags", {
+    p_place_id: target.placeId ?? null,
+    p_shop_id: target.shopId ?? null,
+    p_outcome: outcome,
+    p_reason: reason?.trim() || undefined,
+  });
   if (error) throw error;
 }
 
@@ -1327,13 +1362,15 @@ export async function markShopOpen(client: Client, id: string): Promise<void> {
 }
 
 // snob_approved: a shop you logged first earned the pin. shop_added /
-// shop_declined: an admin decided on a shop you sent (0036).
+// shop_declined: an admin decided on a shop you sent (0036). report_* and
+// message_*: an admin decided on a report or message you sent (0037).
 export type FinderNotification = {
   id: string;
-  kind: "snob_approved" | "shop_added" | "shop_declined";
+  kind: "snob_approved" | "shop_added" | "shop_declined" | "report_done" | "report_passed" | "message_done" | "message_passed";
   shopId: string | null;
   shopName: string;
   reason: string | null;
+  messageKind: "bug" | "idea" | "contact" | null;
   createdAt: string;
 };
 
@@ -1341,18 +1378,21 @@ export type FinderNotification = {
 export async function getUnreadNotifications(client: Client): Promise<FinderNotification[]> {
   const { data, error } = await client
     .from("notifications")
-    .select("id, kind, shop_id, created_at, shops(name), shop_submissions(name, decline_reason)")
+    .select("id, kind, shop_id, created_at, shops(name), shop_submissions(name, decline_reason), place_flags(place_name, shop_id, reason), messages(kind, reason)")
     .is("read_at", null)
     .order("created_at", { ascending: false });
   if (error) throw error;
   return data.map((r) => {
     const sub = r.shop_submissions as { name: string; decline_reason: string | null } | null;
+    const flag = r.place_flags as { place_name: string; shop_id: string | null; reason: string | null } | null;
+    const msg = r.messages as { kind: string; reason: string | null } | null;
     return {
       id: r.id,
       kind: r.kind as FinderNotification["kind"],
-      shopId: r.shop_id,
-      shopName: (r.shops as { name: string } | null)?.name ?? sub?.name ?? "",
-      reason: sub?.decline_reason ?? null,
+      shopId: r.shop_id ?? flag?.shop_id ?? null,
+      shopName: (r.shops as { name: string } | null)?.name ?? sub?.name ?? flag?.place_name ?? "",
+      reason: sub?.decline_reason ?? flag?.reason ?? msg?.reason ?? null,
+      messageKind: (msg?.kind as FinderNotification["messageKind"]) ?? null,
       createdAt: r.created_at,
     };
   });

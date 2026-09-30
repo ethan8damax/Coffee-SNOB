@@ -17,7 +17,8 @@ import {
   allowChain,
   removeChainBlock,
   removePlaceOverride,
-  resolvePlaceFlags,
+  decidePlaceFlags,
+  decideMessage,
   setChainPrefix,
   setPlaceOverride,
   approveSubmission,
@@ -70,17 +71,37 @@ export async function unblockChainAction(formData: FormData) {
   revalidatePath("/admin/shops");
 }
 
+// ── Tell us (0037): shop reports and messages ──────────────────────────
+
+const FLAGS = "/admin/shops?tab=inbox&box=flags";
+const target = (f: FormData) => (str(f, "shopId") ? { shopId: str(f, "shopId") } : { placeId: str(f, "placeId") });
+
 export async function hideFlaggedPlaceAction(formData: FormData) {
   const placeId = str(formData, "placeId");
   const supabase = await getSupabaseServer();
   await setPlaceOverride(supabase, placeId, "hide", str(formData, "reason") || null);
-  await resolvePlaceFlags(supabase, placeId);
+  await decidePlaceFlags(supabase, { placeId }, "done");
   revalidatePath("/admin/shops");
+  redirect(`${FLAGS}&done=hidden`);
 }
 
-export async function dismissFlagsAction(formData: FormData) {
-  await resolvePlaceFlags(await getSupabaseServer(), str(formData, "placeId"));
+export async function doneFlagsAction(formData: FormData) {
+  await decidePlaceFlags(await getSupabaseServer(), target(formData), "done", str(formData, "reason"));
   revalidatePath("/admin/shops");
+  redirect(`${FLAGS}&done=fixed`);
+}
+
+export async function passFlagsAction(formData: FormData) {
+  await decidePlaceFlags(await getSupabaseServer(), target(formData), "passed", str(formData, "reason"));
+  revalidatePath("/admin/shops");
+  redirect(`${FLAGS}&done=passed`);
+}
+
+export async function decideMessageAction(formData: FormData) {
+  const outcome = str(formData, "outcome") === "passed" ? "passed" : "done";
+  await decideMessage(await getSupabaseServer(), str(formData, "id"), outcome, str(formData, "reason"));
+  revalidatePath("/admin/shops");
+  redirect(`/admin/shops?tab=inbox&box=${encodeURIComponent(str(formData, "box"))}&done=${outcome === "passed" ? "passed" : "fixed"}`);
 }
 
 export async function removeOverrideAction(formData: FormData) {
@@ -161,7 +182,7 @@ export async function stillOpenAction(formData: FormData) {
 
 // ── Add a shop (0036) ──────────────────────────────────────────────────
 
-const ADDED = "/admin/shops?tab=added";
+const ADDED = "/admin/shops?tab=inbox&box=added";
 
 export async function approveSubmissionAction(formData: FormData) {
   const at = parseLatLng(str(formData, "latLng"));

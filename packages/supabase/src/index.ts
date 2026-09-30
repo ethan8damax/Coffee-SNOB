@@ -71,7 +71,7 @@ export {
   flagPlace,
   getMyPlaceFlags,
   getOpenPlaceFlags,
-  resolvePlaceFlags,
+  decidePlaceFlags,
   getLeads,
   addCurationVisit,
   removeCurationVisit,
@@ -104,9 +104,10 @@ export type {
   CityFields,
 } from "./queries";
 export type { AdminUserRow } from "./queries";
-export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, Lead, CurationVisit, Roaster, RoasterStockist, RatedRef, FreshnessShop, FinderNotification } from "./queries";
+export type { ShopFields, ShopCurationFields, AdminShopRow, ChainBlock, ChainDecision, PlaceOverride, PlaceFlag, PlaceFlagKind, FlagTarget, Lead, CurationVisit, Roaster, RoasterStockist, RatedRef, FreshnessShop, FinderNotification } from "./queries";
 export type { CityGuideFields, CityGuideItem, AdminCityGuideRow } from "./queries";
 export type { Database } from "./types";
 
 export * from "./collections";
 export * from "./submissions";
+export * from "./tell-us";

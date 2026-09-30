@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fitLongEdge } from "./sizes";
-import { uploadLogPhoto, type CompressedPhoto } from "./upload";
+import { PhotoRefused, uploadLogPhoto, type CompressedPhoto } from "./upload";
 import { _resetPending, enqueuePhoto, isPending, previewFor, subscribe } from "./pending";
 
 describe("fitLongEdge", () => {
@@ -46,6 +46,12 @@ describe("uploadLogPhoto", () => {
     expect(JSON.parse(calls[5].body as string)).toEqual({ logId: "l1", photoId: "p1", ext: "webp", width: 1600, height: 1200 });
   });
 
+  it("marks a refusal from our server as final, so it isn't retried", async () => {
+    const run = (fail: string) => uploadLogPhoto({ apiBase: "https://web.test", token: "t", logId: "l1", photo, fetchImpl: fakeFetch(fail).impl as typeof fetch });
+    await expect(run("confirm")).rejects.toBeInstanceOf(PhotoRefused);
+    await expect(run("r2/thumb")).rejects.not.toBeInstanceOf(PhotoRefused);
+  });
+
   it("throws when any step is refused", async () => {
     await expect(uploadLogPhoto({ apiBase: "https://web.test", token: "t", logId: "l1", photo, fetchImpl: fakeFetch("sign").impl as typeof fetch })).rejects.toThrow();
     await expect(uploadLogPhoto({ apiBase: "https://web.test", token: "t", logId: "l1", photo, fetchImpl: fakeFetch("r2/thumb").impl as typeof fetch })).rejects.toThrow();
@@ -82,6 +88,15 @@ describe("pending photo queue", () => {
     await vi.advanceTimersByTimeAsync(30_000);
     expect(run).toHaveBeenCalledTimes(3);
     expect(isPending("l1")).toBe(false);
+  });
+
+  it("stops at once on a final refusal and drops the preview", async () => {
+    const run = vi.fn().mockRejectedValue(new PhotoRefused(422));
+    enqueuePhoto("l1", run, "file:///picked.jpg");
+    await vi.advanceTimersByTimeAsync(3600_000);
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(isPending("l1")).toBe(false);
+    expect(previewFor("l1")).toBeNull();
   });
 
   it("gives up after 24 hours", async () => {

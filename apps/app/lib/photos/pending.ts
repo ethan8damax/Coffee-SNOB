@@ -1,4 +1,5 @@
 import { PHOTO_LIMITS } from "@coffeesnob/supabase";
+import { PhotoRefused } from "./upload";
 
 // Photos waiting to upload, one per log. The log is already saved; this keeps
 // trying the upload so a bad connection doesn't lose the photo.
@@ -38,8 +39,8 @@ export function enqueuePhoto(logId: string, run: () => Promise<void>, previewUri
     try {
       await run();
       finish();
-    } catch {
-      if (Date.now() - start >= PHOTO_LIMITS.retryHours * 3600_000) {
+    } catch (e) {
+      if (e instanceof PhotoRefused || Date.now() - start >= PHOTO_LIMITS.retryHours * 3600_000) {
         previews.delete(logId);
         return finish();
       }

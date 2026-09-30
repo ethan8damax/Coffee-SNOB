@@ -11,9 +11,23 @@ export type CompressedPhoto = {
 
 const CONTENT_TYPE: Record<PhotoExt, string> = { webp: "image/webp", jpg: "image/jpeg" };
 
+// Our server said no for good (not theirs, over a cap, refused file): retrying
+// won't change the answer. 401 (session refresh), 429 and 5xx are worth retrying.
+export class PhotoRefused extends Error {
+  constructor(readonly status: number) {
+    super(`Photo refused (${status})`);
+  }
+}
+const RETRYABLE = new Set([401, 408, 429]);
+
 async function ok(res: Response, step: string) {
   if (!res.ok) throw new Error(`${step} failed (${res.status})`);
   return res;
+}
+
+async function ours(res: Response, step: string) {
+  if (res.status >= 400 && res.status < 500 && !RETRYABLE.has(res.status)) throw new PhotoRefused(res.status);
+  return ok(res, step);
 }
 
 export async function uploadLogPhoto({
@@ -36,7 +50,7 @@ export async function uploadLogPhoto({
       body: JSON.stringify(body),
     });
 
-  const signed = (await (await ok(await post("/api/photos/sign", { logId, ext: photo.ext }), "sign")).json()) as {
+  const signed = (await (await ours(await post("/api/photos/sign", { logId, ext: photo.ext }), "sign")).json()) as {
     photoId: string;
     fullUrl: string;
     thumbUrl: string;
@@ -48,5 +62,5 @@ export async function uploadLogPhoto({
     fetchImpl(signed.thumbUrl, { method: "PUT", headers: { "content-type": type }, body: thumb }).then((r) => ok(r, "upload")),
   ]);
   const { width, height } = photo.full;
-  await ok(await post("/api/photos/confirm", { logId, photoId: signed.photoId, ext: photo.ext, width, height }), "confirm");
+  await ours(await post("/api/photos/confirm", { logId, photoId: signed.photoId, ext: photo.ext, width, height }), "confirm");
 }

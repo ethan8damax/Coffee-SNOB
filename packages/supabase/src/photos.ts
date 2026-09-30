@@ -7,11 +7,13 @@ export const PHOTO_LIMITS = {
   perUserPerDay: 20,
   full: { longEdge: 1600, quality: 0.7 },
   thumb: { longEdge: 640, quality: 0.65 },
-  jpegFallbackQuality: 0.75,
+  // iPhone Safari can't encode WebP, so JPEG is the common case on the web app.
+  jpegFallbackQuality: 0.65,
   blurhash: { x: 4, y: 3 },
   headerMinShortEdge: 600,
-  maxFullBytes: 400_000,
-  maxThumbBytes: 80_000,
+  // Abuse ceilings, not the budget: a 1600 px JPEG from Safari runs ~250-450 KB.
+  maxFullBytes: 1_000_000,
+  maxThumbBytes: 250_000,
   signedUrlSeconds: 300,
   retryHours: 24,
   flagsToHide: 2,

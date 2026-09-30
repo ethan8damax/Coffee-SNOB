@@ -11,7 +11,7 @@
   - One line under it reads "Only add photos you took." and links to `/terms` on the website.
 - **Compression** (`lib/photos/compress.ts`, `expo-image-manipulator`'s contextual API):
   - Resize to 1600 px on the long edge for the full size and 640 px for the thumbnail. Never upscale.
-  - Save as WebP (quality 0.7 full, 0.65 thumbnail). If WebP fails (older Safari, which throws), save both as JPEG at 0.75.
+  - Save as WebP (quality 0.7 full, 0.65 thumbnail). If WebP fails (Safari can't encode it, so this is the common case on the iPhone web app), save both as JPEG at 0.65. `maxFullBytes`/`maxThumbBytes` (1 MB / 250 KB) are abuse ceilings, not the storage budget: a 1600 px Safari JPEG runs about 250–450 KB. The first caps (400/80 KB, sized for WebP) refused real iPhone photos with 413 (fixed 2026-09-30).
   - Re-encoding drops EXIF.
   - The original is never uploaded.
 - **Publish:** the log saves exactly as today (`logVisit`, which returns `logId`). The photo then goes into the pending queue and the screen moves on without waiting.

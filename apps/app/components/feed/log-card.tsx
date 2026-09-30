@@ -6,6 +6,7 @@ import { setLogLike } from "@coffeesnob/supabase";
 import { Avatar, Body, Label, D2, IconComment, HeartToggle } from "../primitives";
 import { Detour } from "../detour";
 import { CommentThread } from "./comment-thread";
+import { LogPhoto } from "../photos/log-photo";
 import type { LogFeedCard } from "../../lib/feed/types";
 
 export function LogCard({ item, userId }: { item: LogFeedCard; userId: string }) {
@@ -41,6 +42,9 @@ export function LogCard({ item, userId }: { item: LogFeedCard; userId: string })
         <Detour value={item.rating} />
       </View>
       {item.note && <Body style={{ marginTop: 10 }}>{item.note}</Body>}
+      <View style={{ marginTop: 12 }}>
+        <LogPhoto photo={item.photo} logId={item.id} mine={item.userId === userId} />
+      </View>
 
       <View style={{ flexDirection: "row", alignItems: "center", gap: 18, marginTop: 14 }}>
         <Tap

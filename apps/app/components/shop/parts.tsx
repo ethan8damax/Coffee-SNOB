@@ -8,6 +8,7 @@ import { Avatar, Body, ButtonBu, ButtonLine, D1, IconBack, Label } from "../prim
 import { NavIcon } from "../nav/nav-icon";
 import { Detour } from "../detour";
 import { Chip } from "../chip";
+import { LogPhoto } from "../photos/log-photo";
 import { useAuth } from "../../context/auth";
 import { useShopSaved } from "../../lib/profile/use-extras";
 import { AddToCollection } from "../collections/add-to-collection";
@@ -142,6 +143,7 @@ export function TabStrip({ tab, onChange }: { tab: ShopTab; onChange: (t: ShopTa
 }
 
 function ReviewRow({ review }: { review: ShopReview }) {
+  const { session } = useAuth();
   const name = review.displayName || review.username;
   const when = relativeDate(review.createdAt);
   return (
@@ -163,6 +165,9 @@ function ReviewRow({ review }: { review: ShopReview }) {
         {review.drink ? <Chip label={review.drink} /> : null}
       </View>
       {review.note ? <Body style={{ paddingLeft: 37 }}>{review.note}</Body> : null}
+      <View style={{ paddingLeft: 37 }}>
+        <LogPhoto photo={review.photo} logId={review.id} mine={review.userId === session?.user.id} />
+      </View>
     </View>
   );
 }

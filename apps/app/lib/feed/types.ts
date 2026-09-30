@@ -1,3 +1,5 @@
+import type { LogPhoto } from "@coffeesnob/supabase";
+
 export type LogFeedCard = {
   type: "log";
   id: string;
@@ -11,6 +13,7 @@ export type LogFeedCard = {
   likeCount: number;
   likedByMe: boolean;
   commentCount: number;
+  photo: LogPhoto | null;
 };
 
 export type CollectionFeedCard = {

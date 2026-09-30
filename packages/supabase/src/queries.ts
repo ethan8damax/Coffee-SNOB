@@ -308,7 +308,7 @@ export async function getLogsForShops(client: Client, shopIds: string[]) {
   if (shopIds.length === 0) return [];
   const { data, error } = await client
     .from("logs")
-    .select("id, user_id, shop_id, rating, note, visited_at, created_at")
+    .select("id, user_id, shop_id, rating, note, visited_at, created_at, log_photos(id, path, thumb_path, width, height, status)")
     .in("shop_id", shopIds)
     .order("created_at", { ascending: false })
     .limit(20);

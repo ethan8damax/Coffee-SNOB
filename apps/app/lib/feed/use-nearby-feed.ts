@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getShopsInBounds, getLogsForShops, getProfilesByIds, getLogLikes, getCommentCountsByLog } from "@coffeesnob/supabase";
+import { getShopsInBounds, getLogsForShops, getProfilesByIds, getLogLikes, getCommentCountsByLog, livePhoto } from "@coffeesnob/supabase";
 import type { MapBounds } from "../../components/map/types";
 import type { FeedItem, LogFeedCard } from "./types";
 
@@ -44,6 +44,7 @@ export function useNearbyFeed(bounds: MapBounds | null, userId: string | null) {
         likeCount: likes.filter((like) => like.log_id === l.id).length,
         likedByMe: likes.some((like) => like.log_id === l.id && like.user_id === userId),
         commentCount: commentRows.filter((c) => c.log_id === l.id).length,
+        photo: livePhoto(l.log_photos),
       }));
 
       if (!cancelled) {

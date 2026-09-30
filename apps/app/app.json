@@ -36,7 +36,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "Coffee Snob uses your location to show cafés nearby."
+          "locationWhenInUsePermission": "Coffee Snob uses your location to show caf\u00e9s nearby."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Coffee Snob opens your photos so you can add one to a visit.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ]

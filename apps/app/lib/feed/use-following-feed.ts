@@ -6,6 +6,7 @@ import {
   getProfilesByIds,
   getLogLikes,
   getCommentCountsByLog,
+  livePhoto,
 } from "@coffeesnob/supabase";
 import { mergeFeedItems } from "./merge-feed-items";
 import type { FeedItem, LogFeedCard, CollectionFeedCard } from "./types";
@@ -62,6 +63,7 @@ export function useFollowingFeed(userId: string | null) {
         likeCount: likes.filter((like) => like.log_id === l.id).length,
         likedByMe: likes.some((like) => like.log_id === l.id && like.user_id === userId),
         commentCount: commentRows.filter((c) => c.log_id === l.id).length,
+        photo: livePhoto(l.log_photos),
       }));
 
       const listCards: CollectionFeedCard[] = lists.map((l) => ({

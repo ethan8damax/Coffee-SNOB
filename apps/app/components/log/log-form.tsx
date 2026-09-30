@@ -13,6 +13,8 @@ import { VERDICT_FOOTNOTE } from "../../lib/log/verdicts";
 import { NOTE_MAX, buildLogVisitInput, canPublish, type LogParams } from "../../lib/log/params";
 import { useShopName } from "../../lib/log/use-shop-name";
 import { locateShop } from "../../lib/log/locate";
+import { queueLogPhoto, type PickedPhoto } from "../../lib/photos/queue-log-photo";
+import { PhotoField } from "./photo-field";
 
 const WEB_APP_URL = process.env.EXPO_PUBLIC_WEB_APP_URL ?? "";
 
@@ -27,6 +29,7 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
   const [rating, setRating] = useState<number | null>(null);
   const [drink, setDrink] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [photo, setPhoto] = useState<PickedPhoto | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
@@ -47,11 +50,14 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
       if (input.kind === "osm") {
         input = { ...input, ...(await locateShop(input.lat, input.lng, WEB_APP_URL)) };
       }
-      const { shopId } = await logVisit(supabase, userId, input);
+      const { shopId, logId } = await logVisit(supabase, userId, input);
+      // The entry is saved; the photo uploads in the background with retries.
+      if (photo) queueLogPhoto(logId, photo);
       // Tab screens stay mounted; clear the form so the next visit starts fresh.
       setRating(null);
       setDrink(null);
       setNote("");
+      setPhoto(null);
       setSubmitting(false);
       inFlight.current = false;
       router.replace(`/shop/${shopId}`);
@@ -134,6 +140,8 @@ export function LogForm({ params, userId }: { params: Exclude<LogParams, { kind:
             />
             <BodySm style={{ textAlign: "right" }}>{`${NOTE_MAX - note.length} left`}</BodySm>
           </View>
+
+          <PhotoField value={photo} onChange={setPhoto} />
 
           {error ? (
             <Text accessibilityRole="alert" style={{ marginTop: 16, fontFamily: "Area-Regular", fontSize: 13.5, color: colors.oxblood }}>

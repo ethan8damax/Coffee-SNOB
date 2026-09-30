@@ -5,7 +5,7 @@ import type { FeedItem } from "./types";
 function log(id: string, createdAt: string): FeedItem {
   return {
     type: "log", id, createdAt, userId: "u1", authorName: "Mara K.", shopName: "Noi Coffee",
-    shopNeighborhood: null, rating: 4, note: null, likeCount: 0, likedByMe: false, commentCount: 0,
+    shopNeighborhood: null, rating: 4, note: null, likeCount: 0, likedByMe: false, commentCount: 0, photo: null,
   };
 }
 function collection(id: string, createdAt: string): FeedItem {
